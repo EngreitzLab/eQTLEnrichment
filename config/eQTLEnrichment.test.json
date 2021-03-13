@@ -6,7 +6,7 @@
     "outDir": "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/test_out/",
     "bgVariants": "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/all.bg.SNPs.sorted.bed.gz",
     "predColMap" : "/oak/stanford/groups/akundaje/projects/ABC_links/GWAS_test/Test_data/ABCColMap.txt",
-"predictionsTable":"/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/config/GTExEnrichment.config-preds.tsv",
+"predictionsTable":"/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/config/eQTLEnrichment.config-preds.tsv",
     "predictions": [
        "ABC", "ChromHMM2017"
     ],

@@ -1,0 +1,16 @@
+{
+    "projectDir": "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/",
+    "codeDir": "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/src/",
+    "abcDir": "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichments/",
+    "logDir": "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/log/",
+    "outDir": "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/test_out/",
+    "bgVariants": "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/all.bg.SNPs.sorted.bed.gz",
+    "predColMap" : "/oak/stanford/groups/akundaje/projects/ABC_links/GWAS_test/Test_data/ABCColMap.txt",
+"predictionsTable":"/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/config/GTExEnrichment.config-preds.tsv",
+    "predictions": [
+       "ABC", "ChromHMM2017"
+    ],
+    "GTExvariants": "/oak/stanford/groups/engreitz/Projects/GWAS/data/Ulirsch-eQTL/200207/GTEx_30tissues_release1.tsv.gz",
+	"partition": "/oak/stanford/groups/engreitz/Projects/GWAS/191223_Partitioning/200523-ABCPartition/partition/PartitionCombined.bed",
+	"ABCgenes": "/home/groups/engreitz/Software/ABC-Enhancer-Gene-Prediction/reference/RefSeqCurated.170308.bed.CollapsedGeneBounds.bed"
+}

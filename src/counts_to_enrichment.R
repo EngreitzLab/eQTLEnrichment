@@ -13,8 +13,10 @@ library(dplyr); library(tidyr); library(optparse)
     
 	# read in files
 	countMatrix = read.csv(opt$counts, sep = '\t', header=FALSE,stringsAsFactors = FALSE) %>% dplyr::select(-"V34")
-	commonVarByBiosample = read.csv(opt$commonvar, sep = '\t', header=FALSE,stringsAsFactors = FALSE); colnames(commonVarByBiosample) = c('ABCBiosample','nCommonVariantsOverlappingABCEnhancers')
-	variantsByGTExTissue = read.csv(opt$varbytissue, sep = '\t', header=FALSE,stringsAsFactors = FALSE); colnames(variantsByGTExTissue) = c('GTExTissue','nVariantsGTExTissue')
+	commonVarByBiosample = read.csv(opt$commonvar, sep = '\t', header=FALSE,stringsAsFactors = FALSE); 
+	colnames(commonVarByBiosample) = c('ABCBiosample','nCommonVariantsOverlappingABCEnhancers')
+	variantsByGTExTissue = read.csv(opt$varbytissue, sep = '\t', header=FALSE,stringsAsFactors = FALSE); 
+	colnames(variantsByGTExTissue) = c('GTExTissue','nVariantsGTExTissue')
 	totalCommonVar = opt$totalcommonvar
 
 	# make matrix: columns GTExTissue, ABCBiosample, nVariantsOverlappingABCEnhancers, nVariantsGTExTissue, nCommonVariantsOverlappingABCEnhancers,  nCommonVariants, enrichment

@@ -19,10 +19,10 @@ rule all:
 		os.path.join(config["outDir"], "variantLists/distalNoncoding.bg.SNPs.bed.gz"),
 		os.path.join(config["outDir"], "variantLists/variantsPerGTExTissue.tsv"),
 		expand(os.path.join(config["outDir"], "{pred}/predictionCellTypes.tsv"), pred=config["predictions"]),
-#		expand(os.path.join(config["outDir"], "{pred}/enrichmentTable.tsv"), pred=config["predictions"]),
-#		expand(os.path.join(config["outDir"], "{pred}/countMatrix.tsv"), pred=config["predictions"]),
-#		expand(os.path.join(config["outDir"], "{pred}/basesPerEnhancerSet.tsv"), pred=config["predictions"]),
-#		expand(os.path.join(config["outDir"], "{pred}/varPerBiosample.tsv"), pred=config["predictions"]),
+		expand(os.path.join(config["outDir"], "{pred}/enrichmentTable.tsv"), pred=config["predictions"]),
+		expand(os.path.join(config["outDir"], "{pred}/countMatrix.tsv"), pred=config["predictions"]),
+		expand(os.path.join(config["outDir"], "{pred}/basesPerEnhancerSet.tsv"), pred=config["predictions"]),
+		expand(os.path.join(config["outDir"], "{pred}/commonVarPerBiosample.tsv"), pred=config["predictions"]),
 #		expand(os.path.join(config["outDir"], "{pred}/enrichmentHeatmap.full.pdf"), pred=config["predictions"]),
 #		expand(os.path.join(config["outDir"], "{pred}/enrichmentHeatmap.aggregated.pdf"), pred=config["predictions"]),
 #		os.path.join(config["outDir"], "/cdf.pdf"),
@@ -123,12 +123,12 @@ rule filterToDistalNoncoding:
 		awk '$4=="ABC" || $4=="AllPeaks" || $4=="Other" || $4=="OtherIntron"' {params.partition} > {output.partitionDistalNoncoding}
 
 		zcat {input.filteredGTExVar} | bedtools intersect -wa -a stdin -b {output.partitionDistalNoncoding} | gzip > {output.filteredGTExVarDistalNoncoding}
-			cat {input.commonVar} | bedtools intersect -wa -a stdin -b {output.partitionDistalNoncoding} | gzip > {output.commonVarDistalNoncoding}
+		cat {input.commonVar} | bedtools intersect -wa -a stdin -b {output.partitionDistalNoncoding} | gzip > {output.commonVarDistalNoncoding}
 			""")
 		
 rule computeCountMatrix:
 	input: 
-		variantsPredictionInt = lambda wildcard: os.path.join(config["outDir"],preds_config_file.loc[wildcard.pred, "entry"], "GTExVariants-enhancerPredictions.PIP0.5.distalNoncoding.tsv.gz"),
+		variantsPredictionsInt = lambda wildcard: os.path.join(config["outDir"],preds_config_file.loc[wildcard.pred, "entry"], "GTExVariants-enhancerPredictions.PIP0.5.distalNoncoding.tsv.gz"),
 		predictionsSorted = lambda wildcard: os.path.join(config["outDir"], preds_config_file.loc[wildcard.pred, "entry"], "enhancerPredictions.sorted.bed"),
 		samples = lambda wildcard: os.path.join(config["outDir"],preds_config_file.loc[wildcard.pred, "entry"], "predictionCellTypes.tsv")
 	params:
@@ -141,7 +141,8 @@ rule computeCountMatrix:
 			"""			
 			set +o pipefail;
 			
-			for CellType in {input.samples}
+			samples=$(cat {input.samples})
+			for CellType in $samples
 			do
 				printf $CellType"\\t" >> {output.countMatrix}
 				# columns of intersection file: 1-3 (variant loc), 4 (variant hgID), 5 (variant tissue), 6 (variant gene ens id), 7 (variant PIP), 8-10 (enhancer loc), 11 (enhancer cell type)
@@ -160,7 +161,7 @@ rule computeCommonVarOverlap:
 		samples = lambda wildcard: os.path.join(config["outDir"],preds_config_file.loc[wildcard.pred, "entry"], "predictionCellTypes.tsv")
 	params:
 	output:
-		commonVarPerBiosample = os.path.join(config["outDir"], "{pred}/varPerBiosample.tsv"),
+		commonVarPerBiosample = os.path.join(config["outDir"], "{pred}/commonVarPerBiosample.tsv"),
 		commonVarPredictionsInt = os.path.join(config["outDir"], "{pred}/commonVariants-enhancerPredictions.distalNoncoding.tsv.gz")
 	run:
 		shell(
@@ -168,14 +169,15 @@ rule computeCommonVarOverlap:
 			set +o pipefail;
 			
 			# intersect common var with enhancer predictions
-			# columns: 1-3 (enhancer loc), 4 (enhancer cell type)
-			zcat {input.commonVarDistalNoncoding} | bedtools int -wb -a stdin -b {input.predictionsSorted} | gzip > {output.commonVarPredictionsInt}
+			# columns: 1-3 (variant loc), 4 (variant rsid), 5-7 (enhancer loc), 8 (enhancer cell type)
+			zcat {input.commonVarDistalNoncoding} | bedtools intersect -wa -wb -a stdin -b {input.predictionsSorted} | gzip > {output.commonVarPredictionsInt}
 			
+			samples=$(cat {input.samples})
 			# get common variants: biosample/celltype follwed by count
-			for CellType in {input.samples}
+			for CellType in $samples
 			do
 				printf $CellType'\\t' >> {output.commonVarPerBiosample}
-				zcat {output.commonVarPredictionsInt} | awk -v awkvar=$CellType '$4==awkvar' | wc -l >>{output.commonVarPerBiosample}
+				zcat {output.commonVarPredictionsInt} | awk -v awkvar=$CellType '$8==awkvar' | wc -l >> {output.commonVarPerBiosample}
 				printf '\\n' >> {output.commonVarPerBiosample}
 			done
 			""")
@@ -191,12 +193,14 @@ rule computeEnhancerSetSizes:
 		shell(
 			"""			
 			set +o pipefail;
-		
-			for CellType in {input.samples}
+			
+			samples=$(cat {input.samples})
+			
+			for CellType in $samples
 			do
 				# make list of sizes of enhancer sets for each biosample
 				printf $CellType"\\t" >> {output.basesPerEnhancerSet}
-				zcat {output.commonVarPredictionsInt} | awk -v awkvar=$CellType '$4==awkvar' | sort -k1,1 -k2,2n | bedtools merge -i stdin | awk 'BEGIN {{FS=OFS="\\t"}} {{print $3-$2}}' | awk '{{s+=$1}}END{{print s}}' >> {output.basesPerEnhancerSet}
+				cat {input.predictionsSorted} | awk -v awkvar=$CellType '$4==awkvar' | sort -k1,1 -k2,2n | bedtools merge -i stdin | awk 'BEGIN {{FS=OFS="\\t"}} {{print $3-$2}}' | awk '{{s+=$1}}END{{print s}}' >> {output.basesPerEnhancerSet}
 				printf "\\n" >> {output.basesPerEnhancerSet}
 			done
 			""")
@@ -207,7 +211,7 @@ rule computeEnrichmentMatrix:
 	params:
 		variantsPerGTExTissue = os.path.join(config["outDir"], "variantLists/variantsPerGTExTissue.tsv"),
 		commonVarDistalNoncoding = os.path.join(config["outDir"], "variantLists/distalNoncoding.bg.SNPs.bed.gz"),
-		commonVarPerBiosample = os.path.join(config["outDir"], "{pred}/varPerBiosample.tsv"),
+		commonVarPerBiosample = os.path.join(config["outDir"], "{pred}/commonVarPerBiosample.tsv"),
 		basesPerEnhancerSet = os.path.join(config["outDir"], "{pred}/basesPerEnhancerSet.tsv"),
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]

@@ -9,7 +9,7 @@
     "predColMap" : "/oak/stanford/groups/akundaje/projects/ABC_links/GWAS_test/Test_data/ABCColMap.txt",
 "predictionsTable":"/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/config/eQTLEnrichment.config-preds.tsv",
     "predictions": [
-       "ABC", "ChromHMM2017"
+       "ABC", "EpiMap", "ChromHMM2017"
     ],
     "GTExvariants": "/oak/stanford/groups/engreitz/Projects/GWAS/data/Ulirsch-eQTL/200207/GTEx_30tissues_release1.tsv.gz",
 	"partition": "/oak/stanford/groups/engreitz/Projects/GWAS/191223_Partitioning/200523-ABCPartition/partition/PartitionCombined.bed",

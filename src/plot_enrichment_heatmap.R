@@ -33,14 +33,14 @@ main <- function() {
     } else {
         ABC.cat = read.csv(sample.key, sep=',', header=TRUE) %>% dplyr::select(cellID, sample.name);
         colnames(ABC.cat) = c('ABCBiosample','ABCCategory') 
-        enrMatrix = left_join(enrMatrix, ABC.cat) %>% drop_na()
+        enrMatrix = left_join(enrMatrix, ABC.cat, by='ABCBiosample') %>% drop_na()
     }
     
     # add base pairs per ABC biosample
     ABC.data = read.csv(enhancer.size, sep='\t', header=FALSE)
     colnames(ABC.data) = c('ABCBiosample','ABCEnhancerMb')
     ABC.data$ABCEnhancerMb = ABC.data$ABCEnhancerMb/1E6
-    enrMatrix = left_join(enrMatrix, ABC.data) %>% filter(!is.na(ABCCategory))
+    enrMatrix = left_join(enrMatrix, ABC.data) # %>% filter(!is.na(ABCCategory))
     
     # calc aggregate statistics
     cat.key = aggregate(cbind(ABCEnhancerMb, enrichment, nVariantsOverlappingABCEnhancers) ~ ABCCategory + GTExTissue, data=enrMatrix, FUN=mean)
@@ -77,7 +77,7 @@ main <- function() {
     
     y=18; if (nlevels(enrMatrix$ABCCategory)>140) {y=28} # set output file size
     
-    pdf(out.file, width=20, height=y); g.solo; dev.off()
+    pdf(out.file, width=20, height=y); print(g.solo); dev.off()
     #p3 = egg::ggarrange(g, e, t, blank, nrow=2, ncol=2, heights=c(0.9, 0.1),widths=c(0.9,.1))
 
 }

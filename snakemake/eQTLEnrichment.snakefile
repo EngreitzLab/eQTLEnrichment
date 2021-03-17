@@ -209,7 +209,7 @@ rule computeEnhancerSetSizes:
 				# make list of sizes of enhancer sets for each biosample
 				printf $CellType"\\t" >> {output.basesPerEnhancerSet}
 				zcat {input.predictionsSorted} | awk -v awkvar=$CellType '$4==awkvar' | sort -k1,1 -k2,2n | bedtools merge -i stdin | awk 'BEGIN {{FS=OFS="\\t"}} {{print $3-$2}}' | awk '{{s+=$1}}END{{print s}}' >> {output.basesPerEnhancerSet}
-				printf "\\n" >> {output.basesPerEnhancerSet}
+				# printf "\\n" >> {output.basesPerEnhancerSet}
 			done
 			""")
 

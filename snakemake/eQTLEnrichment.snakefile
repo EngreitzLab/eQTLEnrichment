@@ -56,7 +56,7 @@ rule sortPredictions:
 			set +o pipefail;
 			
 			# get list of samples
-			zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType | sed 1d | awk '{{a[$4]++}} END{{for(i in a) printf i" "}}' > {output.samples}
+			zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType | sed 1d | awk '{{a[$4]++}} END{{for(i in a) printf i"\\t"}}' > {output.samples}
 			
 			# sort predictions file
 			zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType | sed 1d | sort -k1,1 -k2,2n | gzip > {output.predictionsSorted}
@@ -181,12 +181,12 @@ rule computeCommonVarOverlap:
 			rm {params.outDir}temp.tsv
 			
 			samples=$(cat {input.samples})
-			# get common variants: biosample/celltype follwed by count
+			# get common variants: biosample/celltype followed by count
 			for CellType in $samples
 			do
 				printf $CellType'\\t' >> {output.commonVarPerBiosample}
 				zcat {output.commonVarPredictionsInt} | awk -v awkvar=$CellType '$8==awkvar' | wc -l >> {output.commonVarPerBiosample}
-				printf '\\n' >> {output.commonVarPerBiosample}
+				# printf '\\n' >> {output.commonVarPerBiosample}
 			done
 			""")
 

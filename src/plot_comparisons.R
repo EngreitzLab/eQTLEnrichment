@@ -33,7 +33,7 @@ main <- function() {
     }
     
     cdf = ggplot(enr.all, aes(enrichment, col=predictionSet)) + stat_ecdf(geom = "step") + ylab('Cumulative fraction') + xlab('Enrichment (GTEx variants/all common variants)') + theme_minimal() + scale_color_discrete(name='Prediction set') + theme(text = element_text(size = rel(4)), legend.text=element_text(size=rel(2.5)))
-    d = ggplot(enr.all,aes(x=enrichment, col=predictionSet)) + + theme_minimal() + ylab('Density') + xlab('Enrichment (GTEx variants/all common variants)') + scale_color_discrete(name='Prediction set') + theme(text = element_text(size = rel(4)), legend.text=element_text(size=rel(2.5)))
+    d = ggplot(enr.all,aes(x=enrichment, col=predictionSet)) + geom_density() + theme_minimal() + ylab('Density') + xlab('Enrichment (GTEx variants/all common variants)') + scale_color_discrete(name='Prediction set') + theme(text = element_text(size = rel(4)), legend.text=element_text(size=rel(2.5)))
     
     pdf(file=paste0(outDir, "cdf.pdf"), width=7, height=5); print(cdf); dev.off()
     pdf(file=paste0(outDir, "density.pdf"), width=7, height=5); print(d); dev.off()

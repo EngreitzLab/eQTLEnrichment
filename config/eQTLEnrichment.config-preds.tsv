@@ -1,5 +1,7 @@
-entry	predFile	sampleKey	sampleID	sampleName	sampleCategory	
-ABC	/oak/stanford/groups/engreitz/Projects/ABC/191216_ABC/summary/AllPredictions.txt.gz	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv	CellType	NA	Categorical.CellTypeMergedPrimary
+entry	predFile	sampleKey	sampleID	sampleName	sampleCategory	biosampleTissueMap
+ABC	/oak/stanford/groups/engreitz/Projects/ABC/191216_ABC/summary/AllPredictions.txt.gz	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv	CellType	NA	Categorical.CellTypeMergedPrimary	/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/ABCBiosampleMap.test.txt
 EpiMap	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/enhancerPredictions_Ben-all.bed.gz	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/bssid_legend.csv	BSSID	SampleName	Group
 ChromHMM2017	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/ChromHMM2017_Appended.txt.gz	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/EID-legend.csv	EID	Epigenome.Mnemonic	Group
+ABC.original	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/ABCPredictions.txt.gz	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv	CellType	NA	Categorical.CellTypeMergedPrimary
+ABC.noPromoters	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/ABCPredictions.noPromoters.txt.gz	/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv	CellType	NA	Categorical.CellTypeMergedPrimary
 

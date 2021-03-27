@@ -1,0 +1,55 @@
+## FILE LOCATIONS
+
+outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/results"
+codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/scripts"
+GTExVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/data/Ulirsch-eQTL/200207/GTEx_30tissues_release1.tsv.gz"
+bgVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/all.bg.SNPs.sorted.bed.gz"
+chrSizes: "/oak/stanford/groups/engreitz/Projects/GWAS/201216_ABCPipelineTest/Test_data/sizes_sorted"
+partition: "/oak/stanford/groups/engreitz/Projects/GWAS/191223_Partitioning/200523-ABCPartition/partition/PartitionCombined.bed"
+genes: "/oak/stanford/groups/engreitz/Users/sheth/eQTLPredictions/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed"
+TSS: "/oak/stanford/groups/engreitz/Users/sheth/eQTLPredictions/RefSeqCurated.170308.bed.CollapsedGeneBounds.TSS500bp.sorted.bed"
+
+
+## METHODS AND METHOD-SPECIFIC PARAMETERS
+# list of methods to run
+methods: [ABC]
+GTExTissues: [Brain_Cortex, Prostate, Muscle_Skeletal, Artery_Tibial, Skin_Not_Sun_Exposed_Suprapubic, Esophagus_Muscularis, Brain_Cerebellum, Pituitary, Adipose_Subcutaneous, Pancreas, Spleen, Adrenal_Gland, Testis, Lung, Skin_Sun_Exposed_Lower_leg, Heart_Atrial_Appendage, Adipose_Visceral_Omentum, Esophagus_Mucosa, Thyroid, Brain_Nucleus_accumbens_basal_ganglia, Colon_Sigmoid, Breast_Mammary_Tissue, Artery_Aorta, Cells_EBV-transformed_lymphocytes, Heart_Left_Ventricle, Artery_Coronary, Esophagus_Gastroesophageal_Junction, Nerve_Tibial, Liver, Whole_Blood, Colon_Transverse, Stomach]
+
+# gzipped prediction file locations
+predFile:
+ ABC: "/oak/stanford/groups/engreitz/Projects/ABC/191216_ABC/summary/AllPredictions.txt.gz"
+ EpiMap: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/enhancerPredictions_Ben-all.bed.gz"
+ ChromHMM2017: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/ChromHMM2017_Appended.txt.gz"
+
+## PARAMETERS FOR INDIVIDUAL RULES
+enrichment_heatmaps:
+ sampleKey:
+  ABC: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv"
+  EpiMap: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/bssid_legend.csv"
+  ChromHMM2017: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/EID-legend.csv"
+
+ sampleID:
+  ABC: CellType
+  EpiMap: BSSID
+  ChromHMM2017: EID
+
+ sampleName:
+  ABC: NA
+  EpiMap: SampleName
+  ChromHMM2017: Epigenome.Mnemonic
+
+ sampleCategory:
+  ABC: Categorical.CellTypeMergedPrimary
+  EpiMap: Group
+  ChromHMM2017: Group
+
+predRates:
+ mapGTExTissues:
+  ABC: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
+  EpiMap: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
+  ChromHMM2017: [Cells_EBV-transformed_lymphocytes, Liver]
+
+ mapBiosamples:
+  ABC: [GM12878-Roadmap, liver-ENCODE, thyroid_gland-ENCODE]
+  EpiMap: [BSS00439, BSS01158, BSS01831]
+  ChromHMM2017: [E116, E066]

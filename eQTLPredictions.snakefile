@@ -23,7 +23,7 @@ for x in config["methods"]:
 	filteredPredictions.extend(expand(os.path.join(config["outDir"], x, "{Biosample}.filteredPredictions.tsv.gz"), Biosample=config["predRates"]["mapBiosamples"][x]))
 	
 	# list of output sensitivity plot names
-	sensitivityPlots.extend(expand(os.path.join(config["outDir"], "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=config["predRates"]["mapGTExTissues"][x], method=x))
+	sensitivityPlots.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=config["predRates"]["mapGTExTissues"][x], method=x))
 
 rule all:
 	input:
@@ -48,5 +48,5 @@ rule all:
 		filteredVariantsProximal = expand(os.path.join(config["outDir"], "variantFilesForPrediction", "{GTExTissue}.filteredVariants.proximalGenes.tsv.gz"), GTExTissue=config["GTExTissues"]),
 		allFilteredPredictions = filteredPredictions,
 		allPredictionTables = predTables,
-		allSensitivityPlots = sensitivityPlots,
+		#allSensitivityPlots = sensitivityPlots,
 		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf")

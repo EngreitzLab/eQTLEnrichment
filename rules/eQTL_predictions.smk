@@ -106,7 +106,7 @@ for x in config["methods"]:
 	predTables.extend(expand(os.path.join(config["outDir"], x, "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=config["predRates"]["mapGTExTissues"][x], Biosample=config["predRates"]["mapBiosamples"][x]))
 	
 	# list of output plot names
-	sensitivityPlots.extend(expand(os.path.join(config["outDir"], "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=config["predRates"]["mapGTExTissues"][x], method=x))
+	sensitivityPlots.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=config["predRates"]["mapGTExTissues"][x], method=x))
 
 rule plot_prediction_rates:
 	input:
@@ -134,5 +134,5 @@ rule plot_sensitivities:
 		shell("""
 		set +o pipefail;
 		
-		Rscript {params.codeDir}/plot_sensitivities.R --tables "{input.allTables}" --outDir {params.outDir}
+		Rscript {params.codeDir}/plot_sensitivities.R --tables "{input.allTables}" --outDir {params.outDir}/sensitivityPlots
 		""")

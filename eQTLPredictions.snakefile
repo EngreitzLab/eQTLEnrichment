@@ -48,5 +48,5 @@ rule all:
 		filteredVariantsProximal = expand(os.path.join(config["outDir"], "variantFilesForPrediction", "{GTExTissue}.filteredVariants.proximalGenes.tsv.gz"), GTExTissue=config["GTExTissues"]),
 		allFilteredPredictions = filteredPredictions,
 		allPredictionTables = predTables,
-		#allSensitivityPlots = sensitivityPlots,
+		allSensitivityPlots = sensitivityPlots,
 		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf")

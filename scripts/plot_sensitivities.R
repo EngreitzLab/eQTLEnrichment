@@ -18,7 +18,6 @@ main <- function() {
   # get list of GTEx tissues represented
   GTExTissues = str_split(tables, '/') %>% data.frame() %>% t()
   GTExTissues = GTExTissues[,ncol(GTExTissues)] %>% str_split('\\.') %>% data.frame() %>% t() %>% data.frame() %>% dplyr::select(X1) %>% distinct()
-  
   # add rates for proximity-based E-G predictions
   df = data.frame(matrix(ncol=4,nrow=0, dimnames=list(NULL)))
   colnames(df) = c("GTExTissue", "metric", "method","value")
@@ -46,7 +45,6 @@ main <- function() {
     predTable = read.table(file=fileName, header=TRUE, stringsAsFactors=FALSE)
     tissue = str_split(fileName, '/')[[1]]; tissue = tissue[length(tissue)] %>% str_split(pattern='\\.'); tissue = tissue[[1]][1]
     method = str_split(fileName, '/')[[1]]; method = method[length(method)-1]
-    
     prediction.rate.GivenEnhancer = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(filter(predTable,predictionClass!='noOverlap'))
     prediction.rate.total = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(predTable)
     prediction.rate.inEnhancer=nrow(filter(predTable,predictionClass!='noOverlap'))/nrow(predTable)
@@ -70,17 +68,19 @@ main <- function() {
   for (method.i in methods[[1]]){
     for (tissue.i in GTExTissues[[1]]){
       df.specific = data.frame(matrix(ncol=4,nrow=0, dimnames=list(NULL)))
-      temp = tables[str_detect(tables, method.i)]; temp = temp[str_detect(temp, tissue.i)]
+      key = paste0(method.i, "/", tissue.i)
+      #temp = tables[str_detect(tables, method.i)]; temp = temp[str_detect(temp, tissue.i)]
+      temp = tables[str_detect(tables, key)] 
       if (nrow(as.data.frame(temp))>0) { # if this method has predictions for this tissue
         # get list of all tables for this tissue
-        tables.tissue = tables[str_detect(tables, tissue.i)]
+        tables.tissue = tables[str_detect(tables, paste0(tissue.i))]
         key.table = temp
         # filter all to list of variants in enhancers for this method
         var.set = read.table(file=key.table, header=TRUE, stringsAsFactors=FALSE) %>% filter(predictionClass!="noOverlap") %>% dplyr::select(chr, start, end) %>% distinct()
-        
         # add prediction rates for each method 
         for (x in tables.tissue){
           t = read.table(file=x, header=TRUE, stringsAsFactors=FALSE)
+
           this.method = str_split(x, '/')[[1]]; this.method = this.method[length(this.method)-1]
           t = suppressMessages(left_join(var.set, t))
           rate = nrow(filter(t, predictionClass=='inEnhancer-correctGene'))/nrow(t)
@@ -103,7 +103,7 @@ main <- function() {
         
         # graph
         df.specific$value=as.numeric(df.specific$value)
-        nVar = nrow(var.set)
+        nVar = nrow(var.set); 
         graph.title = paste0('Prediction rates for ', tissue.i, ' variants\noverlapping ', method.i, ' enhancers (n=', nVar, ")")
         g.specific = ggplot(df.specific, aes(x=metric, y=value, fill=method)) + 
           geom_bar(stat="identity", position="dodge", width=0.5) + ylab('Sensitivity') +

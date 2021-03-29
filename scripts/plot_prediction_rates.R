@@ -70,7 +70,7 @@ main <- function() {
                                          "Prediction rate"="Overlaps predicted enhancer\nlinked to correct gene"))
     sr = ggplot(small.rates, aes(x=metric, y=value, fill=method)) + 
       geom_bar(stat="identity", position="dodge", width=0.5) + 
-      facet_grid(GTExTissue~.) + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + ylim(0,0.10) + 
+      facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + 
       theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=8)) +
       scale_fill_viridis(discrete=TRUE,option='viridis',name='Method')
   

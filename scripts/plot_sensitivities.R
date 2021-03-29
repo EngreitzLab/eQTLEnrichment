@@ -104,7 +104,7 @@ main <- function() {
         # graph
         df.specific$value=as.numeric(df.specific$value)
         nVar = nrow(var.set); 
-        graph.title = paste0('Prediction rates for ', tissue.i, ' variants\noverlapping ', method.i, ' enhancers (n=', nVar, ")")
+        graph.title = paste0('eGene prediction rates for ', tissue.i, ' variants\noverlapping ', method.i, ' enhancers (n=', nVar, ")")
         g.specific = ggplot(df.specific, aes(x=metric, y=value, fill=method)) + 
           geom_bar(stat="identity", position="dodge", width=0.5) + ylab('Sensitivity') +
           theme_minimal() +  ylim(0,1) + ggtitle(graph.title) + scale_fill_viridis(discrete = TRUE) +

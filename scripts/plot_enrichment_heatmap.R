@@ -2,8 +2,15 @@
 # also adjust scale of heat map according to range of enrichment values
 
 main <- function() {
-    library(ggplot2); library(dplyr); library(scales); library(tidyr); library(tibble); library(viridis);
-    library(optparse)
+    suppressPackageStartupMessages({library(ggplot2)
+                                    library(dplyr)
+                                    library(scales)
+                                    library(tidyr)
+                                    library(tibble)
+                                    library(viridis)
+                                    library(optparse)
+                                    library(cowplot)
+                                    library(egg)})
     
     # load data
     option_list <- list(
@@ -47,15 +54,13 @@ main <- function() {
     colnames(cat.key)[3:5] = c('ABCEnhancerMbByCategory', 'enrichmentByCategory', 'nVariantsOverlappingABCEnhancersByCategory')
     enrMatrix = left_join(enrMatrix, cat.key, by=c('ABCCategory', 'GTExTissue'))
     
-    print('check 3')
-
     # cluster to get orders
     M = dplyr::select(enrMatrix, ABCCategory, GTExTissue, enrichmentByCategory) %>% distinct() %>% spread(GTExTissue, enrichmentByCategory) %>% column_to_rownames("ABCCategory") %>% drop_na()
     ord.GTEx = hclust(dist(1-cor(M)), method = "ward.D")$order
     ord.ABC = hclust(dist(1-cor(t(M))), method = "ward.D")$order
     enrMatrix$ABCCategory = factor(enrMatrix$ABCCategory)
     enrMatrix$ABCCategory = factor(enrMatrix$ABCCategory, levels(enrMatrix$ABCCategory)[ord.ABC])
-    #levels(enrMatrix$ABCCategory)
+    #print(levels(enrMatrix$ABCCategory))
     enrMatrix$GTExTissue = factor(enrMatrix$GTExTissue)
     enrMatrix$GTExTissue = factor(enrMatrix$GTExTissue, levels(enrMatrix$GTExTissue)[ord.GTEx])
     #levels(enrMatrix$GTExTissue)
@@ -71,14 +76,21 @@ main <- function() {
     t = ggplot(tissueCount, aes(x=GTExTissue, y=nVariantsGTExTissue)) + geom_bar(stat='identity', width=0.5) + theme_minimal() + ylab('# variants in \n GTEx tissue') + theme(axis.text.x = element_text(angle = 60,hjust=1), axis.text=element_text(size=12), axis.title=element_text(size=12))  + xlab('')
     
     # Mb per enhancer set, all ABC biosamples
-    e = ggplot(ABC.data, aes(x=ABCCategory, y=ABCEnhancerMbByCategory)) + geom_bar(stat='identity', width=0.5) + theme_minimal() + theme(axis.text=element_text(size=12), axis.title=element_text(size=12),  axis.text.y=element_blank()) + ylab('Enhancer\nset size (Mb)') + xlab('') + coord_flip()
+    e = ggplot(enrMatrix, aes(x=ABCCategory, y=ABCEnhancerMbByCategory)) + geom_bar(stat='identity', width=0.5) + theme_minimal() + theme(axis.text=element_text(size=12), axis.title=element_text(size=12),  axis.text.y=element_blank()) + ylab('Enhancer\nset size (Mb)') + xlab('') + coord_flip()
     
     blank = ggplot() + theme_void()
     
     y=18; if (nlevels(enrMatrix$ABCCategory)>140) {y=28} # set output file size
     
-    pdf(out.file, width=20, height=y); print(g.solo); dev.off()
-    #p3 = egg::ggarrange(g, e, t, blank, nrow=2, ncol=2, heights=c(0.9, 0.1),widths=c(0.9,.1))
+    p3 = egg::ggarrange(g, e, t, blank, nrow=2, ncol=2, heights=c(0.9, 0.1),widths=c(0.9,.1))
+    #p3 = g.solo
+    
+    left.col = cowplot::align_plots(g, t,align='v',axis='l')
+    top.row = cowplot::plot_grid(left.col[[1]], e, nrow=1, ncol=2, rel_widths=c(9,1), align='h',axis='t')
+    bottom.row = cowplot::plot_grid(left.col[[2]], blank, nrow=1, ncol=2, rel_widths=c(9,1), align='h',axis='t')
+    all.plots = cowplot::plot_grid(top.row, bottom.row, ncol=1, rel_heights=c(2,1))
+    
+    pdf(out.file, width=20, height=y); print(p3); dev.off()
 
 }
 

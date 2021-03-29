@@ -1,5 +1,5 @@
 # sort enhancer predictions by chromosome & start location, get list of samples
-rule sortPredictions:
+rule sort_predictions:
 	input:
 		predFile = lambda wildcards: config["predFile"][wildcards.method]
 	params:
@@ -20,7 +20,7 @@ rule sortPredictions:
 			""")
 
 # intersect predictions and GTEx variants			
-rule intersectPredictionsVariants:
+rule intersect_predictions_variants:
 	input:
 		predictionsSorted = os.path.join(config["outDir"], "{pred}", "enhancerPredictions.sorted.bed.gz"),
 		filteredGTExVarDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/GTEx.filtered.PIP0.5.distalNoncoding.tsv.gz")
@@ -39,7 +39,7 @@ rule intersectPredictionsVariants:
 			""")
 
 # filter GTEx variants by PIP, credible set, protein-coding genes
-rule filterGTExVariants:
+rule filter_GTEx_variants:
 	input:
 		GTExVariants = config["GTExVariants"]
 	params: 
@@ -58,7 +58,7 @@ rule filterGTExVariants:
 			""")
 
 # get number of variants per GTEx tissue
-rule getVarPerGTExTissue:
+rule get_variants_per_GTEx_tissue:
 	input:
 		filteredGTExVarDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/GTEx.filtered.PIP0.5.distalNoncoding.tsv.gz")
 	output: 
@@ -72,7 +72,7 @@ rule getVarPerGTExTissue:
 			""")
 
 # filter GTEx variants and common variants to distal noncoding
-rule filterToDistalNoncoding:
+rule filter_to_distal_noncoding:
 	input:
 		commonVar = config["bgVariants"],
 		filteredGTExVar = os.path.join(config["outDir"], "variantFilesForEnrichment/GTEx.filtered.PIP0.5.tsv.gz")
@@ -93,7 +93,7 @@ rule filterToDistalNoncoding:
 			""")
 		
 # compute matrix with number of variants from each GTEx tissue overlapping enhancers from each biosample
-rule computeCountMatrix:
+rule compute_count_matrix:
 	input: 
 		#variantsPredictionsInt = lambda wildcard: os.path.join(config["outDir"],preds_config_file.loc[wildcard.pred, "entry"], "GTExVariants-enhancerPredictions.PIP0.5.distalNoncoding.tsv.gz"),
 		#predictionsSorted = lambda wildcard: os.path.join(config["outDir"], preds_config_file.loc[wildcard.pred, "entry"], "enhancerPredictions.sorted.bed.gz"),
@@ -125,7 +125,7 @@ rule computeCountMatrix:
 			""")
 			
 # computer number of common variants overlapping enhancers in each biosample
-rule computeCommonVarOverlap:
+rule compute_common_var_overlap:
 	input:
 		# predictionsSorted = lambda wildcard: os.path.join(config["outDir"], preds_config_file.loc[wildcard.pred, "entry"], "enhancerPredictions.sorted.bed.gz"),
 		predictionsSorted = os.path.join(config["outDir"], "{pred}", "enhancerPredictions.sorted.bed.gz"),
@@ -160,7 +160,7 @@ rule computeCommonVarOverlap:
 			""")
 
 # compute number of base pairs in each enhancer set
-rule computeEnhancerSetSizes:
+rule compute_enhancer_set_size:
 	input:
 		#predictionsSorted = lambda wildcard: os.path.join(config["outDir"], preds_config_file.loc[wildcard.pred, "entry"], "enhancerPredictions.sorted.bed.gz"),
 		#samples = lambda wildcard: os.path.join(config["outDir"],preds_config_file.loc[wildcard.pred, "entry"], "predictionCellTypes.tsv")
@@ -186,7 +186,7 @@ rule computeEnhancerSetSizes:
 			""")
 			
 # generate matrix with enrichment values for each GTEx tissue/biosample intersection
-rule computeEnrichmentMatrix:
+rule compute_enrichment_matrix:
 	input: 
 		# countMatrix = lambda wildcard: directory(os.path.join(config["outDir"], preds_config_file.loc[wildcard.pred, "entry"],"countMatrix.tsv"))
 		countMatrix = os.path.join(config["outDir"], "{pred}","countMatrix.tsv")
@@ -212,7 +212,7 @@ rule computeEnrichmentMatrix:
 			""")
 
 # plot aggregate and full heat maps of enrichment values
-rule plotEnrichmentHeatmaps:
+rule plot_enrichment_heatmaps:
 	input: 
 		enrichmentTable = os.path.join(config["outDir"], "{pred}","enrichmentTable.tsv")
 		
@@ -242,7 +242,7 @@ rule plotEnrichmentHeatmaps:
 			""")
 			
 # plot cdf and density graphs comparing enrichments across methods
-rule plotComparisons:
+rule plot_comparisons:
 	input: 
 		enrichmentTables = expand(os.path.join(config["outDir"],"{pred}/enrichmentTable.tsv"), pred=config["methods"]),
 	params:

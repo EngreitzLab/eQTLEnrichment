@@ -12,7 +12,7 @@ TSS: "/oak/stanford/groups/engreitz/Users/sheth/eQTLPredictions/RefSeqCurated.17
 
 ## METHODS AND METHOD-SPECIFIC PARAMETERS
 # list of methods to run
-methods: [ABC]
+methods: [ABC, EpiMap, ChromHMM2017, ABCShrunk100, ABCShrunk200, ABCShrunk300, ABCShrunk400, ABCShrunk500]
 GTExTissues: [Brain_Cortex, Prostate, Muscle_Skeletal, Artery_Tibial, Skin_Not_Sun_Exposed_Suprapubic, Esophagus_Muscularis, Brain_Cerebellum, Pituitary, Adipose_Subcutaneous, Pancreas, Spleen, Adrenal_Gland, Testis, Lung, Skin_Sun_Exposed_Lower_leg, Heart_Atrial_Appendage, Adipose_Visceral_Omentum, Esophagus_Mucosa, Thyroid, Brain_Nucleus_accumbens_basal_ganglia, Colon_Sigmoid, Breast_Mammary_Tissue, Artery_Aorta, Cells_EBV-transformed_lymphocytes, Heart_Left_Ventricle, Artery_Coronary, Esophagus_Gastroesophageal_Junction, Nerve_Tibial, Liver, Whole_Blood, Colon_Transverse, Stomach]
 
 # gzipped prediction file locations
@@ -20,6 +20,12 @@ predFile:
  ABC: "/oak/stanford/groups/engreitz/Projects/ABC/191216_ABC/summary/AllPredictions.txt.gz"
  EpiMap: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/enhancerPredictions_Ben-all.bed.gz"
  ChromHMM2017: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/ChromHMM2017_Appended.txt.gz"
+ ABCShrunk100: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/AllPredictions.AvgHiC.ABC0.015.100.txt.gz"
+ ABCShrunk200: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/AllPredictions.AvgHiC.ABC0.015.200.txt.gz"
+ ABCShrunk300: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/AllPredictions.AvgHiC.ABC0.015.300.txt.gz"
+ ABCShrunk400: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/AllPredictions.AvgHiC.ABC0.015.400.txt.gz"
+ ABCShrunk500: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/AllPredictions.AvgHiC.ABC0.015.500.txt.gz"
+ 
 
 ## PARAMETERS FOR INDIVIDUAL RULES
 enrichment_heatmaps:
@@ -27,29 +33,61 @@ enrichment_heatmaps:
   ABC: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv"
   EpiMap: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/bssid_legend.csv"
   ChromHMM2017: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/EID-legend.csv"
+  ABCShrunk100: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv"
+  ABCShrunk200: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv"
+  ABCShrunk300: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv"
+  ABCShrunk400: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv"
+  ABCShrunk500: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/CellTypes.Annotated.ABCPaper.csv"
 
  sampleID:
   ABC: CellType
   EpiMap: BSSID
   ChromHMM2017: EID
+  ABCShrunk100: CellType
+  ABCShrunk200: CellType
+  ABCShrunk300: CellType
+  ABCShrunk400: CellType
+  ABCShrunk500: CellType
 
  sampleName:
   ABC: NA
   EpiMap: SampleName
   ChromHMM2017: Epigenome.Mnemonic
+  ABCShrunk100: NA
+  ABCShrunk200: NA
+  ABCShrunk300: NA
+  ABCShrunk400: NA
+  ABCShrunk500: NA
 
  sampleCategory:
   ABC: Categorical.CellTypeMergedPrimary
   EpiMap: Group
   ChromHMM2017: Group
+  ABCShrunk100: Categorical.CellTypeMergedPrimary
+  ABCShrunk200: Categorical.CellTypeMergedPrimary
+  ABCShrunk300: Categorical.CellTypeMergedPrimary
+  ABCShrunk400: Categorical.CellTypeMergedPrimary
+  ABCShrunk500: Categorical.CellTypeMergedPrimary
 
 predRates:
  mapGTExTissues:
   ABC: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
   EpiMap: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
   ChromHMM2017: [Cells_EBV-transformed_lymphocytes, Liver]
+  ABCShrunk100: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
+  ABCShrunk200: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
+  ABCShrunk300: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
+  ABCShrunk400: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
+  ABCShrunk500: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
+  
 
  mapBiosamples:
   ABC: [GM12878-Roadmap, liver-ENCODE, thyroid_gland-ENCODE]
   EpiMap: [BSS00439, BSS01158, BSS01831]
   ChromHMM2017: [E116, E066]
+  ABCShrunk100: [GM12878-Roadmap, liver-ENCODE, thyroid_gland-ENCODE]
+  ABCShrunk200: [GM12878-Roadmap, liver-ENCODE, thyroid_gland-ENCODE]
+  ABCShrunk300: [GM12878-Roadmap, liver-ENCODE, thyroid_gland-ENCODE]
+  ABCShrunk400: [GM12878-Roadmap, liver-ENCODE, thyroid_gland-ENCODE]
+  ABCShrunk500: [GM12878-Roadmap, liver-ENCODE, thyroid_gland-ENCODE]
+  

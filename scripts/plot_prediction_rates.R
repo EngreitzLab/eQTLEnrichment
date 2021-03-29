@@ -3,7 +3,9 @@ suppressPackageStartupMessages({
   library(tidyr)
   library(optparse)
   library(stringr)
-  library(ggplot2)})
+  library(ggplot2)
+  library(viridis)
+  library(plyr)})
 
 main <- function() {
   option_list <- list(
@@ -58,10 +60,21 @@ main <- function() {
     df$GTExTissue=as.factor(df$GTExTissue)
     df$metric = factor(df$metric); df$metric=factor(df$metric, levels = levels(df$metric)[c(2,3,6,1,4,5)])
 
-    # graph
-    g = ggplot(df, aes(x=metric, y=value, fill=method)) + geom_bar(stat="identity", position="dodge", width=0.5) + facet_grid(GTExTissue~.) + theme_minimal() + theme(axis.text.x = element_text(angle = 60,hjust=1)) + ylim(0,1)
+    # graph all stats
+    # g = ggplot(df, aes(x=metric, y=value, fill=method)) + geom_bar(stat="identity", position="dodge", width=0.5) + facet_grid(GTExTissue~.) + theme_minimal() + theme(axis.text.x = element_text(angle = 60,hjust=1)) + ylim(0,1)
     
-    pdf(file=outFile,width=8,height=nrow(GTExTissues)*2); print(g); dev.off()
+    # graph variant capture, prediction rate across all methods and tissues
+    small.rates = filter(df, metric %in% c("% variants in\nany enhancer","Prediction rate"))
+    small.rates$metric = plyr::revalue(small.rates$metric, 
+                                       c("% variants in\nany enhancer"="Overlaps predicted\nenhancer",
+                                         "Prediction rate"="Overlaps predicted enhancer\nlinked to correct gene"))
+    sr = ggplot(small.rates, aes(x=metric, y=value, fill=method)) + 
+      geom_bar(stat="identity", position="dodge", width=0.5) + 
+      facet_grid(GTExTissue~.) + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + ylim(0,0.10) + 
+      theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=8)) +
+      scale_fill_viridis(discrete=TRUE,option='viridis',name='Method')
+  
+    pdf(file=outFile,width=8,height=nrow(GTExTissues)*2); print(sr); dev.off()
 
 }
 

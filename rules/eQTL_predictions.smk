@@ -99,10 +99,15 @@ rule make_prediction_table:
 # generate plot of prediction rates across all methods and tissues
 
 predTables = []
+sensitivityPlots = []
+
 for x in config["methods"]:
 	# list of prediction tables
 	predTables.extend(expand(os.path.join(config["outDir"], x, "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=config["predRates"]["mapGTExTissues"][x], Biosample=config["predRates"]["mapBiosamples"][x]))
 	
+	# list of output plot names
+	sensitivityPlots.extend(expand(os.path.join(config["outDir"], "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=config["predRates"]["mapGTExTissues"][x], method=x))
+
 rule plot_prediction_rates:
 	input:
 		allTables=predTables
@@ -115,4 +120,19 @@ rule plot_prediction_rates:
 		set +o pipefail;
 		
 		Rscript {params.codeDir}/plot_prediction_rates.R --tables "{input.allTables}" --out {output.predictionPlot}
+		""")
+
+rule plot_sensitivities:
+	input:
+		allTables=predTables
+	params:
+		codeDir = config["codeDir"],
+		outDir = config["outDir"]
+	output:
+		allSensPlots = sensitivityPlots
+	run:
+		shell("""
+		set +o pipefail;
+		
+		Rscript {params.codeDir}/plot_sensitivities.R --tables "{input.allTables}" --outDir {params.outDir}
 		""")

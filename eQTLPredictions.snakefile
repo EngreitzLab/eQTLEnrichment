@@ -49,4 +49,5 @@ rule all:
 		allFilteredPredictions = filteredPredictions,
 		allPredictionTables = predTables,
 		allSensitivityPlots = sensitivityPlots,
-		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf")
+		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
+		PPVPlot = os.path.join(config["outDir"], "PPV.pdf")

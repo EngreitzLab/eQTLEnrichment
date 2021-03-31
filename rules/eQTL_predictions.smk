@@ -112,14 +112,16 @@ rule plot_prediction_rates:
 	input:
 		allTables=predTables
 	params:
-		codeDir = config["codeDir"]
+		codeDir = config["codeDir"],
+		outDir = config["outDir"]
 	output:
-		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf")
+		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
+		PPVPlot = os.path.join(config["outDir"], "PPV.pdf")
 	run:
 		shell("""
 		set +o pipefail;
 		
-		Rscript {params.codeDir}/plot_prediction_rates.R --tables "{input.allTables}" --out {output.predictionPlot}
+		Rscript {params.codeDir}/plot_prediction_rates.R --tables "{input.allTables}" --out {params.outDir}
 		""")
 
 rule plot_sensitivities:

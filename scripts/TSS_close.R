@@ -21,7 +21,8 @@ main <- function() {
   
   for (i in 1:nrow(variants)) {
     temp = filter(TSSint, unique_id==variants$unique_id[i])
-    variants$nearbyTSS[i] = is.element(variants$eGene[i], temp$closeTSS)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+    variants$nearbyTSS[i] = is.element(variants$eGene[i], temp$closeTSS)     
+    variants$nTSSnear[i] = nrow(temp)
   }
   
   write.table(variants, file="", sep="\t", quote=F, row.names=F, col.names=T)

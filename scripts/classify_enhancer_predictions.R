@@ -22,10 +22,13 @@ main <- function() {
     temp = filter(predictionsInt, unique_id==variants$unique_id[i])
     if (nrow(temp)==0){
       variants$predictionClass[i] = 'noOverlap'
+      variants$nEnhancers[i]=0
     } else if (is.element(variants$eGene[i], temp$targetGene)) {
       variants$predictionClass[i] = 'inEnhancer-correctGene'
+      variants$nEnhancers[i] = nrow(temp)
     } else {
       variants$predictionClass[i] = 'inEnhancer-incorrectGene'
+      variants$nEnhancers[i] = nrow(temp)
     }
   }
   

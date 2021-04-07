@@ -1,0 +1,136 @@
+---
+title: "eQTL enrichment analysis"
+author: "Maya Sheth"
+date: "4/1/2021"
+output: html_document
+---
+```{css echo=FALSE}
+
+.main-container {
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+```
+
+
+```{r setup, include=FALSE, echo=FALSE}
+
+knitr::opts_chunk$set(error = TRUE)
+
+# load libraries
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(heatmaply)
+library(tidyr)
+library(forcats)
+library(plotly)
+library(stringr)
+library(DT)
+library(pander)
+library(viridis)
+
+# input arguments
+tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
+varPerTissue = (snakemake@input$variantsPerGTExTissue) %>% read.table(header=FALSE)
+colnames(varPerTissue) = c('GTExTissue','nVariants')
+methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
+```
+
+## GTEx fine-mapped eQTL variants
+For all analyses, the set of distal, noncoding fine-mapped eQTL variants in a credible set and with a posterior threshold greater than 0.5 were considered. The following shows the number of variants per GTEx tissue.
+
+```{r varPerTissue, echo=FALSE, fig.width=12}
+varPerTissue$GTExTissue = fct_reorder(varPerTissue$GTExTissue, varPerTissue$nVariants, min)
+g = ggplot(varPerTissue, aes(x=GTExTissue, y=nVariants)) + geom_bar(stat='identity', width=0.5) + 
+  theme_minimal() + ylab('# variants in \n GTEx tissue') +  xlab('') +
+  theme(axis.text.x = element_text(angle=60, hjust=1), 
+        axis.text=element_text(size=rel(.75)), 
+        axis.title=element_text(size=rel(1)))
+ggplotly(g)
+
+
+```
+
+
+## Enrichment in eQTL variants across different prediction methods
+```{r cdf, echo=FALSE, warning=FALSE}
+
+# aggregate data
+  enr.all = read.table(tables[1], header=TRUE, stringsAsFactors = FALSE) %>% dplyr::select(enrichment)
+  enr.all$method = methods[1]
+  for (i in 2:length(methods)){
+        temp = read.table(file=tables[i], header=TRUE, stringsAsFactors = FALSE) %>% dplyr::select(enrichment)
+        temp$method = methods[i]
+        enr.all = rbind(enr.all, temp)
+  }
+  enr.all = enr.all[order(enr.all$enrichment),]
+  
+  # plot cdf
+  enrLabel = 'Enrichment\n(GTEx variants/all common variants)'
+  
+  cdf = ggplot(enr.all, aes(x=enrichment, col=method)) + stat_ecdf(geom = "step") + 
+      ylab('Cumulative fraction') + xlab(enrLabel) + 
+      theme_minimal() + scale_color_viridis(discrete=TRUE,name='Method') + 
+      theme()
+  ggplotly(cdf)
+  
+```
+
+```{r boxPlot, warning=FALSE, echo=FALSE}
+
+bp = ggplot(enr.all, aes(x=method, y=enrichment, fill=method)) + geom_boxplot() +
+      theme_minimal() + ylab(enrLabel) + xlab('') + 
+      scale_fill_viridis(discrete=TRUE) +
+      theme(legend.position='none', 
+            axis.text.x=element_text(angle=60,hjust=1))
+ggplotly(bp)
+
+```
+
+
+
+## Enrichment tables {.tabset}
+```{r doSomething, include=FALSE}
+DT::datatable(matrix())
+```
+
+```{r dataTables, echo=FALSE, results='asis'}
+
+for (i in 1:length(methods)) {
+  cat("  \n###",  methods[i], "  \n")
+  table.current = read.table(tables[i], header=TRUE)
+  cat("  \n")
+  cat("  \n")
+  
+  cat(knitr::knit_print(datatable(table.current, rownames = FALSE, filter="top", 
+                                  options=list(pageLength = 5, scrollX=T),
+            colnames=c('Biosample','GTEx tissue', 'Variants overlapping\nenhancers',
+                       'Variants per\nGTEx tissue','Common variants\noverlapping enhancers',
+                       'Total common\nvariants', 'Enrichment'))))
+  cat("  \n")
+  cat("  \n")
+}
+```
+
+## Enrichment heat maps {.tabset}
+```{r heatMaps, echo=FALSE, results='asis', out.width=1100, out.height=3000}
+
+for (i in 1:length(methods)) {
+  cat("  \n###",  methods[i], "  \n")
+  table.current = read.table(tables[i], header=TRUE)
+  hm.df = dplyr::select(table.current, ABCBiosample, GTExTissue, enrichment)
+  colnames(hm.df) = c('name','variable','value')
+  cat(knitr::knit_print(heatmaply(long_data=hm.df, show_dendrogram = c(FALSE,FALSE),
+            label_names=c('GTExTissue','Biosample','Enrichment'), 
+            dynamicTicks=FALSE, fontsize_row = 8, fontsize_col = 8,
+            margins=c(-50,0,0,0),mplot_method='ggplot', 
+            heatmap_layers = (list(theme(legend.key.height=unit(10,'pt')))),
+            scale_fill_gradient_fun = scale_fill_viridis(discrete = FALSE, name='Enrichment',
+                                                         limits =c(1,8), oob=scales::squish))))
+  cat("  \n")
+  cat("  \n")
+}
+```
+

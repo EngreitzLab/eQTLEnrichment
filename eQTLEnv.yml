@@ -1,0 +1,20 @@
+name: eQTLEnv
+dependencies:
+ - r-base
+ - r-tidyverse
+ - r-optparse
+ - r-egg
+ - r-dt
+ - r-bookdown
+ - r-pander
+ - plotly
+ - r-heatmaply
+ - cairo
+ - pandoc
+ - samtools
+ - bedtools
+ - numpy
+ - pandas
+ - snakemake
+ - csvtk
+

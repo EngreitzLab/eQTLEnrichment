@@ -1,18 +1,19 @@
 ## FILE LOCATIONS
 
-outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/results"
-codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/scripts"
+outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results_rep1genes"
+codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/scripts"
 GTExVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/data/Ulirsch-eQTL/200207/GTEx_30tissues_release1.tsv.gz"
 bgVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/all.bg.SNPs.sorted.bed.gz"
 chrSizes: "/oak/stanford/groups/engreitz/Projects/GWAS/201216_ABCPipelineTest/Test_data/sizes_sorted"
 partition: "/oak/stanford/groups/engreitz/Projects/GWAS/191223_Partitioning/200523-ABCPartition/partition/PartitionCombined.bed"
 genes: "/oak/stanford/groups/engreitz/Users/sheth/eQTLPredictions/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed"
+geneFilter: "/oak/stanford/groups/engreitz/Users/sheth/GM12878Expression/rep1_genelist.tsv"
 TSS: "/oak/stanford/groups/engreitz/Users/sheth/eQTLPredictions/RefSeqCurated.170308.bed.CollapsedGeneBounds.TSS500bp.sorted.bed"
 
 
 ## METHODS AND METHOD-SPECIFIC PARAMETERS
 # list of methods to run
-methods: [ABC, EpiMap, ChromHMM2017, ABCShrunk100, ABCShrunk200, ABCShrunk300, ABCShrunk400, ABCShrunk500]
+methods: [ABCShrunk500, EpiMap, ChromHMM2017]
 GTExTissues: [Brain_Cortex, Prostate, Muscle_Skeletal, Artery_Tibial, Skin_Not_Sun_Exposed_Suprapubic, Esophagus_Muscularis, Brain_Cerebellum, Pituitary, Adipose_Subcutaneous, Pancreas, Spleen, Adrenal_Gland, Testis, Lung, Skin_Sun_Exposed_Lower_leg, Heart_Atrial_Appendage, Adipose_Visceral_Omentum, Esophagus_Mucosa, Thyroid, Brain_Nucleus_accumbens_basal_ganglia, Colon_Sigmoid, Breast_Mammary_Tissue, Artery_Aorta, Cells_EBV-transformed_lymphocytes, Heart_Left_Ventricle, Artery_Coronary, Esophagus_Gastroesophageal_Junction, Nerve_Tibial, Liver, Whole_Blood, Colon_Transverse, Stomach]
 
 # gzipped prediction file locations

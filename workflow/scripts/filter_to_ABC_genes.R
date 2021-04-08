@@ -1,7 +1,9 @@
-library(biomaRt)
-library(dplyr)
-library(tidyr)
-library(optparse)
+suppressPackageStartupMessages({
+  library(biomaRt)
+  library(dplyr)
+  library(tidyr)
+  library(optparse)
+  library(stringr)})
 
 main <- function() {
   option_list <- list(
@@ -9,14 +11,22 @@ main <- function() {
     make_option(c("--col"), type="numeric", default=4, help="col # of input file containing ensembl IDs"))
   opt = parse_args(OptionParser(option_list=option_list))
   
-  colID = opt$col; ABC.gene.file=opt$genes
-  
-  # read ABC data
-  ABC.genes = read.csv(ABC.gene.file, sep='\t', header=FALSE) %>% dplyr::select(chr='V1',start='V2',end='V3',hgnc.IDs='V4')
-  
+  col = opt$col; ABC.gene.file=opt$genes
+
+    # read ABC data
+  ABC.genes = read.csv(ABC.gene.file, sep='\t', header=FALSE)
+  if (ncol(ABC.genes)>1){
+    ABC.genes = dplyr::select(ABC.genes, chr='V1',start='V2',end='V3',hgnc.IDs='V4')
+  } else {
+    colnames(ABC.genes) = 'hgnc.IDs'
+  }
   # read dataframe, remove values after decimal in ens ID column
-  df = readLines(con = file("stdin")) %>% as.data.frame() %>% separate(col='.',into=c('chr','start','end','hgid','tissue','ens.IDs','PIP'),sep='\t')
-  df$ens.IDs = substr(df$ens.IDs, 1,15)
+  df = readLines(con = file("stdin")) %>% as.data.frame()
+
+  nCols = str_count(df[1,], '\t') + 1
+  df = separate(df, col='.',into=as.character(1:nCols),sep="\t")
+  
+  df[[col]] = substr(df[[col]], 1,15) # get rid of decimals after ensembl IDs
   
   # convert ABC genes to ens id
   ensembl = useMart("ensembl",dataset="hsapiens_gene_ensembl")
@@ -24,7 +34,8 @@ main <- function() {
   ABC.genes = left_join(ABC.genes, ens.IDs, by=c("hgnc.IDs"="hgnc_symbol"))
   
   # filter dataset to only having IDs in ABC list
-  df = dplyr::filter(df, is.element(ens.IDs, ABC.genes$ensembl_gene_id))
+  colnames(df)[col] = 'gene.IDs'
+  df = dplyr::filter(df, is.element(df$gene.IDs, ABC.genes$ensembl_gene_id))
   
   # write table
   

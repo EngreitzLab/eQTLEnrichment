@@ -24,10 +24,12 @@ main <- function() {
     enr.all = read.csv(file=enrichmentTables[1], sep='\t', header=TRUE, stringsAsFactors = FALSE)
     enr.all$predictionSet = names[1]
     
-    for (i in 2:length(names)){
+    if(length(names)>1){
+      for (i in 2:length(names)){
         temp = read.csv(file=enrichmentTables[i], sep='\t', header=TRUE, stringsAsFactors = FALSE)
         temp$predictionSet = names[i]
         enr.all = rbind(enr.all, temp)
+      }
     }
     
     enrLabel = 'Enrichment\n(GTEx variants/all common variants)'

@@ -8,6 +8,7 @@ rule filter_variants_for_predictions:
 	params:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"],
+		geneList = config["geneFilter"]
 	output:
 		filteredVariants = os.path.join(config["outDir"], "variantFilesForPrediction", "{GTExTissue}.filteredVariants.tsv.gz")
 	run:
@@ -19,7 +20,7 @@ rule filter_variants_for_predictions:
 		# filter out non ABC genes?
 		
 		# column key: 1-3 = location, 4 = unique ID in hg19, 5 = hgnc ID, 6 = PIP, 7 = effect size, 8 = sd of effect size 
-		zcat {input.GTExVariants} | awk -v var={wildcards.GTExTissue} '$16>=0.5 && $17 != -1  && $9 == "SUSIE" && $10==var' | cut -f 1,2,3,4,11,16,18,19 | bedtools intersect -wa -a stdin -b {input.partitionDistalNoncoding} | Rscript {params.codeDir}/get_hgnc_symbols.R --col 5 | sort -k1,1 -k2,2n | gzip > {output.filteredVariants}
+		zcat {input.GTExVariants} | awk -v var={wildcards.GTExTissue} '$16>=0.5 && $17 != -1  && $9 == "SUSIE" && $10==var' | cut -f 1,2,3,4,11,16,18,19 | bedtools intersect -wa -a stdin -b {input.partitionDistalNoncoding} | Rscript {params.codeDir}/filter_to_ABC_genes.R --genes {params.geneList} --col 5 | Rscript {params.codeDir}/get_hgnc_symbols.R --col 5 | sort -k1,1 -k2,2n | gzip > {output.filteredVariants}
 		""")
 		
 # add columns for closest gene body, closest gene TSS, and whether eGene has its TSS within 100 kb for each variant
@@ -83,7 +84,7 @@ rule make_prediction_table:
 		set +o pipefail;
 		
 		# intersect predictions with relevant variants 
-		zcat {input.filteredVariantsProximal} | cut -f 1-4 | sort -k 1,1 -k2,2n | uniq > {params.outDir}/variantFilesForPrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
+		zcat {input.filteredVariantsProximal} | cut -f 1-4 | sed 1d | sort -k 1,1 -k2,2n | uniq > {params.outDir}/variantFilesForPrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
 		zcat {input.filteredPredictions} | bedtools intersect -wa -wb -a {params.outDir}/variantFilesForPrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv -b stdin | cut -f 4,8 > {params.outDir}/{wildcards.method}/temp.PredictionTargetGenes.tsv
 		
 		# classify variants

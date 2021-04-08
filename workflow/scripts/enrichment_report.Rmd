@@ -120,7 +120,7 @@ for (i in 1:length(methods)) {
 for (i in 1:length(methods)) {
   cat("  \n###",  methods[i], "  \n")
   table.current = read.table(tables[i], header=TRUE)
-  hm.df = dplyr::select(table.current, ABCBiosample, GTExTissue, enrichment)
+  hm.df = dplyr::select(table.current, Biosample, GTExTissue, enrichment)
   colnames(hm.df) = c('name','variable','value')
   cat(knitr::knit_print(heatmaply(long_data=hm.df, show_dendrogram = c(FALSE,FALSE),
             label_names=c('GTExTissue','Biosample','Enrichment'), 

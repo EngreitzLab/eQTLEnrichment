@@ -21,7 +21,8 @@ main <- function() {
     GTExTissues = GTExTissues[,ncol(GTExTissues)] %>% str_split('\\.') %>% data.frame() %>% t() %>% data.frame() %>% dplyr::select(X1) %>% distinct()
 
     # add rates for proximity-based E-G predictions
-    df = data.frame(matrix(ncol=4,nrow=0, dimnames=list(NULL)))
+    df = data.frame('temp','temp','temp',1)
+    #df = data.frame(matrix(ncol=4,nrow=0, dimnames=list(NULL)))
     colnames(df) = c("GTExTissue", "metric", "method","value")
     
     for (x in GTExTissues$X1) {
@@ -45,7 +46,7 @@ main <- function() {
         add_row(GTExTissue=x, metric="Positive predictive value", method="Proximity", value=nearby.TSS.PPV)
     }
     colnames(df) = c("GTExTissue", "metric", "method","value")
-
+    df = filter(df, GTExTissue!="temp")
     # read in prediction rates from each method
     for (fileName in tables){
       predTable = read.table(file=fileName, header=TRUE, stringsAsFactors=FALSE)

@@ -43,7 +43,7 @@ rule filter_GTEx_variants:
 	input:
 		GTExVariants = config["GTExVariants"]
 	params: 
-		ABCgenes = config["genes"],
+		geneList = config["geneFilter"],
 		commonVar = config["bgVariants"],
 		partition = config["partition"],
 		codeDir = config["codeDir"]
@@ -54,7 +54,7 @@ rule filter_GTEx_variants:
 			"""
 			set +o pipefail;
 			# filter all variants by SUSIE, credible set, PIP0.5; print set of columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (gene ens id), 7 (PIP)
-			zcat {input.GTExVariants} | awk '$16>=0.5 && $17 != -1  && $9 == "SUSIE"' | awk '{{print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $10 "\t" $11 "\t" $16;}}' | sort -k1,1 -k2,2n | uniq | Rscript {params.codeDir}/filter_to_ABC_genes.R --genes {params.ABCgenes} --col 6| gzip > {output.filteredGTExVar}
+			zcat {input.GTExVariants} | awk '$16>=0.5 && $17 != -1  && $9 == "SUSIE"' | awk '{{print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $10 "\t" $11 "\t" $16;}}' | sort -k1,1 -k2,2n | uniq | Rscript {params.codeDir}/filter_to_ABC_genes.R --genes {params.geneList} --col 6| gzip > {output.filteredGTExVar}
 			""")
 
 # get number of variants per GTEx tissue

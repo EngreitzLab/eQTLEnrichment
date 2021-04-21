@@ -1,9 +1,33 @@
-# sort enhancer predictions by chromosome & start location, get list of samples
+
+# get list of genes considered by GTEx and by the prediction method
+# run once per method
+rule make_gene_universes:
+	input: 
+ 		methodGeneUniverse = lambda wildcards: config["geneUniverse"][wildcards.method],
+		GTExGeneUniverse = config["GTExGeneUniverse"]
+	params:
+		outDir = config["outDir"],
+		codeDir = config["codeDir"]
+	output:
+		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
+	run:
+		shell(
+			"""
+			set +o pipefail;
+			
+			# filter GTEx genes to method genes
+			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExGeneUniverse} --col 4 --genes {input.methodGeneUniverse} --id hgnc > {output.geneUniverse}
+			""")
+
+# sort enhancer predictions by chromosome & start location & filter to gene universe, get list of samples
+# run once per prediction method
 rule sort_predictions:
 	input:
-		predFile = lambda wildcards: config["predFile"][wildcards.method]
+		predFile = lambda wildcards: config["predFile"][wildcards.method],
+		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
 	params:
-		chrSizes = config["chrSizes"]
+		codeDir = config["codeDir"],
+		outDir = config["outDir"]
 	output:
 		predictionsSorted = os.path.join(config["outDir"], "{method}", "enhancerPredictions.sorted.bed.gz"),
 		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
@@ -12,216 +36,250 @@ rule sort_predictions:
 			"""
 			set +o pipefail;
 			
-			# get list of samples
-			zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType | sed 1d | awk '{{a[$4]++}} END{{for(i in a) printf i"\\t"}}' > {output.samples}
+			# get list of samples alphabetically (in a column)
+			zcat {input.predFile} | csvtk cut -t -f CellType | sed 1d | sort -k1,1 | uniq > {output.samples}
 			
 			# sort predictions file
-			zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType | sed 1d | sort -k1,1 -k2,2n | gzip > {output.predictionsSorted}
+			zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType,TargetGene | sed 1d | sort -k1,1 -k2,2n > {params.outDir}/{wildcards.method}/temp.sortedPred.tsv
+			
+			# filter predictions to gene universe
+			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/temp.sortedPred.tsv --col 5 --genes {input.geneUniverse} --id hgnc | gzip > {output.predictionsSorted}
+			
+			rm {params.outDir}/{wildcards.method}/temp.sortedPred.tsv
+			
 			""")
 
-# intersect predictions and GTEx variants			
-rule intersect_predictions_variants:
+# filter GTEx variants by PIP, credible set, and to distal noncoding genes; convert ensembl id to hgnc
+# run once overall
+rule filter_all_variants:
 	input:
-		predictionsSorted = os.path.join(config["outDir"], "{pred}", "enhancerPredictions.sorted.bed.gz"),
-		filteredGTExVarDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/GTEx.filtered.PIP0.5.distalNoncoding.tsv.gz")
+		GTExVariants = config["GTExVariants"],
+		commonVar = config["bgVariants"],
+		partition = config["partition"]
+	params: 
+		codeDir = config["codeDir"],
+		outDir = config["outDir"]
+	output: 
+		filteredGTExVar = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.tsv.gz"),
+		partitionDistalNoncoding = os.path.join(config["outDir"], "generalReference", "Partition.distalNoncoding.bed"),
+		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncoding.bg.SNPs.bed.gz"),	
+	run:
+		shell(
+			"""
+			set +o pipefail;
+			
+			# filter partition to distal noncoding
+			awk '$4=="ABC" || $4=="AllPeaks" || $4=="Other" || $4=="OtherIntron"' {input.partition} | sort -k1,1 -k2,2n > {output.partitionDistalNoncoding}
+			
+			# filter GTEx variants by SUSIE, credible set, PIP0.5; print set of columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP); then filter to distal noncoding
+			zcat {input.GTExVariants} | awk '$16>=0.5 && $17 != -1  && $9 == "SUSIE"' | cut -f1-4,10,11,16 | sort -k1,1 -k2,2n | uniq | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} > gzip > {output.filteredGTExVar}
+
+			# filter common variants to distal noncoding
+			cat {input.commonVar} | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} | gzip > {output.commonVarDistalNoncoding}
+			""")
+
+# filter variants by expression (once overall)
+rule filter_variants_by_expression:
+	input: 
+		exprData = config["GTExExpression"],
+		filteredGTExVar = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.tsv.gz"),
+	params:
+		outDir = config["outDir"]
+	output:
+		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv")
+	script: 
+		os.path.join(config["codeDir"], "GTEx_expression.R")
+
+# filter to by gene universe (per method)
+rule filter_variants_to_gene_universe:
+	input:
+		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv"),
+		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
+	params:
+		codeDir = config["codeDir"],
+		outDir = config["outDir"]
+	output:
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
+	run:
+		shell(
+			"""
+			## filter this method's gene universe
+			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExExpressedGenes} --col 6 --genes {input.geneUniverse} --id hgnc > {output.filteredGTExVariantsFinal}
+			
+			""")	
+# intersect predictions and GTEx variants
+# run once per  method
+rule intersect_variants_predictions:
+	input:
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "enhancerPredictions.sorted.bed.gz"),
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
 	params: 
 		outDir = config["outDir"]
 	output:
-		predictionsVariantsInt = os.path.join(config["outDir"], "{pred}/GTExVariants-enhancerPredictions.PIP0.5.distalNoncoding.tsv.gz")
+		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "GTExVariants-enhancerPredictionsInt.tsv.gz")
 	run:
 		shell(
 			"""
-			# columns of output: 1-3 (variant loc), 4 (variant hgID), 5 (variant tissue), 6 (variant gene ens id), 7 (variant PIP), 8-10 (enhancer loc), 11 (enhancer cell type)
-			zcat {input.filteredGTExVarDistalNoncoding} > {params.outDir}temp.tsv
-			zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {params.outDir}temp.tsv -b stdin | gzip > {output.predictionsVariantsInt}
-			rm {params.outDir}temp.tsv
-			
+			# columns of output: 1-3 (variant loc), 4 (variant hgID), 5 (variant tissue), 6 (egene), 7 (variant PIP), 8 (eGene TPM), 9-11 (enhancer loc), 12 (enhancer cell type), 13 (enhancer target gene hgnc)
+			zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {input.filteredGTExVariantsFinal} -b stdin | gzip > {output.variantsPredictionsInt}
 			""")
-
-# filter GTEx variants by PIP, credible set, protein-coding genes
-rule filter_GTEx_variants:
+        
+# make count matrix
+# once per method
+rule compute_count_matrix_old:
 	input:
-		GTExVariants = config["GTExVariants"]
-	params: 
-		geneList = config["geneFilter"],
-		commonVar = config["bgVariants"],
-		partition = config["partition"],
-		codeDir = config["codeDir"]
-	output: 
-		filteredGTExVar = os.path.join(config["outDir"], "variantFilesForEnrichment/GTEx.filtered.PIP0.5.tsv.gz"),
-	run:
-		shell(
-			"""
-			set +o pipefail;
-			# filter all variants by SUSIE, credible set, PIP0.5; print set of columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (gene ens id), 7 (PIP)
-			zcat {input.GTExVariants} | awk '$16>=0.5 && $17 != -1  && $9 == "SUSIE"' | awk '{{print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $10 "\t" $11 "\t" $16;}}' | sort -k1,1 -k2,2n | uniq | Rscript {params.codeDir}/filter_to_ABC_genes.R --genes {params.geneList} --col 6| gzip > {output.filteredGTExVar}
-			""")
-
-# get number of variants per GTEx tissue
-rule get_variants_per_GTEx_tissue:
-	input:
-		filteredGTExVarDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/GTEx.filtered.PIP0.5.distalNoncoding.tsv.gz")
-	output: 
-		variantsPerGTExTissue = os.path.join(config["outDir"], "variantFilesForEnrichment/variantsPerGTExTissue.tsv")
-	run:
-		shell(
-			"""
-			set +o pipefail;
-			# get counts per GTEx tissue
-			zcat {input.filteredGTExVarDistalNoncoding} | sort -k5 | awk '{{a[$5]++}} END {{for(i in a) print i"\t"a[i]}}' > {output.variantsPerGTExTissue}
-			""")
-
-# filter GTEx variants and common variants to distal noncoding
-rule filter_to_distal_noncoding:
-	input:
-		commonVar = config["bgVariants"],
-		filteredGTExVar = os.path.join(config["outDir"], "variantFilesForEnrichment/GTEx.filtered.PIP0.5.tsv.gz")
-	params: 
-		partition = config["partition"],
-		codeDir = config["codeDir"]
-	output: 
-		partitionDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/Partition.distalNoncoding.bed"),
-		filteredGTExVarDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/GTEx.filtered.PIP0.5.distalNoncoding.tsv.gz"),
-		commonVarDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/distalNoncoding.bg.SNPs.bed.gz"),
-	run:
-		shell(
-			"""
-		awk '$4=="ABC" || $4=="AllPeaks" || $4=="Other" || $4=="OtherIntron"' {params.partition} | sort -k1,1 -k2,2n > {output.partitionDistalNoncoding}
-
-		zcat {input.filteredGTExVar} | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} | gzip > {output.filteredGTExVarDistalNoncoding}
-		cat {input.commonVar} | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} | gzip > {output.commonVarDistalNoncoding}
-			""")
-		
-# compute matrix with number of variants from each GTEx tissue overlapping enhancers from each biosample
-rule compute_count_matrix:
-	input:
-		variantsPredictionsInt = os.path.join(config["outDir"],"{pred}", "GTExVariants-enhancerPredictions.PIP0.5.distalNoncoding.tsv.gz"),
-		predictionsSorted = os.path.join(config["outDir"], "{pred}", "enhancerPredictions.sorted.bed.gz"),
-		samples = os.path.join(config["outDir"], "{pred}", "biosampleList.tsv")
+		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "GTExVariants-enhancerPredictionsInt.tsv.gz"),
+		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
 	params:
-		outDir = config["outDir"]
+		outDir = config["outDir"],
+		GTExTissues=config["GTExTissues"]
 	output: 
-		countMatrix = os.path.join(config["outDir"], "{pred}/countMatrix.tsv"),
+		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrixOld.tsv")
 	run:
 		shell(
 			"""			
 			set +o pipefail;
 			
-			samples=$(cat {input.samples})
-			for CellType in $samples
+			biosamples=$(awk 'BEGIN {{ ORS=" " }} {{ print }}' {input.samples})
+			for sample in $biosamples
 			do
-				printf $CellType"\\t" >> {output.countMatrix}
-				# columns of intersection file: 1-3 (variant loc), 4 (variant hgID), 5 (variant tissue), 6 (variant gene ens id), 7 (variant PIP), 8-10 (enhancer loc), 11 (enhancer cell type)
+			# columns of output: 1-3 (variant loc), 4 (variant hgID), 5 (variant tissue), 6 (egene), 7 (variant PIP), 8 (eGene TPM), 9-11 (enhancer loc), 12 (enhancer cell type), 13 (enhancer target gene hgnc)
 				# filter for cell type, select just variant hgID and tissue, deduplicate (through uniq)
 				# print counts per GTEx tissue, sort (alphabetically by first tissue), print only count, then print all numbers in a row in matrix
-				zcat {input.variantsPredictionsInt} | awk -v awkvar=$CellType '$11==awkvar' | cut -f 4,5 | sort -k1 | uniq | awk '{{a[$2]++}} END {{for(i in a) print i" "a[i]}}' | sort -k1 | cut -d' ' -f2 | awk 'BEGIN {{ ORS = "\\t" }} {{ print }}' >> {output.countMatrix}
+				zcat {input.variantsPredictionsInt} | awk -v awkvar=$sample '$12==awkvar' | cut -f 4,5 | sort -k1 | uniq | awk '{{a[$2]++}} END {{for(i in a) print i" "a[i]}}' | sort -k1 | cut -d' ' -f2 | awk 'BEGIN {{ ORS = "\\t" }} {{ print }}' >> {output.countMatrix}
 				printf "\\n" >> {output.countMatrix}
+			done
+			""")
+			
+rule compute_count_matrix:
+	input:
+		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "GTExVariants-enhancerPredictionsInt.tsv.gz"),
+		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
+	params:
+		outDir = config["outDir"],
+		GTExTissues=config["GTExTissues"]
+	output: 
+		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrix.tsv")
+	script:
+		os.path.join(config["codeDir"], "count_matrix.R")
+	
 
+# get number of variants per GTExTissue linked to expresed genes
+rule get_variants_per_GTEx_tissue:
+	input:
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
+	params:
+		outDir = config["outDir"],
+		codeDir = config["codeDir"],
+		GTExTissues = config["GTExTissues"]
+	output: 
+		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv")
+	run:
+		shell(
+			"""
+			set +o pipefail;
+			# get counts per GTEx tissue, columns of GTEx var: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (gene ens id), 7 (PIP)
+
+			for tissue in {params.GTExTissues}
+			do
+				printf $tissue"\\t" >> {output.variantsPerGTExTissue}
+				cat {input.filteredGTExVariantsFinal} | awk -v awkvar=$tissue '$5==awkvar' | wc -l >> {output.variantsPerGTExTissue}
 			done
 			""")
 			
 # computer number of common variants overlapping enhancers in each biosample
+# run once per method
 rule compute_common_var_overlap:
 	input:
-		predictionsSorted = os.path.join(config["outDir"], "{pred}", "enhancerPredictions.sorted.bed.gz"),
-		commonVarDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/distalNoncoding.bg.SNPs.bed.gz"),
-		samples = os.path.join(config["outDir"], "{pred}", "biosampleList.tsv")
+		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncoding.bg.SNPs.bed.gz"),
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "enhancerPredictions.sorted.bed.gz"),
+		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
 		
 	params:
-		outDir = config["outDir"]
+		outDir = config["outDir"],
+		codeDir = config["codeDir"]
 	output:
-		commonVarPerBiosample = os.path.join(config["outDir"], "{pred}/commonVarPerBiosample.tsv"),
-		commonVarPredictionsInt = os.path.join(config["outDir"], "{pred}/commonVariants-enhancerPredictions.distalNoncoding.tsv.gz")
+		commonVarPerBiosample = os.path.join(config["outDir"], "{method}", "commonVarPerBiosample.tsv"),
+		commonVarPredictionsInt = os.path.join(config["outDir"], "{method}", "commonVarPredictionsInt.tsv")
 	run:
 		shell(
 			"""			
 			set +o pipefail;
 			
-			# intersect common var with enhancer predictions
-			# columns: 1-3 (variant loc), 4 (variant rsid), 5-7 (enhancer loc), 8 (enhancer cell type)
-			zcat {input.commonVarDistalNoncoding} > {params.outDir}temp.tsv
-			zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {params.outDir}temp.tsv -b stdin | gzip > {output.commonVarPredictionsInt}
-			rm {params.outDir}temp.tsv
+			# intersect common variants with predictions
+			# output columns: (1-3) common variant loc, (4) common variant rsid, (5-7) enhancer loc, (8) cell type, (9) target gene
+			zcat {input.commonVarDistalNoncoding} > {params.outDir}/{wildcards.method}/tempCommonVar.tsv
+			zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {params.outDir}/{wildcards.method}/tempCommonVar.tsv -b stdin > {output.commonVarPredictionsInt}
 			
-			samples=$(cat {input.samples})
 			# get common variants: biosample/celltype followed by count
-			for CellType in $samples
-			do
-				printf $CellType'\\t' >> {output.commonVarPerBiosample}
-				zcat {output.commonVarPredictionsInt} | awk -v awkvar=$CellType '$8==awkvar' | wc -l >> {output.commonVarPerBiosample}
-				# printf '\\n' >> {output.commonVarPerBiosample}
+			biosamples=$(awk 'BEGIN {{ ORS=" " }} {{ print }}' {input.samples})
+			for sample in $biosamples
+			do	
+				printf $sample'\\t' >> {output.commonVarPerBiosample}
+				cat {output.commonVarPredictionsInt} | awk -v awkvar=$sample '$8==awkvar' | wc -l >> {output.commonVarPerBiosample}
 			done
+			
+			rm {params.outDir}/{wildcards.method}/tempCommonVar.tsv
 			""")
-
+		
 # compute number of base pairs in each enhancer set
 rule compute_enhancer_set_size:
 	input:
-		#predictionsSorted = lambda wildcard: os.path.join(config["outDir"], preds_config_file.loc[wildcard.pred, "entry"], "enhancerPredictions.sorted.bed.gz"),
-		#samples = lambda wildcard: os.path.join(config["outDir"],preds_config_file.loc[wildcard.pred, "entry"], "predictionCellTypes.tsv")
-		predictionsSorted = os.path.join(config["outDir"], "{pred}", "enhancerPredictions.sorted.bed.gz"),
-		samples = os.path.join(config["outDir"],"{pred}", "biosampleList.tsv")
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "enhancerPredictions.sorted.bed.gz"),
+		samples = os.path.join(config["outDir"],"{method}", "biosampleList.tsv")
 	params:
 	output:
-		basesPerEnhancerSet = os.path.join(config["outDir"], "{pred}/basesPerEnhancerSet.tsv"),
+		basesPerEnhancerSet = os.path.join(config["outDir"], "{method}", "basesPerEnhancerSet.tsv")
 	run:
 		shell(
 			"""			
 			set +o pipefail;
 			
-			samples=$(cat {input.samples})
+			biosamples=$(awk 'BEGIN {{ ORS=" " }} {{ print }}' {input.samples})
 			
-			for CellType in $samples
+			for sample in $biosamples
 			do
 				# make list of sizes of enhancer sets for each biosample
-				printf $CellType"\\t" >> {output.basesPerEnhancerSet}
-				zcat {input.predictionsSorted} | awk -v awkvar=$CellType '$4==awkvar' | sort -k1,1 -k2,2n | bedtools merge -i stdin | awk 'BEGIN {{FS=OFS="\\t"}} {{print $3-$2}}' | awk '{{s+=$1}}END{{print s}}' >> {output.basesPerEnhancerSet}
-				# printf "\\n" >> {output.basesPerEnhancerSet}
+				printf $sample"\\t" >> {output.basesPerEnhancerSet}
+				zcat {input.predictionsSorted} | awk -v awkvar=$sample '$4==awkvar' | sort -k1,1 -k2,2n | bedtools merge -i stdin | awk 'BEGIN {{FS=OFS="\\t"}} {{print $3-$2}}' | awk '{{s+=$1}}END{{print s}}' >> {output.basesPerEnhancerSet}
 			done
 			""")
-			
+
 # generate matrix with enrichment values for each GTEx tissue/biosample intersection
+# run once per method
 rule compute_enrichment_matrix:
 	input: 
-		# countMatrix = lambda wildcard: directory(os.path.join(config["outDir"], preds_config_file.loc[wildcard.pred, "entry"],"countMatrix.tsv"))
-		countMatrix = os.path.join(config["outDir"], "{pred}","countMatrix.tsv")
+		countMatrix = os.path.join(config["outDir"], "{method}","countMatrix.tsv"),
+		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"),
+		commonVarPerBiosample = os.path.join(config["outDir"], "{method}", "commonVarPerBiosample.tsv"),
+		samples = os.path.join(config["outDir"],"{method}", "biosampleList.tsv"),
 	params:
-		variantsPerGTExTissue = os.path.join(config["outDir"], "variantFilesForEnrichment/variantsPerGTExTissue.tsv"),
-		commonVarDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/distalNoncoding.bg.SNPs.bed.gz"),
-		commonVarPerBiosample = os.path.join(config["outDir"], "{pred}/commonVarPerBiosample.tsv"),
-		basesPerEnhancerSet = os.path.join(config["outDir"], "{pred}/basesPerEnhancerSet.tsv"),
 		codeDir = config["codeDir"],
-		outDir = config["outDir"]
+		outDir = config["outDir"],
+		GTExTissues = config["GTExTissues"],
+		sampleKey = lambda wildcards: config["enrichment_heatmaps"]["sampleKey"][wildcards.method],
+		sampleID = lambda wildcards: config["enrichment_heatmaps"]["sampleID"][wildcards.method],
+		sampleName = lambda wildcards: config["enrichment_heatmaps"]["sampleName"][wildcards.method]
 	output: 
-		enrichmentTable = os.path.join(config["outDir"], "{pred}/enrichmentTable.tsv")
-	run:
-		shell(
-			"""			
-			set +o pipefail;
-
-			# get total common variants
-			totalCommonVar=$(zcat {params.commonVarDistalNoncoding} | wc -l)
-
-			# pass to R to calc and format enrichment matrix
-			Rscript {params.codeDir}/counts_to_enrichment.R --counts {input.countMatrix} --commonvar {params.commonVarPerBiosample} --varbytissue {params.variantsPerGTExTissue} --totalcommonvar $totalCommonVar > {output.enrichmentTable}
-			""")
+		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv")
+	script: 
+		os.path.join(config["codeDir"], "counts_to_enrichment.R")
 
 # plot aggregate and full heat maps of enrichment values
+# run once per method
 rule plot_enrichment_heatmaps:
 	input: 
-		enrichmentTable = os.path.join(config["outDir"], "{pred}","enrichmentTable.tsv")
-		
+		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv")
 	params:
-		basesPerEnhancerSet = os.path.join(config["outDir"], "{pred}/basesPerEnhancerSet.tsv"),
+		basesPerEnhancerSet = os.path.join(config["outDir"], "{method}", "basesPerEnhancerSet.tsv"),
 		codeDir = config["codeDir"],
-		sampleKey = lambda wildcards: config["enrichment_heatmaps"]["sampleKey"][wildcards.pred],
-		sampleID = lambda wildcards: config["enrichment_heatmaps"]["sampleID"][wildcards.pred],
-		sampleName = lambda wildcards: config["enrichment_heatmaps"]["sampleName"][wildcards.pred],
-		sampleCategory = lambda wildcards: config["enrichment_heatmaps"]["sampleCategory"][wildcards.pred]
-		
+		sampleKey = lambda wildcards: config["enrichment_heatmaps"]["sampleKey"][wildcards.method],
+		sampleID = lambda wildcards: config["enrichment_heatmaps"]["sampleID"][wildcards.method],
+		sampleName = lambda wildcards: config["enrichment_heatmaps"]["sampleName"][wildcards.method],
+		sampleCategory = lambda wildcards: config["enrichment_heatmaps"]["sampleCategory"][wildcards.method]
 	output: 
-		heatmapFull = os.path.join(config["outDir"], "{pred}/enrichmentHeatmap.full.pdf"),
-		heatmapAggregated = os.path.join(config["outDir"], "{pred}/enrichmentHeatmap.aggregated.pdf")
-
+		heatmapFull = os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.full.pdf"),
+		heatmapAggregated = os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.aggregated.pdf")
 	run:
 		shell(
 			"""	
@@ -236,29 +294,28 @@ rule plot_enrichment_heatmaps:
 			""")
 			
 # plot cdf and density graphs comparing enrichments across methods
+# run once overall
 rule plot_comparisons:
 	input: 
-		enrichmentTables = expand(os.path.join(config["outDir"],"{pred}/enrichmentTable.tsv"), pred=config["methods"]),
+		enrichmentTables = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"), method=config["methods"]),
 	params:
-		names = config["methods"],
+		methods = config["methods"],
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]
 	output: 
 		cdf = os.path.join(config["outDir"], "cdf.pdf"),
 		density = os.path.join(config["outDir"], "density.pdf"),
 		boxplot = os.path.join(config["outDir"], "boxplot.pdf")
-	run:
-		shell(
-			"""	
-				set +o pipefail;
-				Rscript {params.codeDir}/plot_comparisons.R --names "{params.names}" --tables "{input.enrichmentTables}" --outdir {params.outDir}
+	script:
+		os.path.join(config["codeDir"], "plot_comparisons.R")
 			
-			""")
-			
+# html report, run once overall
 rule generate_report:
 	input: 
-		enrichmentTables = expand(os.path.join(config["outDir"],"{pred}/enrichmentTable.tsv"), pred=config["methods"]),
-		variantsPerGTExTissue = os.path.join(config["outDir"], "variantFilesForEnrichment/variantsPerGTExTissue.tsv")
+		enrichmentTables = expand(os.path.join(config["outDir"],"{method}", "enrichmentTable.tsv"), method=config["methods"]),
+		variantsPerGTExTissue = expand(os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"), method=config["methods"]),
+		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv"),
+		sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv")
 	params:
 		names = config["methods"]
 	output:

@@ -24,10 +24,11 @@ main <- function() {
     file.name = opt$table; enhancer.size = opt$enhancersizes;  sample.key = opt$samplekey; out.file = opt$outfile
     cellID = opt$cellid; sample.name = opt$category; max.color=opt$maxcolor
     
-    enrMatrix = read.csv(file=file.name, sep='\t', header=TRUE, stringsAsFactors = FALSE) %>% filter(enrichment!='NA')
+    enrMatrix = read.csv(file=file.name, sep='\t', header=TRUE, stringsAsFactors = FALSE) %>% 
+        filter(enrichment!='NA') %>% dplyr::select(-BiosampleName)
 
     if (is.na(max.color) || max.color=='nan') {
-        max.color = ceiling(quantile(enrMatrix$enrichment, 0.9))
+        max.color = ceiling(quantile(enrMatrix$enrichment, 0.95))
     }
     
     # add category/sample name

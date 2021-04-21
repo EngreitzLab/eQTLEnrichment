@@ -9,19 +9,15 @@ main <- function() {
                                   library(viridis)})
 
     # load data
-    option_list <- list(
-        make_option(c("--names"), type="character", default=NA, help="list of prediction names"),
-        make_option(c("--tables"), type="character", default=NA, help="list of enrichment tables"),
-        make_option(c("--outdir"), type="character", default=NA, help="out directory"))
   
-    opt <- parse_args(OptionParser(option_list=option_list))
-    names = strsplit(opt$names, " ") %>% unlist()
-    print(names)
-    enrichmentTables = strsplit(opt$tables, " ") %>% unlist()
-    outDir = opt$outdir
-    
+    enrichmentTables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist()
+    names = (snakemake@params$methods) %>% strsplit(" ") %>% unlist()
+    outCDF = (snakemake@output$cdf)
+    outDensity = (snakemake@output$density)
+    outBoxplot = (snakemake@output$boxplot)
+  
     # aggregate data
-    enr.all = read.csv(file=enrichmentTables[1], sep='\t', header=TRUE, stringsAsFactors = FALSE)
+    enr.all = read.table(file=enrichmentTables[1], header=TRUE, stringsAsFactors = FALSE)
     enr.all$predictionSet = names[1]
     
     if(length(names)>1){
@@ -50,9 +46,9 @@ main <- function() {
             axis.text.x=element_text(angle=60,hjust=1))
       
       
-    pdf(file=paste0(outDir, "/cdf.pdf"), width=7, height=5); print(cdf); dev.off()
-    pdf(file=paste0(outDir, "/density.pdf"), width=7, height=5); print(d); dev.off()
-    pdf(file=paste0(outDir, "/boxplot.pdf"), width=7, height=5); print(bp); dev.off()
+    pdf(file=outCDF, width=7, height=5); print(cdf); dev.off()
+    pdf(file=outDensity, width=7, height=5); print(d); dev.off()
+    pdf(file=outBoxplot, width=7, height=5); print(bp); dev.off()
     
     
     }

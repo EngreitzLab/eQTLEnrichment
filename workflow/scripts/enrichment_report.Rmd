@@ -28,44 +28,77 @@ library(forcats)
 library(plotly)
 library(stringr)
 library(DT)
-library(pander)
 library(viridis)
+library(htmltools)
+library(reactable)
 
 # input arguments
 tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
-varPerTissue = (snakemake@input$variantsPerGTExTissue) %>% read.table(header=FALSE)
-colnames(varPerTissue) = c('GTExTissue','nVariants')
+varPerTissue = (snakemake@input$variantsPerGTExTissue) %>% strsplit(" ") %>% unlist()
 methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
+predictionMetricsFile = (snakemake@input$predictionMetrics) 
+sensitivitiesFile = (snakemake@input$sensitivitiesTable) 
 ```
 
-## GTEx fine-mapped eQTL variants
-For all analyses, the set of distal, noncoding fine-mapped eQTL variants in a credible set and with a posterior threshold greater than 0.5 were considered. The following shows the number of variants per GTEx tissue.
 
-```{r varPerTissue, echo=FALSE, fig.width=12}
-varPerTissue$GTExTissue = fct_reorder(varPerTissue$GTExTissue, varPerTissue$nVariants, min)
-g = ggplot(varPerTissue, aes(x=GTExTissue, y=nVariants)) + geom_bar(stat='identity', width=0.5) + 
+# GTEx fine-mapped eQTL variants
+The following analyses use the [version 8 GTEx Consortium data](https://science.sciencemag.org/content/369/6509/1318) to benchmark enhancer-gene prediction methods. This dataset was generated from 15,201 RNA-seq samples from 49 tissues of 838 postmortem donors, which were used to discover cis-eQTLs for 18,262 protein-coding and 5006 lincRNA genes. The eQTLs were fine-mapped by SuSiE to identify likely causal variants (cite Jacob Ulirsch and Hilary Finucane). The diversity of tissues represented offer a uniquely valuable resource to evaluate the cell-type specificity of enhancer-gene prediction methods. In the following analyses, we considered fine-mapped eQTL variants that met the following criteria:  
+
+- located in distal, noncoding regions of the genome  
+- in a credible set  
+- posterior threshold > 0.5  
+- linked to a gene considered by the prediction method being considered  
+- linked to a highly-expressed gene for that tissue (median TPM > 1)  
+
+The following shows the number of variants in each of the GTEx tissues that were used. [Why is this important?] 
+
+```{r varPerTissue, echo=FALSE, fig.width=10, fig.height=5}
+# aggregate data
+  var.all = read.table(file=varPerTissue[1], header=TRUE, stringsAsFactors=FALSE)
+  var.all$method = methods[1]
+  if (length(methods)>1){
+    for (i in 2:length(methods)){
+        temp = read.table(file=varPerTissue[i], header=TRUE, stringsAsFactors = FALSE)
+        temp$method = methods[i]
+        var.all = rbind(var.all, temp)
+    }
+  }
+
+colnames(var.all) = c('GTExTissue','nVariants', 'method')
+
+var.all$GTExTissue = fct_reorder(var.all$GTExTissue, var.all$nVariants, min)
+g = ggplot(var.all, aes(x=GTExTissue, y=nVariants)) + geom_point() + 
   theme_minimal() + ylab('# variants in \n GTEx tissue') +  xlab('') +
   theme(axis.text.x = element_text(angle=60, hjust=1), 
         axis.text=element_text(size=rel(.75)), 
-        axis.title=element_text(size=rel(1)))
+        axis.title=element_text(size=rel(1))) +
+  ylim(0,max(var.all$nVariants))
 ggplotly(g)
 
 
 ```
 
 
-## Enrichment in eQTL variants across different prediction methods
+# Enrichment of eQTL variants in enhancers from different prediction methods
+First, we consider how the distribution of eQTLs overlaps with predicted enhancer regions from each prediction method. To answer the question, "How much more likely is a causal variant to be located in an enhancer than any common variant?", we consider the overall enrichment of eQTL variants in each set of enhancers. The enrichment E of variants from each GTEx tissue, G, in enhancers for each biosample, B, included in the prediction dataset was computed as:
+E(G,B) = [(# variants in G overlapping enhancers in B)/(# variants in G)]/[(# common variants overlapping enhancers in B)/(total common variants)]. The enrichment tables showing the value used to derive the enrichment at each intersection are included below. 
+
+The distribution of enrichment values were compared by plotting the cumulative density function for each method. The curves shifted furthest to the right had larger proportions of higher enrichment values, suggesting stronger specificity at predicting the regions where variants are concentrated.
 ```{r cdf, echo=FALSE, warning=FALSE}
 
 # aggregate data
-  enr.all = read.table(tables[1], header=TRUE, stringsAsFactors = FALSE) %>% dplyr::select(enrichment)
+  enr.all = read.table(tables[1], header=TRUE, stringsAsFactors = FALSE) # %>% dplyr::select(enrichment)
   enr.all$method = methods[1]
-  for (i in 2:length(methods)){
-        temp = read.table(file=tables[i], header=TRUE, stringsAsFactors = FALSE) %>% dplyr::select(enrichment)
+  if(length(methods)>1){
+      for (i in 2:length(methods)){
+        temp = read.table(file=tables[i], header=TRUE, stringsAsFactors = FALSE) # %>% dplyr::select(enrichment)
         temp$method = methods[i]
         enr.all = rbind(enr.all, temp)
+    }
   }
+
   enr.all = enr.all[order(enr.all$enrichment),]
+  max.enr = max(enr.all$enrichment)
   
   # plot cdf
   enrLabel = 'Enrichment\n(GTEx variants/all common variants)'
@@ -78,59 +111,125 @@ ggplotly(g)
   
 ```
 
+Comparing the distribution of enrichment values between prediction methods, we can see whether the strongest enrichments occur between matching biosamples and tissues, which suggests that the method can make cell-type specific predictions.
 ```{r boxPlot, warning=FALSE, echo=FALSE}
 
-bp = ggplot(enr.all, aes(x=method, y=enrichment, fill=method)) + geom_boxplot() +
-      theme_minimal() + ylab(enrLabel) + xlab('') + 
-      scale_fill_viridis(discrete=TRUE) +
-      theme(legend.position='none', 
-            axis.text.x=element_text(angle=60,hjust=1))
-ggplotly(bp)
+bp = ggplot(enr.all, aes(x=method, y=enrichment, fill=method, 
+                         text=paste("GTExTissue:",GTExTissue,"\nBiosample:", BiosampleName,"\nEnrichment:", enrichment))) + 
+              geom_boxplot() + geom_point(alpha=0) +
+              theme_minimal() + ylab(enrLabel) + xlab('') + 
+              scale_fill_viridis(discrete=TRUE) + 
+              theme(legend.position='none', axis.text.x=element_text(angle=60,hjust=1))
+ggplotly(bp, tooltip='text')
 
 ```
 
 
 
 ## Enrichment tables {.tabset}
+Tables with values used to derive enrichment values (searchable and sortable by any metric) 
 ```{r doSomething, include=FALSE}
-DT::datatable(matrix())
+htmltools::tagList(DT::datatable(matrix()))
 ```
 
 ```{r dataTables, echo=FALSE, results='asis'}
 
 for (i in 1:length(methods)) {
   cat("  \n###",  methods[i], "  \n")
-  table.current = read.table(tables[i], header=TRUE)
+  table.current = read.table(tables[i], header=TRUE) %>% dplyr::select(-nCommonVariants)
+  table.current$Biosample=table.current$BiosampleName
+  table.current=dplyr::select(table.current,-BiosampleName)
   cat("  \n")
-  cat("  \n")
+
+  # cat(knitr::knit_print(datatable(table.current, rownames = FALSE, filter="top", 
+  #                                 options=list(pageLength = 5, scrollX=T),
+  #           colnames=c('Biosample','GTEx tissue', 'Variants overlapping\nenhancers',
+  #                      'Variants per\nGTEx tissue','Common variants\noverlapping enhancers',
+  #                      'Enrichment'))))
   
-  cat(knitr::knit_print(datatable(table.current, rownames = FALSE, filter="top", 
-                                  options=list(pageLength = 5, scrollX=T),
-            colnames=c('Biosample','GTEx tissue', 'Variants overlapping\nenhancers',
-                       'Variants per\nGTEx tissue','Common variants\noverlapping enhancers',
-                       'Total common\nvariants', 'Enrichment'))))
+  # print(htmltools::tagList(datatable(table.current, rownames = FALSE, filter="top", 
+  #                                 options=list(pageLength = 5, scrollX=T),
+  #           colnames=c('Biosample','GTEx tissue', 'Variants overlapping\nenhancers',
+  #                      'Variants per\nGTEx tissue','Common variants\noverlapping enhancers',
+  #                      'Enrichment'))))
+  
+  cat(print(reactable(table.current, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE)))
+
   cat("  \n")
   cat("  \n")
 }
 ```
 
 ## Enrichment heat maps {.tabset}
+Heat maps displaying enrichment values at each GTEx tissue/biosample intersection. As the order on each axis was determined by clustering, we expect similar biosamples and tissues to be located near each other. Areas of the heat map with more yellow indicate stronger enrichment. 
 ```{r heatMaps, echo=FALSE, results='asis', out.width=1100, out.height=3000}
 
 for (i in 1:length(methods)) {
   cat("  \n###",  methods[i], "  \n")
   table.current = read.table(tables[i], header=TRUE)
-  hm.df = dplyr::select(table.current, Biosample, GTExTissue, enrichment)
+  max.color = ceiling(quantile(table.current$enrichment, 0.95))
+  hm.df = dplyr::select(table.current, BiosampleName, GTExTissue, enrichment)
   colnames(hm.df) = c('name','variable','value')
   cat(knitr::knit_print(heatmaply(long_data=hm.df, show_dendrogram = c(FALSE,FALSE),
-            label_names=c('GTExTissue','Biosample','Enrichment'), 
+            label_names=c('Biosample','GTExTissue','Enrichment'), 
             dynamicTicks=FALSE, fontsize_row = 8, fontsize_col = 8,
             margins=c(-50,0,0,0),mplot_method='ggplot', 
             heatmap_layers = (list(theme(legend.key.height=unit(10,'pt')))),
             scale_fill_gradient_fun = scale_fill_viridis(discrete = FALSE, name='Enrichment',
-                                                         limits =c(1,8), oob=scales::squish))))
+                                                         limits =c(1,max.color), oob=scales::squish))))
   cat("  \n")
   cat("  \n")
 }
 ```
 
+## Enrichment values by tissue {.tabset}
+Enrichment values for each biosample stratified by GTEx tissue. The highest enrichment values for each tissue would be expected to be in enhancers predicted in relevant or matching cell types. 
+```{r enrByTissue, echo=FALSE, results='asis', fig.width=9, fig.height=5}
+for (i in 1:length(methods)) {
+  cat("  \n###",  methods[i], "  \n")
+  table.current = read.table(tables[i], header=TRUE)
+ 
+  m = ggplot(table.current, aes(x=GTExTissue, y=enrichment, fill=GTExTissue, 
+                         text=paste("GTExTissue:",GTExTissue,"\nBiosample:", BiosampleName,"\nEnrichment:", enrichment))) +
+              geom_boxplot() + geom_point(alpha=0) +
+              theme_minimal() + ylab(enrLabel) + xlab('') + ylim(0, max.enr) +
+              scale_fill_viridis(discrete=TRUE, option='plasma') + 
+              theme(legend.position='none', axis.text.x=element_text(angle=60,hjust=1))
+cat(knitr::knit_print(ggplotly(m, tooltip='text')))
+  
+  cat("  \n")
+  cat("  \n")
+}
+```
+
+# Prediction of variant eGenes
+
+```{r, include=FALSE}
+htmltools::tagList(reactable(matrix()))
+```
+
+## Prediction metrics
+```{r, echo=FALSE}
+
+  metrics = read.table(predictionMetricsFile, header=TRUE, sep='\t')
+  print(reactable(metrics, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE))
+  
+  cat("  \n")
+  cat("  \n")
+
+```
+
+```{r , include=FALSE}
+htmltools::tagList(DT::datatable(matrix()))
+```
+## Sensitivities
+```{r, results='asis', echo=FALSE}
+
+  metrics = read.table(sensitivitiesFile, header=TRUE, sep='\t')
+  #print(htmltools::tagList(datatable(metrics, rownames = FALSE, filter="top",options=list(pageLength = 10, scrollX=T))))
+  cat(knit_print(reactable(metrics, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE)))
+
+  cat("  \n")
+  cat("  \n")
+
+```

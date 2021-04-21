@@ -15,8 +15,8 @@ main <- function() {
   varFile = opt$variants; intFile = opt$TSSint
   
   variants = read.csv(file=varFile, sep='\t',header=FALSE, stringsAsFactor=FALSE); 
-  colnames(variants)=c('chr','start','end','unique_id','eGene','PIP','beta_posterior','sd_posterior','closestGene','closestTSS')
-  TSSint = read.csv(file=intFile ,sep='\t',header=FALSE, stringsAsFactor=FALSE)
+  colnames(variants)=c('chr','start','end','unique_id','eGene','PIP','closestGene','closestTSS')
+  TSSint = read.csv(file=intFile, sep='\t',header=FALSE, stringsAsFactor=FALSE)
   colnames(TSSint) = c('unique_id','closeTSS')
   
   for (i in 1:nrow(variants)) {

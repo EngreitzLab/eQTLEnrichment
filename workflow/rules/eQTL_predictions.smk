@@ -1,141 +1,149 @@
-## rules for eQTL eGene prediction analysis
+# generate output files
+variantsByTissueFiles = []
+variantsByTissueProximalFiles = []
+predictionsByBiosampleFiles = []
+predTablesFiles = []
+sensitivityPlotsFiles = []
 
-# filter GTEx variants by individual tissue
-rule filter_variants_for_predictions:
+for x in config["methods"]:
+	# list of variant files
+	variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.filteredVariants.tsv"), GTExTissue=config["predRates"]["mapGTExTissues"][x]))
+	# list of variant files with proximal genes
+	variantsByTissueProximalFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.filteredVariants.proximal.tsv"), GTExTissue=config["predRates"]["mapGTExTissues"][x]))
+	# list of filtered prediction files
+	predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{Biosample}.filteredPredictions.tsv"), Biosample=config["predRates"]["mapBiosamples"][x]))
+	# list of prediction tables
+	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=config["predRates"]["mapGTExTissues"][x], Biosample=config["predRates"]["mapBiosamples"][x]))
+	# list of output plot names
+	sensitivityPlotsFiles.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=config["predRates"]["mapGTExTissues"][x], method=x))
+
+# split variants to tissue (just the ones needed for predictions) and filter for highly expressed genes
+# run once per method x tissue
+rule split_variants_by_tissue:
 	input: 
-		GTExVariants = config["GTExVariants"],
-		partitionDistalNoncoding = os.path.join(config["outDir"], "variantFilesForEnrichment/Partition.distalNoncoding.bed")
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
 	params:
 		codeDir = config["codeDir"],
-		outDir = config["outDir"],
-		geneList = config["geneFilter"]
+		outDir = config["outDir"]
 	output:
-		filteredVariants = os.path.join(config["outDir"], "variantFilesForPrediction", "{GTExTissue}.filteredVariants.tsv.gz")
+		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.filteredVariants.tsv")
 	run:
 		shell("""
 		set +o pipefail;
 		
-		# continue to use 0.5 PIP threshold?
-		# just consider distal noncoding?
-		# filter out non ABC genes?
-		
-		# column key: 1-3 = location, 4 = unique ID in hg19, 5 = hgnc ID, 6 = PIP, 7 = effect size, 8 = sd of effect size 
-		zcat {input.GTExVariants} | awk -v var={wildcards.GTExTissue} '$16>=0.5 && $17 != -1  && $9 == "SUSIE" && $10==var' | cut -f 1,2,3,4,11,16,18,19 | bedtools intersect -wa -a stdin -b {input.partitionDistalNoncoding} | Rscript {params.codeDir}/filter_to_ABC_genes.R --genes {params.geneList} --col 5 | Rscript {params.codeDir}/get_hgnc_symbols.R --col 5 | sort -k1,1 -k2,2n | gzip > {output.filteredVariants}
+ 	   # input variant file columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (gene hgnc), 7 (PIP)
+	   cat {input.filteredGTExVariantsFinal} | awk -v var={wildcards.GTExTissue} '$5==var' | sort -k1,1 -k2,2n > {output.variantsByTissue}
+	   
 		""")
-		
-# add columns for closest gene body, closest gene TSS, and whether eGene has its TSS within 100 kb for each variant
+
+# add columns to variant files with proximal genes, proximal TSS, TSS within 100 kb (filter reference gene files to gene universe)
+# run once per method x tissue
 rule add_proximal_genes:
 	input:
-		filteredVariants = os.path.join(config["outDir"], "variantFilesForPrediction", "{GTExTissue}.filteredVariants.tsv.gz")
+		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.filteredVariants.tsv"),
+		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
 	params:
 		chrSizes = config["chrSizes"],
 		TSS = config["TSS"],
-		genes = config["genes"],
 		codeDir = config["codeDir"],
-		outDir = config["outDir"]
+		outDir = config["outDir"],
 	output:
-		filteredVariantsProximal = os.path.join(config["outDir"], "variantFilesForPrediction", "{GTExTissue}.filteredVariants.proximalGenes.tsv.gz")
+		variantsByTissueProximal = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.filteredVariants.proximal.tsv")
 	run:
 		shell("""
 		set +o pipefail;
-				
-		# get list of distinct variants, expand variant +/- 100 kb, intersect with location of all TSS; end up with following columns: 1) variant unique ID, 2) gene with TSS within 100 kb
-		zcat {input.filteredVariants} | cut -f 1-4 | sort -k 1,1 -k2,2n | uniq | bedtools slop -i stdin -b 100000 -g {params.chrSizes} | bedtools intersect -wa -wb -a stdin -b {params.TSS} | cut -f 4,8 > {params.outDir}/{wildcards.GTExTissue}.temp.100kbInterval.tsv
+		
+		# filter TSS to gene universe
+		Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.TSS} --col 4 --id hgnc --genes {input.geneUniverse} > {params.outDir}/{wildcards.method}/eGenePrediction/temp.TSS.tsv
+		
+		# get list of distinct variants, expand variant +/- 100 kb, intersect with location of all TSS; end up with following columns: (1) variant unique ID, (2) gene with TSS within 100 kb
+		cat {input.variantsByTissue} | cut -f 1-4 | sort -k 1,1 -k2,2n | uniq | bedtools slop -i stdin -b 100000 -g {params.chrSizes} | bedtools intersect -wa -wb -a stdin -b {params.outDir}/{wildcards.method}/eGenePrediction/temp.TSS.tsv | cut -f 4,8 > {params.outDir}/{wildcards.method}/eGenePrediction/temp.100kbInterval.tsv
 
 		# closest gene body (9), TSS (10), whether eGene has TSS within 100 kb (11)
 		# how to handle cases where two genes or TSSs are equidistant? currently reporting only first (can do all, but leads to variants being counted multiple times)
-		zcat {input.filteredVariants} | bedtools closest -t first -a stdin -b {params.genes} | cut -f 1-8,12 | bedtools closest -t first -a stdin -b {params.TSS} | cut -f  1-9,13 > {params.outDir}/{wildcards.GTExTissue}.temp.closest.tsv
-		Rscript {params.codeDir}/TSS_close.R --variants {params.outDir}/{wildcards.GTExTissue}.temp.closest.tsv --TSSint {params.outDir}/{wildcards.GTExTissue}.temp.100kbInterval.tsv | gzip > {output.filteredVariantsProximal}
+		cat {input.variantsByTissue} | bedtools closest -t first -a stdin -b {input.geneUniverse} | cut -f 1-4,6,7,12 | bedtools closest -t first -a stdin -b {params.outDir}/{wildcards.method}/eGenePrediction/temp.TSS.tsv | cut -f  1-7,11 > {params.outDir}/{wildcards.method}/eGenePrediction/temp.closest.tsv
 		
-		rm {params.outDir}/{wildcards.GTExTissue}.temp.100kbInterval.tsv
-		rm {params.outDir}/{wildcards.GTExTissue}.temp.closest.tsv
+		Rscript {params.codeDir}/TSS_close.R --variants {params.outDir}/{wildcards.method}/eGenePrediction/temp.closest.tsv --TSSint {params.outDir}/{wildcards.method}/eGenePrediction/temp.100kbInterval.tsv > {output.variantsByTissueProximal}
+		
+		rm {params.outDir}/{wildcards.method}/eGenePrediction/temp.TSS.tsv
+		rm {params.outDir}/{wildcards.method}/eGenePrediction/temp.100kbInterval.tsv
+		rm {params.outDir}/{wildcards.method}/eGenePrediction/temp.closest.tsv
+		
 		""")
-		
-# filter enhancer predictions to invidual biosamples needed for predictions
+
+# split enhancer predictions to invidual biosamples needed for predictions and filter to gene universe
+# run once per method x tissue
 rule filter_enhancer_predictions:
 	input:
-		predictions = lambda wildcards: config["predFile"][wildcards.method]
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "enhancerPredictions.sorted.bed.gz")
 	params:
-		outDir = config["outDir"]
-	output:
-		filteredPredictions = os.path.join(config["outDir"], "{method}", "{Biosample}.filteredPredictions.tsv.gz")
+		outDir = config["outDir"],
+		codeDir = config["outDir"]
+	output:	
+		predictionsByBiosample = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{Biosample}.filteredPredictions.tsv")
 	run:
 		shell(
 		"""
 		set +o pipefail;
 		
 		# filter predictions
-		zcat {input.predictions} | csvtk cut -t -f chr,start,end,CellType,TargetGene | sed 1d | awk -v awkvar={wildcards.Biosample} '$4==awkvar' | cut -f 1,2,3,5 | sort -k1,1 -k2,2n | uniq | gzip > {output.filteredPredictions}
+		zcat {input.predictionsSorted} |  awk -v awkvar={wildcards.Biosample} '$4==awkvar' | cut -f 1,2,3,5 | sort -k1,1 -k2,2n | uniq > {output.predictionsByBiosample}
+		
 		""")
 
 # generate list of variants with proximal genes and where the variant is located with respect to the enhancer predictions for each pairing of GTEx tissue/biosample 
 rule make_prediction_table:
 	input:
-		filteredVariantsProximal = os.path.join(config["outDir"], "variantFilesForPrediction", "{GTExTissue}.filteredVariants.proximalGenes.tsv.gz"),
-		filteredPredictions = lambda wildcards: os.path.join(config["outDir"], "{method}", "{Biosample}.filteredPredictions.tsv.gz")
+		variantsByTissueProximal = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.filteredVariants.proximal.tsv"),
+		predictionsByBiosample = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{Biosample}.filteredPredictions.tsv")
 	params:
 		outDir = config["outDir"],
-		codeDir = config["codeDir"]
+		codeDir = config["codeDir"],
 	output:
-		predTable = os.path.join(config["outDir"], "{method}", "{GTExTissue}.{Biosample}.predictionTable.tsv")
+		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv")
 	run:
 		shell(
 		"""
 		set +o pipefail;
 		
 		# intersect predictions with relevant variants 
-		zcat {input.filteredVariantsProximal} | cut -f 1-4 | sed 1d | sort -k 1,1 -k2,2n | uniq > {params.outDir}/variantFilesForPrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
-		zcat {input.filteredPredictions} | bedtools intersect -wa -wb -a {params.outDir}/variantFilesForPrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv -b stdin | cut -f 4,8 > {params.outDir}/{wildcards.method}/temp.PredictionTargetGenes.tsv
+		cat {input.variantsByTissueProximal} | cut -f 1-4 | sed 1d | sort -k 1,1 -k2,2n | uniq > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
+		cat {input.predictionsByBiosample} | bedtools intersect -wa -wb -a {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv -b stdin | cut -f 4,8 > {params.outDir}/{wildcards.method}/eGenePrediction/temp.predictionTargetGenes.tsv
 		
-		# classify variants
-		zcat {input.filteredVariantsProximal} > {params.outDir}/variantFilesForPrediction/{wildcards.GTExTissue}.temp.allVariants.tsv
+		# classify variants	
+		Rscript {params.codeDir}/classify_enhancer_predictions.R --variants {input.variantsByTissueProximal} --pred {params.outDir}/{wildcards.method}/eGenePrediction/temp.predictionTargetGenes.tsv > {output.predTable}
 		
-		Rscript {params.codeDir}/classify_enhancer_predictions.R --variants {params.outDir}/variantFilesForPrediction/{wildcards.GTExTissue}.temp.allVariants.tsv --pred {params.outDir}/{wildcards.method}/temp.PredictionTargetGenes.tsv > {output.predTable}
-		
-		rm {params.outDir}/variantFilesForPrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
-		rm {params.outDir}/variantFilesForPrediction/{wildcards.GTExTissue}.temp.allVariants.tsv
-		rm {params.outDir}/{wildcards.method}/temp.PredictionTargetGenes.tsv
+		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
+		rm {params.outDir}/{wildcards.method}/eGenePrediction/temp.predictionTargetGenes.tsv
 		""")
 
 # generate plot of prediction rates across all methods and tissues
-
-predTables = []
-sensitivityPlots = []
-
-for x in config["methods"]:
-	# list of prediction tables
-	predTables.extend(expand(os.path.join(config["outDir"], x, "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=config["predRates"]["mapGTExTissues"][x], Biosample=config["predRates"]["mapBiosamples"][x]))
-	
-	# list of output plot names
-	sensitivityPlots.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=config["predRates"]["mapGTExTissues"][x], method=x))
-
 rule plot_prediction_rates:
 	input:
-		allTables=predTables
+		allTables=predTablesFiles
 	params:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]
 	output:
 		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
-		PPVPlot = os.path.join(config["outDir"], "PPV.pdf")
+		PPVPlot = os.path.join(config["outDir"],"PPV.pdf"),
+		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv")
 	run:
 		shell("""
 		set +o pipefail;
 		
 		Rscript {params.codeDir}/plot_prediction_rates.R --tables "{input.allTables}" --out {params.outDir}
 		""")
-
+# generate sensitivity plots
+# rewrite with script
 rule plot_sensitivities:
 	input:
-		allTables=predTables
+		allTables=predTablesFiles
 	params:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]
 	output:
-		allSensPlots = sensitivityPlots
-	run:
-		shell("""
-		set +o pipefail;
-		
-		Rscript {params.codeDir}/plot_sensitivities.R --tables "{input.allTables}" --outDir {params.outDir}/sensitivityPlots
-		""")
+		allSensPlots = sensitivityPlotsFiles,
+		sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv")
+	script:
+		os.path.join(config["codeDir"], "plot_sensitivities.R")

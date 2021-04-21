@@ -22,7 +22,6 @@ main <- function() {
 
     # add rates for proximity-based E-G predictions
     df = data.frame('temp','temp','temp',1)
-    #df = data.frame(matrix(ncol=4,nrow=0, dimnames=list(NULL)))
     colnames(df) = c("GTExTissue", "metric", "method","value")
     
     for (x in GTExTissues$X1) {
@@ -91,11 +90,6 @@ main <- function() {
     
     #reorder method factor for graphing
     df.ppv$method=as.factor(df.ppv$method); 
-    #lev = levels(df.ppv$method); lev.n = lev[lev!="Proximity"]
-    #print(levels(df.ppv$method))
-    #print(lev.n)
-    #df.ppv$method=plyr::revalue(df.ppv$method, c("Proximity", lev.n))
-    print("check3")
 
     ppv = ggplot(df.ppv, aes(x=method, y=value, fill=method)) + 
       geom_bar(stat="identity", position="dodge", width=0.5) + 
@@ -104,6 +98,9 @@ main <- function() {
       theme(text = element_text(size = rel(4)),axis.text.x = element_text(angle=60,hjust=1), legend.position='none') + 
       scale_fill_viridis(discrete=TRUE,option='viridis')
     pdf(file=outFile.PPV,width=8,height=nrow(GTExTissues)*2); print(ppv); dev.off()
+    
+    # print table
+    write.table(df, file=paste0(outDir, "/predictionMetrics.tsv"), row.names=FALSE, col.names=TRUE, quote=FALSE)
     
 }
 

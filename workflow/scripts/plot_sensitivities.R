@@ -8,12 +8,17 @@ suppressPackageStartupMessages({
   library(plyr)})
 
 main <- function() {
-  option_list <- list(
-    make_option(c("--tables"), type="character", default=NA, help="tsv with variants"),
-    make_option(c("--outDir"), type="character", default=NA, help="file path to results folder"))
-  opt = parse_args(OptionParser(option_list=option_list))
-  outDir = opt$outDir
-  tables = strsplit(opt$tables, " ") %>% unlist()
+  # option_list <- list(
+  #   make_option(c("--tables"), type="character", default=NA, help="tsv with variants"),
+  #   make_option(c("--outDir"), type="character", default=NA, help="file path to results folder"))
+  # opt = parse_args(OptionParser(option_list=option_list))
+  # outDir = opt$outDir
+  # tables = strsplit(opt$tables, " ") %>% unlist()
+  
+  tables = (snakemake@input$allTables) %>% strsplit(" ") %>% unlist()
+  outDir = (snakemake@params$outDir)
+  
+  create.dir(file.path(outDir, "sensitivityPlots"))
   
   # get list of GTEx tissues represented
   GTExTissues = str_split(tables, '/') %>% data.frame() %>% t()
@@ -46,25 +51,18 @@ main <- function() {
     predTable = read.table(file=fileName, header=TRUE, stringsAsFactors=FALSE)
     tissue = str_split(fileName, '/')[[1]]; tissue = tissue[length(tissue)] %>% str_split(pattern='\\.'); 
     tissue = tissue[[1]][1]
-    method = str_split(fileName, '/')[[1]]; method = method[length(method)-1]
+    method = str_split(fileName, '/')[[1]]; method = method[length(method)-2]
     prediction.rate.GivenEnhancer = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(filter(predTable,predictionClass!='noOverlap'))
     prediction.rate.total = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(predTable)
     prediction.rate.inEnhancer=nrow(filter(predTable,predictionClass!='noOverlap'))/nrow(predTable)
-    print("Check0")
-    print(df)
     df = add_row(df, GTExTissue=tissue, metric="Prediction rate given\nvariant in enhancer", method=method, value=prediction.rate.GivenEnhancer)
-    print("Check0.1")
-    print(df)
     df = add_row(df, GTExTissue=tissue, metric="% variants in\nany enhancer", method=method, value=prediction.rate.inEnhancer)
-    print("Check0.2")
     df = add_row(df, GTExTissue=tissue, metric="Prediction rate", method=method, value=prediction.rate.total)    
     
     #df = rbind(df, c(tissue, "Prediction rate given\nvariant in enhancer", method, prediction.rate.GivenEnhancer)) %>%
       #rbind(c(tissue, "% variants in\nany enhancer", method, prediction.rate.inEnhancer)) %>%
       #rbind(c(tissue, "Prediction rate", method, prediction.rate.total))
   }
-  
-  print('Check2')
   
   
   df$value=as.numeric(df$value)
@@ -73,12 +71,17 @@ main <- function() {
   
   #### graph variant prediction rates for each set
   methods = df$method %>% data.frame() %>% distinct() %>% dplyr::filter(.!="Proximity") %>% distinct()
-
+  
+  # set up table to record all data
+  record.cols = c('GTExTissue','methodDefiningVariantSet', 'nVariants', 'predictionMethod','predictionRate')
+  df.record = data.frame('temp', 'temp', 1, 'temp', 1)
+  colnames(df.record) = record.cols
+    
   for (method.i in methods[[1]]){
     for (tissue.i in GTExTissues[[1]]){
       #df.specific = data.frame(matrix(ncol=4,nrow=0, dimnames=list(NULL)))
       df.specific = data.frame('temp','temp','temp',1)
-      key = paste0(method.i, "/", tissue.i)
+      key = paste0(method.i, "/eGenePrediction/", tissue.i)
       #temp = tables[str_detect(tables, method.i)]; temp = temp[str_detect(temp, tissue.i)]
       temp = tables[str_detect(tables, key)] 
       if (nrow(as.data.frame(temp))>0) { # if this method has predictions for this tissue
@@ -90,15 +93,19 @@ main <- function() {
         # add prediction rates for each method 
         for (x in tables.tissue){
           t = read.table(file=x, header=TRUE, stringsAsFactors=FALSE)
-
-          this.method = str_split(x, '/')[[1]]; this.method = this.method[length(this.method)-1]
+          
+          # add data to specific df for plotting
+          this.method = str_split(x, '/')[[1]]; this.method = this.method[length(this.method)-2]
           t = suppressMessages(left_join(var.set, t))
           rate = nrow(filter(t, predictionClass=='inEnhancer-correctGene'))/nrow(t)
           metric.name = paste0("Prediction rate given variant\nin enhancer (", this.method, ")" )
           colnames(df.specific) = c("GTExTissue", "metric", "method","value")
           df.specific = add_row(df.specific, GTExTissue=tissue.i, metric=metric.name, method=this.method, value=rate)
-          #df.specific = rbind(df.specific, c(tissue.i, metric.name, this.method, rate))
-          print('Check3')
+          
+          # add data to recording df
+          df.record = add_row(df.record, GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
+                              nVariants=nrow(var.set), predictionMethod=this.method, 
+                              predictionRate=rate)
         }
         df.specific = filter(df.specific, GTExTissue!='temp')
     
@@ -110,10 +117,14 @@ main <- function() {
         closest.TSS.rate = nrow(filter(t, closestTSS==eGene))/nrow(t)
         nearby.TSS.rate = nrow(filter(t, nearbyTSS==TRUE))/nrow(t)
         
-        df.specific = add_row(df.specific, GTExTissue=tissue.i, metric="Closest gene body", method="Proximity", value=closest.gene.rate) %>% add_row(GTExTissue=tissue.i, metric="Closest TSS", method="Proximity", value=closest.TSS.rate) %>% add_row(GTExTissue=tissue.i, metric="Any TSS within 100 kb", method="Proximity", value=nearby.TSS.rate)
-        #df.specific = rbind(df.specific, c(tissue.i, "Closest gene body","Proximity", closest.gene.rate)) %>% rbind(c(tissue.i, "Closest TSS", "Proximity", closest.TSS.rate)) %>% rbind(c(tissue.i, "Any TSS within 100 kb", "Proximity", nearby.TSS.rate))
-        print('Check4')
         
+        df.specific = add_row(df.specific, GTExTissue=tissue.i, metric="Closest gene body", method="Proximity", value=closest.gene.rate) %>% add_row(GTExTissue=tissue.i, metric="Closest TSS", method="Proximity", value=closest.TSS.rate) %>% add_row(GTExTissue=tissue.i, metric="Any TSS within 100 kb", method="Proximity", value=nearby.TSS.rate)
+        df.record = add_row(df.record, GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
+      nVariants=nrow(var.set), predictionMethod='Closest gene', predictionRate=closest.gene.rate) %>%
+          add_row(df.record, GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
+                  nVariants=nrow(var.set), predictionMethod='Closest TSS', predictionRate=closest.TSS.rate) %>%
+          add_row(df.record, GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
+                  nVariants=nrow(var.set), predictionMethod='Any TSS within 100 kb', predictionRate=nearby.TSS.rate)
         # graph
         df.specific$value=as.numeric(df.specific$value)
         nVar = nrow(var.set); 
@@ -126,11 +137,15 @@ main <- function() {
                 plot.title= element_text(size=14),
                 legend.position='none')
         
-        file.name = paste0(outDir, "/", tissue.i, ".", method.i, "Enhancers.variantOverlapSensitivity.pdf")
+        file.name = paste0(outDir, "/sensitivityPlots/", tissue.i, ".", method.i, "Enhancers.variantOverlapSensitivity.pdf")
         pdf(file=file.name,width=8,height=5); print(g.specific); dev.off()
       
       }
+      
     }
   }
+  
+  df.record = filter(df.record, GTExTissue!='temp')
+  write.table(df.record, file=paste0(outDir, "/sensitivitiesTable.tsv"), row.names=FALSE, col.names=TRUE, quote=FALSE)
 }
 main()

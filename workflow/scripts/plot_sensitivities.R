@@ -134,6 +134,6 @@ main <- function() {
   }
   
   df.record = filter(df.record, GTExTissue!='temp')
-  write.table(df.record, file=paste0(outDir, "/sensitivitiesTable.tsv"), row.names=FALSE, col.names=TRUE, quote=FALSE)
+  write.table(df.record, file=paste0(outDir, "/sensitivitiesTable.tsv"), sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE)
 }
 main()

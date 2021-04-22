@@ -5,8 +5,7 @@ dependencies:
  - r-optparse
  - r-egg
  - r-dt
- - r-bookdown
- - r-pander
+ - bioconductor-biomart
  - plotly
  - r-heatmaply
  - cairo

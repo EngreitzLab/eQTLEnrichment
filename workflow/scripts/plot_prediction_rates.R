@@ -58,24 +58,20 @@ main <- function() {
       denom = dplyr::select(predTable, chr, start, end, nEnhancers) %>% distinct() 
       PPV = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/(sum(denom$nEnhancers))
       
-      df = rbind(df, c(tissue, "Prediction rate given\nvariant in enhancer", method, prediction.rate.GivenEnhancer)) %>%
-        rbind(c(tissue, "% variants in\nany enhancer", method, prediction.rate.inEnhancer)) %>%
+      df = rbind(df, c(tissue, "Prediction rate given \nvariant in enhancer", method, prediction.rate.GivenEnhancer)) %>%
+        rbind(c(tissue, "% variants in \nany enhancer", method, prediction.rate.inEnhancer)) %>%
         rbind(c(tissue, "Prediction rate", method, prediction.rate.total)) %>%
         rbind(c(tissue, "Positive predictive value", method, PPV))
     }
     
     df$value=as.numeric(df$value)
     df$GTExTissue=as.factor(df$GTExTissue)
-    #df$metric = factor(df$metric); df$metric=factor(df$metric, levels = levels(df$metric)[c(2,3,6,1,4,5)])
-
-    # graph all stats
-    # g = ggplot(df, aes(x=metric, y=value, fill=method)) + geom_bar(stat="identity", position="dodge", width=0.5) + facet_grid(GTExTissue~.) + theme_minimal() + theme(axis.text.x = element_text(angle = 60,hjust=1)) + ylim(0,1)
-    
+  
     # graph variant capture, prediction rate across all methods and tissues
-    small.rates = filter(df, metric %in% c("% variants in\nany enhancer","Prediction rate"))
+    small.rates = filter(df, metric %in% c("% variants in \nany enhancer","Prediction rate"))
     small.rates$metric = plyr::revalue(small.rates$metric, 
-                                       c("% variants in\nany enhancer"="Overlaps predicted\nenhancer",
-                                         "Prediction rate"="Overlaps predicted enhancer\nlinked to correct gene"))
+                                       c("% variants in \nany enhancer"="Overlaps predicted \nenhancer",
+                                         "Prediction rate"="Overlaps predicted enhancer \nlinked to correct gene"))
     sr = ggplot(small.rates, aes(x=metric, y=value, fill=method)) + 
       geom_bar(stat="identity", position="dodge", width=0.5) + 
       facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + 
@@ -100,7 +96,8 @@ main <- function() {
     pdf(file=outFile.PPV,width=8,height=nrow(GTExTissues)*2); print(ppv); dev.off()
     
     # print table
-    write.table(df, file=paste0(outDir, "/predictionMetrics.tsv"), row.names=FALSE, col.names=TRUE, quote=FALSE)
+    df$metric = str_remove(df$metric, "\n")
+    write.table(df, file=paste0(outDir, "/predictionMetrics.tsv"), sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE)
     
 }
 

@@ -72,7 +72,7 @@ rule filter_all_variants:
 			awk '$4=="ABC" || $4=="AllPeaks" || $4=="Other" || $4=="OtherIntron"' {input.partition} | sort -k1,1 -k2,2n > {output.partitionDistalNoncoding}
 			
 			# filter GTEx variants by SUSIE, credible set, PIP0.5; print set of columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP); then filter to distal noncoding
-			zcat {input.GTExVariants} | awk '$16>=0.5 && $17 != -1  && $9 == "SUSIE"' | cut -f1-4,10,11,16 | sort -k1,1 -k2,2n | uniq | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} > gzip > {output.filteredGTExVar}
+			zcat {input.GTExVariants} | awk '$16>=0.5 && $17 != -1  && $9 == "SUSIE"' | cut -f1-4,10,11,16 | sort -k1,1 -k2,2n | uniq | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} | gzip > {output.filteredGTExVar}
 
 			# filter common variants to distal noncoding
 			cat {input.commonVar} | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} | gzip > {output.commonVarDistalNoncoding}

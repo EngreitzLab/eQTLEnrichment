@@ -11,7 +11,7 @@ TSS: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqC
 
 ## TISSUE- AND METHOD-SPECIFIC PARAMETERS
 # list of methods to run
-methods: [ABCShrunk500]
+methods: [ABCShrunk500, ChromHMM2017]
 GTExTissues: [Brain_Cortex, Prostate, Muscle_Skeletal, Artery_Tibial, Skin_Not_Sun_Exposed_Suprapubic, Esophagus_Muscularis, Brain_Cerebellum, Pituitary, Adipose_Subcutaneous, Pancreas, Spleen, Adrenal_Gland, Testis, Lung, Skin_Sun_Exposed_Lower_leg, Heart_Atrial_Appendage, Adipose_Visceral_Omentum, Esophagus_Mucosa, Thyroid, Brain_Nucleus_accumbens_basal_ganglia, Colon_Sigmoid, Breast_Mammary_Tissue, Artery_Aorta, Cells_EBV-transformed_lymphocytes, Heart_Left_Ventricle, Artery_Coronary, Esophagus_Gastroesophageal_Junction, Nerve_Tibial, Liver, Whole_Blood, Colon_Transverse, Stomach]
 
 # GTEx expression data

@@ -31,6 +31,7 @@ library(DT)
 library(viridis)
 library(htmltools)
 library(reactable)
+library(egg)
 
 # input arguments
 tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
@@ -140,6 +141,8 @@ for (i in 1:length(methods)) {
   table.current$Biosample=table.current$BiosampleName
   table.current=dplyr::select(table.current,-BiosampleName)
   cat("  \n")
+  cat("  \n")
+  cat("  \n")
   
   cat(knitr::knit_print(reactable(table.current, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE,
                                   defaultPageSize=5, resizable=TRUE)))
@@ -192,7 +195,7 @@ cat(knitr::knit_print(ggplotly(m, tooltip='text')))
 ```
 
 # Prediction of variant eGenes
-```{r}
+```{r predictionGraphs, echo=FALSE}
   df = read.table(predictionMetricsFile, header=TRUE, sep='\t') %>%
   setNames(c('GTExTissue','metric', 'predictionMethod', 'value')) %>%
   arrange(GTExTissue, predictionMethod, metric, value)
@@ -200,13 +203,12 @@ cat(knitr::knit_print(ggplotly(m, tooltip='text')))
  # graph variant capture, prediction rate across all methods and tissues
   small.rates = filter(df, metric %in% c("% variants in any enhancer","Prediction rate"))
   small.rates$metric = plyr::revalue(small.rates$metric, 
-                                       c("% variants in \any enhancer"="Overlaps predicted enhancer",
+                                       c("% variants in any enhancer"="Overlaps predicted enhancer",
                                          "Prediction rate"="Overlaps predicted enhancer linked to correct gene"))
-  sr = ggplot(small.rates, aes(x=metric, y=value, fill=method)) + 
+  sr = ggplot(small.rates, aes(x=metric, y=value, fill=predictionMethod)) + 
     geom_bar(stat="identity", position="dodge", width=0.5) + 
     facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + 
-    theme(text = element_text(size = rel(4)), axis.text.y=element_text(size=rel(2.5)),
-          legend.text=element_text(size=rel(2.5))) +
+#    theme(text = element_text(size = rel(1)), axis.text.y=element_text(size=rel(0.75)), legend.text=element_text(size=rel(1))) +
     scale_fill_viridis(discrete=TRUE,option='viridis',name='Method')
   
 ggplotly(sr)
@@ -215,20 +217,27 @@ ggplotly(sr)
 df.ppv = filter(df, metric=="Positive predictive value")
     
 #reorder method factor for graphing
-df.ppv$method=as.factor(df.ppv$method); 
+df.ppv$method=as.factor(df.ppv$predictionMethod); 
 
-ppv = ggplot(df.ppv, aes(x=method, y=value, fill=method)) +  
+ppv = ggplot(df.ppv, aes(x=method, y=value, fill=predictionMethod)) +  
   geom_bar(stat="identity", position="dodge", width=0.5) + 
   facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Positive predictive value') + 
-      theme(text = element_text(size = rel(4)),axis.text.x = element_text(angle=60,hjust=1), legend.position='none') + 
+      theme(axis.text.x = element_text(angle=60,hjust=1), legend.position='none') + 
       scale_fill_viridis(discrete=TRUE,option='viridis')
 
 ggplotly(ppv)
 
 ```
 
+```{r, include=FALSE}
+  cat(knitr::knit_print(reactable(matrix())))
+```
+
 ## Prediction metrics
 ```{r predMetricsTable, results='asis', echo=FALSE}
+  cat("  \n")
+  cat("  \n")
+  cat("  \n")
 
   cat(knitr::knit_print(reactable(df, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE,
                                   defaultPageSize=5, resizable=TRUE)))
@@ -241,11 +250,19 @@ ggplotly(ppv)
 ## Sensitivities
 ```{r sensitivitiesTable, results='asis', echo=FALSE}
 
+
+
+cat('test before\n')
+
+
   metrics = read.table(sensitivitiesFile, header=TRUE, sep='\t')
   #print(htmltools::tagList(datatable(metrics, rownames = FALSE, filter="top",options=list(pageLength = 10, scrollX=T))))
   cat(knitr::knit_print(reactable(metrics, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE,
                                   defaultPageSize=5, resizable=TRUE)))
-
+  
+  
+  
+cat('test after\n')
   cat("  \n")
   cat("  \n")
 

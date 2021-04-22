@@ -50,7 +50,7 @@ main <- function() {
     for (fileName in tables){
       predTable = read.table(file=fileName, header=TRUE, stringsAsFactors=FALSE)
       tissue = str_split(fileName, '/')[[1]]; tissue = tissue[length(tissue)] %>% str_split(pattern='\\.'); tissue = tissue[[1]][1]
-      method = str_split(fileName, '/')[[1]]; method = method[length(method)-1]
+      method = str_split(fileName, '/')[[1]]; method = method[length(method)-2]
       
       prediction.rate.GivenEnhancer = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(filter(predTable,predictionClass!='noOverlap'))
       prediction.rate.total = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(predTable)

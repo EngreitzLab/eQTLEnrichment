@@ -43,7 +43,7 @@ rule sort_predictions:
 			zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType,TargetGene | sed 1d | sort -k1,1 -k2,2n > {params.outDir}/{wildcards.method}/temp.sortedPred.tsv
 			
 			# filter predictions to gene universe
-			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/temp.sortedPred.tsv --col 5 --genes {input.geneUniverse} --id hgnc | gzip > {output.predictionsSorted}
+			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/temp.sortedPred.tsv --col 4 --genes {input.geneUniverse} --id hgnc | gzip > {output.predictionsSorted}
 			
 			rm {params.outDir}/{wildcards.method}/temp.sortedPred.tsv
 			

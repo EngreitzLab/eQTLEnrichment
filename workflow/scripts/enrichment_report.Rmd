@@ -153,7 +153,7 @@ for (i in 1:length(methods)) {
   #                      'Variants per\nGTEx tissue','Common variants\noverlapping enhancers',
   #                      'Enrichment'))))
   
-  cat(print(reactable(table.current, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE)))
+  cat(knitr::knit_print(reactable(table.current, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE)))
 
   cat("  \n")
   cat("  \n")
@@ -209,7 +209,7 @@ htmltools::tagList(reactable(matrix()))
 ```
 
 ## Prediction metrics
-```{r, echo=FALSE}
+```{r, include=as.is, echo=FALSE}
 
   metrics = read.table(predictionMetricsFile, header=TRUE, sep='\t')
   print(reactable(metrics, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE))
@@ -227,7 +227,7 @@ htmltools::tagList(DT::datatable(matrix()))
 
   metrics = read.table(sensitivitiesFile, header=TRUE, sep='\t')
   #print(htmltools::tagList(datatable(metrics, rownames = FALSE, filter="top",options=list(pageLength = 10, scrollX=T))))
-  cat(knit_print(reactable(metrics, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE)))
+  cat(knitr::knit_print(reactable(metrics, striped=TRUE, highlight=TRUE, searchable=TRUE, filterable=TRUE)))
 
   cat("  \n")
   cat("  \n")

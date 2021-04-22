@@ -1,0 +1,58 @@
+---
+title: "eQTL prediction analysis"
+author: "Maya Sheth"
+date: "4/1/2021"
+output: html_document
+---
+```{css echo=FALSE}
+
+.main-container {
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+```
+
+
+```{r setup, include=FALSE, echo=FALSE}
+
+knitr::opts_chunk$set(error = TRUE)
+
+# load libraries
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(heatmaply)
+library(tidyr)
+library(forcats)
+library(plotly)
+library(stringr)
+library(DT)
+library(pander)
+library(viridis)
+
+# input arguments
+tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
+varPerTissue = (snakemake@input$variantsPerGTExTissue) %>% read.table(header=FALSE)
+colnames(varPerTissue) = c('GTExTissue','nVariants')
+methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
+```
+
+## Sensitivity of enhancer prediction methods to detecting eQTLs in matching tissues detecting
+Sensitivity: fraction of variants from a given GTEx tissue that overlap a predicted enhancer for a matching cell type  
+Prediction rate: number of variants from a given GTEx tissue that overlap a predicted enhancer that is linked to the variant's eGene for a matching cell type 
+
+```{r varPerTissue, echo=FALSE, fig.width=12}
+varPerTissue$GTExTissue = fct_reorder(varPerTissue$GTExTissue, varPerTissue$nVariants, min)
+g = ggplot(varPerTissue, aes(x=GTExTissue, y=nVariants)) + geom_bar(stat='identity', width=0.5) + 
+  theme_minimal() + ylab('# variants in \n GTEx tissue') +  xlab('') +
+  theme(axis.text.x = element_text(angle=60, hjust=1), 
+        axis.text=element_text(size=rel(.75)), 
+        axis.title=element_text(size=rel(1)))
+ggplotly(g)
+
+
+```
+
+\
+

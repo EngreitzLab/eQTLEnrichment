@@ -14,11 +14,6 @@ main <- function() {
   
   opt = parse_args(OptionParser(option_list=option_list))
   inFile=opt$input; col = opt$col; ABC.gene.file=opt$genes; idType=opt$id
-  
-  # read dataframe
-  #df = readLines(con = file("stdin")) %>% as.data.frame()
-  #nCols = str_count(df[1,], '\t') + 1
-  #df = separate(df, col='.',into=as.character(1:nCols),sep="\t")
 
   df = read.table(inFile, header=FALSE)
   

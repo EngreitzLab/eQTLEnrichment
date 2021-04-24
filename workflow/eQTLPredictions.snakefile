@@ -43,7 +43,6 @@ rule all:
 		variantsPredictionsInt = expand(os.path.join(config["outDir"], "{method}", "GTExVariants-enhancerPredictionsInt.tsv.gz"), method=config["methods"]),
 		countMatrix = expand(os.path.join(config["outDir"], "{method}", "countMatrix.tsv"), method=config["methods"]),
 		variantsPerGTExTissue = expand(os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"), method=config["methods"]),
-		commonVarPredictionsInt = expand(os.path.join(config["outDir"], "{method}/commonVarPredictionsInt.tsv"), method=config["methods"]),
 		commonVarPerBiosample = expand(os.path.join(config["outDir"], "{method}", "commonVarPerBiosample.tsv"), method=config["methods"]),
 		enrichmentTable = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"), method=config["methods"]),
 		#basesPerEnhancerSet = expand(os.path.join(config["outDir"], "{method}/basesPerEnhancerSet.tsv"), method=config["methods"]),

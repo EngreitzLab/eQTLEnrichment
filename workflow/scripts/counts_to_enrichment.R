@@ -22,12 +22,10 @@ suppressPackageStartupMessages({library(dplyr)
   biosamples = read.table(biosampleFile, header=FALSE, stringsAsFactors=FALSE)
   # each row = biosample, each col = tissue
 	countMatrix = read.table(countFile, header=TRUE, stringsAsFactors=FALSE)
-	#countMatrix$Biosample = biosamples[[1]]
-	#colnames(countMatrix) = c(GTExTissues, 'Biosample')
 
 	# common variants by tissue/biosample
 	commonVarPerBiosample = read.table(commonVarFile, header=FALSE,stringsAsFactors=FALSE)
-	colnames(commonVarPerBiosample) = c('Biosample', 'nCommonVariantsOverlappingEnhancers')
+	colnames(commonVarPerBiosample) = c('nCommonVariantsOverlappingEnhancers','Biosample')
 
 	# variants by tissue
 	variantsByGTExTissue = read.table(varPerGTExTissueFile, header=FALSE, stringsAsFactors=FALSE); 

@@ -199,27 +199,13 @@ rule compute_common_var_overlap:
 		outDir = config["outDir"],
 		codeDir = config["codeDir"]
 	output:
-		commonVarPerBiosample = os.path.join(config["outDir"], "{method}", "commonVarPerBiosample.tsv"),
-		commonVarPredictionsInt = os.path.join(config["outDir"], "{method}", "commonVarPredictionsInt.tsv")
+		commonVarPerBiosample = os.path.join(config["outDir"], "{method}", "commonVarPerBiosample.tsv")
 	run:
 		shell(
 			"""			
 			set +o pipefail;
-			
-			# intersect common variants with predictions
-			# output columns: (1-3) common variant loc, (4) common variant rsid, (5-7) enhancer loc, (8) cell type, (9) target gene
-			zcat {input.commonVarDistalNoncoding} > {params.outDir}/{wildcards.method}/tempCommonVar.tsv
-			zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {params.outDir}/{wildcards.method}/tempCommonVar.tsv -b stdin > {output.commonVarPredictionsInt}
-			
-			# get common variants: biosample/celltype followed by count
-			biosamples=$(awk 'BEGIN {{ ORS=" " }} {{ print }}' {input.samples})
-			for sample in $biosamples
-			do	
-				printf $sample'\\t' >> {output.commonVarPerBiosample}
-				cat {output.commonVarPredictionsInt} | awk -v awkvar=$sample '$8==awkvar' | wc -l >> {output.commonVarPerBiosample}
-			done
-			
-			rm {params.outDir}/{wildcards.method}/tempCommonVar.tsv
+					
+			zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a stdin -b {input.commonVarDistalNoncoding}| cut -f 4 | sort | uniq -c > {output.commonVarPerBiosample}
 			""")
 		
 # compute number of base pairs in each enhancer set

@@ -27,11 +27,9 @@ library(tidyr)
 library(forcats)
 library(plotly)
 library(stringr)
-library(DT)
 library(viridis)
 library(htmltools)
 library(reactable)
-library(egg)
 
 # input arguments
 tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
@@ -54,7 +52,7 @@ The following analyses use the [version 8 GTEx Consortium data](https://science.
 
 The following shows the number of variants in each of the GTEx tissues that were used. [Why is this important?] 
 
-```{r varPerTissue, echo=FALSE, fig.width=10}
+```{r varPerTissue, echo=FALSE, fig.width=10, fig.cap=cap}
 # aggregate data
   var.all = read.table(file=varPerTissue[1], header=TRUE, stringsAsFactors=FALSE)
   var.all$method = methods[1]
@@ -77,6 +75,8 @@ g = ggplot(var.all, aes(x=GTExTissue, y=nVariants)) + geom_point() +
   ylim(0,max(var.all$nVariants))
 ggplotly(g)
 
+cap = "Fig. 1. Number of distinct distal noncoding, fine-mapped GTEx variants in a credible set with a posterior threshold greater than 0.5 in each GTEx tissue."
+
 
 ```
 
@@ -86,7 +86,7 @@ First, we consider how the distribution of eQTLs overlaps with predicted enhance
 E(G,B) = [(# variants in G overlapping enhancers in B)/(# variants in G)]/[(# common variants overlapping enhancers in B)/(total common variants)]. The enrichment tables showing the value used to derive the enrichment at each intersection are included below. 
 
 The distribution of enrichment values were compared by plotting the cumulative density function for each method. The curves shifted furthest to the right had larger proportions of higher enrichment values, suggesting stronger specificity at predicting the regions where variants are concentrated.
-```{r cdf, echo=FALSE, warning=FALSE}
+```{r cdf, echo=FALSE, warning=FALSE, fig.cap=cap}
 
 # aggregate data
   enr.all = read.table(tables[1], header=TRUE, stringsAsFactors = FALSE, fill = TRUE) %>% drop_na()
@@ -111,10 +111,12 @@ The distribution of enrichment values were compared by plotting the cumulative d
       theme()
   ggplotly(cdf)
   
+  cap = "Fig. 2. Cumulative density function graph showing distribution of enrichment values at each GTEx tissue/biosample intersections across the different enhancer-gene prediction methods. The enrichment E of variants from each GTEx tissue, G, in enhancers for each biosample, B, included in the prediction dataset was computed as:
+E(G,B) = [(# variants in G overlapping enhancers in B)/(# variants in G)]/[(# common variants overlapping enhancers in B)/(total common variants)]. "
 ```
 
 Comparing the distribution of enrichment values between prediction methods, we can see whether the strongest enrichments occur between matching biosamples and tissues, which suggests that the method can make cell-type specific predictions.
-```{r boxPlot, warning=FALSE, echo=FALSE}
+```{r boxPlot, warning=FALSE, echo=FALSE, fig.cap=cap}
 
 bp = ggplot(enr.all, aes(x=method, y=enrichment, fill=method, 
                          text=paste("GTExTissue:",GTExTissue,"\nBiosample:", BiosampleName,"\nEnrichment:", enrichment))) +
@@ -126,6 +128,7 @@ bp = ggplot(enr.all, aes(x=method, y=enrichment, fill=method,
 
 ggplotly(bp, tooltip='text')
 
+cap = "Fig. 3. Boxplots showing distribution of enrichment values for each enhancer-gene prediction method. Enrichment values were calculated as described above."
 ```
 
 
@@ -160,7 +163,7 @@ for (i in 1:length(methods)) {
 
 ## Enrichment heat maps {.tabset}
 Heat maps displaying enrichment values at each GTEx tissue/biosample intersection. As the order on each axis was determined by clustering, we expect similar biosamples and tissues to be located near each other. Areas of the heat map with more yellow indicate stronger enrichment. 
-```{r heatMaps, echo=FALSE, results='asis', fig.height=12}
+```{r heatMaps, echo=FALSE, results='asis', fig.height=12, fig.cap=cap}
 
 for (i in 1:length(methods)) {
   cat("  \n###",  methods[i], "  \n")
@@ -177,6 +180,8 @@ for (i in 1:length(methods)) {
                                                          limits =c(1,max.color), oob=scales::squish))))
   cat("  \n")
   cat("  \n")
+  
+  cap = "Fig. 4. Heat map displaying enrichment at every GTEx tissue/biosample intersection for each prediction method. Both the x- and y- axes were clustered using the Euclidean distance measure and the average linkage function."
 }
 ```
 
@@ -193,10 +198,14 @@ for (i in 1:length(methods)) {
               theme_minimal() + ylab(enrLabel) + xlab('') + ylim(0, max.enr) +
               scale_fill_viridis(discrete=TRUE, option='plasma') + 
               theme(legend.position='none', axis.text.x=element_text(angle=60,hjust=1))
-cat(knitr::knit_print(ggplotly(m, tooltip='text')))
   
+  mp = ggplotly(m, tooltip='text') %>% layout(margin = list(b = 160), xaxis = list(tickangle = -60))
+  cat(knitr::knit_print(ggplotly(mp)))
+
   cat("  \n")
   cat("  \n")
+  cap = "Fig. 5. Boxplots showing enrichment values for each method stratified by GTEx tissue."
+  cat(cap, " \n \n")
 }
 ```
 
@@ -204,7 +213,7 @@ cat(knitr::knit_print(ggplotly(m, tooltip='text')))
 The enhancer-gene prediction methods can also be evaluated on how well they predict the effect of fine-mapped GTEx eQTLs. The following metrics were calculated for several pairs of matching biosamples and GTEx tissues. First, we assess the sensitvity of methods by comparing the fraction of variants from a tissue that fall in enhancers predicted in a matching biosample (left), and the fraction of variants that fall in an enhancer linked to the variant's eGene (right).  
 
 
-```{r predictionGraph, echo=FALSE, fig.width=9}
+```{r predictionGraph, echo=FALSE, fig.width=9, fig.cap=cap}
 
 df = read.table(predictionMetricsFile, header=TRUE, sep='\t') %>%
   setNames(c('GTExTissue','metric', 'predictionMethod', 'value')) %>%
@@ -222,8 +231,9 @@ df$GTExTissue=df$GTExName
     facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + theme(axis.text.y=element_text(hjust=1))+
     scale_fill_viridis(discrete=TRUE,option='viridis',name='Method') + ylim(0,0.2)
   
-#ggplotly(sr)
   print(sr)
+  cap = "Fig. 6. Bar plots showing: the fraction of fine-mapped, distal noncoding eQTL variants with a posterior threshold greater than 0.5 from a certain GTEx tissue that overlap any predicted enhancers in a matching cell type (left), and the fraction of variants overlapping predicted enhancers linked to the variant's eGene (right)."
+  
 ```
 
 Next, we compare the the specificity of the methods in  predicting variant-gene links by calculating the positive predictive value (PPV). It is important to note that since the eQTL dataset does not represent a complete list of "true positive" variant-gene links, the PPV should be interpreted with caution here. However, it provides a useful metric to compare the relative performance of methods. 
@@ -231,7 +241,7 @@ Next, we compare the the specificity of the methods in  predicting variant-gene 
 In this analysis, we first noted that 1) a single variant may be connected to multiple eGenes, and 2) each enhancer prediction may be connected to multiple target genes. Each variant and all of its associated eGenes is considered as a unit, while each enhancer-target gene link is considered as a distinct prediction. A correct prediction is defined as an enhancer-target gene pair that contains a variant linked to the same gene, and PPV was calculated as: PPV = (# correct predictions)/(# total predictions). As a point of reference, the PPV of predicting that a variant is linked to every gene with a transcription start site within 100 kb was included for each tissue.  
 
 
-```{r ppvGraph, echo=FALSE, fig.width=9}
+```{r ppvGraph, echo=FALSE, fig.width=9, fig.cap=cap}
 # graph positive predictive value
 df.ppv = filter(df, metric=="Positive predictive value")
     
@@ -245,9 +255,8 @@ ppv = ggplot(df.ppv, aes(x=method, y=value, fill=predictionMethod)) +
       theme(axis.text.x = element_text(angle=60,hjust=1), legend.position='none', axis.text.y=element_text(hjust=1)) + 
       scale_fill_viridis(discrete=TRUE,option='viridis') + ylim(0,1)
 
-# ggplotly(ppv)
 print(ppv)
-
+cap="Fig. 7. Bar plots showing the positive predictive value (PPV) for each method for linking a variant to its eGene. Each variant and all of its associated eGenes were considered a unit, and each enhancer-target gene connection for an enhancer overlapping a variant was considered as a single prediction. PPV was thus calculated as (# correct predictions)/(# total predictions). The PPV for the proximity-based method of linking a variant to every gene with a TSS within 100 kb of the variant was calculated as (# variants with eGene having a TSS within 100 kb)/(sum of # TSSs within 100 kb of each variants)."
 ```
 
 ```{r, include=FALSE}
@@ -286,21 +295,13 @@ cat(knitr::knit_print(reactable(df.metric, striped=TRUE, searchable=TRUE, filter
           columns = list(GTExTissue = colDef(name = "GTEx tissue"),
                           predictionMethod = colDef(name = "Prediction method")))))
 
-  
-  # cat(knitr::knit_print(reactable(df, striped=TRUE, searchable=TRUE, filterable=TRUE,
-  #                                 defaultPageSize=5, resizable=TRUE,
-  #         columns = list(GTExTissue = colDef(name = "GTEx tissue"),
-  #                        predictionMethod = colDef(name = "Prediction method"),
-  #                        metric = colDef(name = "Metric"),
-  #                        value = colDef(name="Value", maxWidth=100,format=colFormat(digits=2))))))
-  # 
   cat("  \n")
   cat("  \n")
 
 ```
 
 ## Sensitivities
-The following table includes the prediction rate of a method in linking a variant to the correct eGene, given the set of variants that fall in enhancers for a given method. If a variant in this set is not predicted to be in an enhancer for the method being evaluated, it was assumed to be an incorrect prediction.
+The following table includes the prediction rate of a method in linking a variant to the correct eGene, given the set of variants that fall in enhancers for a given method. If a variant in this set is not predicted to be in an enhancer for the method being evaluated, it was assumed to be an incorrect prediction. The large variance in prediction rate depending on which method is used to define the variant set is likely because the different prediction methods usually capture distinct variants.  
 ```{r sensitivitiesTable, results='asis', echo=FALSE, fig.width=7, fig.height=5}
 
   metrics = read.table(sensitivitiesFile, header=TRUE, sep='\t') %>%

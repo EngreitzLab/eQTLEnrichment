@@ -199,7 +199,7 @@ for (i in 1:length(methods)) {
               scale_fill_viridis(discrete=TRUE, option='plasma') + 
               theme(legend.position='none', axis.text.x=element_text(angle=60,hjust=1))
   
-  mp = ggplotly(m, tooltip='text') %>% layout(margin = list(b = 160), xaxis = list(tickangle = -60))
+  mp = ggplotly(m, tooltip='text') %>% layout(margin = list(b = 200), xaxis = list(tickangle = -60))
   cat(knitr::knit_print(ggplotly(mp)))
 
   cat("  \n")
@@ -274,11 +274,11 @@ The following table includes prediction metrics across the different GTEx tissue
   df.table = df
  for (i in 1:nrow(df.table)){
    if (df.table$predictionMethod[i]=="Proximity"){
-     if (df.table$predictionMethod[i]=="Positive predictive value"){
+     if (df.table$metric[i]=="Positive predictive value"){
        df.table$predictionMethod[i] = "TSS within 100 kb"
      } else {
         df.table$predictionMethod[i] = df.table$metric[i]
-        df.table$predictionMethod[i] = "Recall"
+        df.table$metric[i] = "Recall"
      }
    }
  }

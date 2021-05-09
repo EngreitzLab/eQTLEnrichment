@@ -3,7 +3,8 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
   library(optparse)
-  library(stringr)})
+  library(stringr)
+  library(gdata)})
 
 
 main <- function() {
@@ -21,7 +22,8 @@ main <- function() {
   
   for (i in 1:nrow(variants)) {
     temp = filter(TSSint, unique_id==variants$unique_id[i])
-    variants$nearbyTSS[i] = is.element(variants$eGene[i], temp$closeTSS)     
+    #variants$nearbyTSS[i] = is.element(variants$eGene[i], temp$closeTSS)
+    variants$nearbyTSS[i] = (any(gdata::startsWith(str=temp$closeTSS, pattern=variants$eGene[i])))
     variants$nTSSnear[i] = nrow(temp)
   }
   

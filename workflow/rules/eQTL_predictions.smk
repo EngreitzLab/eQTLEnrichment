@@ -54,20 +54,20 @@ rule add_proximal_genes:
 		set +o pipefail;
 		
 		# filter TSS to gene universe
-		Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.TSS} --col 4 --id hgnc --genes {input.geneUniverse} > {params.outDir}/{wildcards.method}/eGenePrediction/temp.TSS.tsv
+		Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.TSS} --col 4 --id hgnc --genes {input.geneUniverse} > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.TSS.tsv
 		
 		# get list of distinct variants, expand variant +/- 100 kb, intersect with location of all TSS; end up with following columns: (1) variant unique ID, (2) gene with TSS within 100 kb
-		cat {input.variantsByTissue} | cut -f 1-4 | sort -k 1,1 -k2,2n | uniq | bedtools slop -i stdin -b 100000 -g {params.chrSizes} | bedtools intersect -wa -wb -a stdin -b {params.outDir}/{wildcards.method}/eGenePrediction/temp.TSS.tsv | cut -f 4,8 > {params.outDir}/{wildcards.method}/eGenePrediction/temp.100kbInterval.tsv
+		cat {input.variantsByTissue} | cut -f 1-4 | sort -k 1,1 -k2,2n | uniq | bedtools slop -i stdin -b 100000 -g {params.chrSizes} | bedtools intersect -wa -wb -a stdin -b {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.TSS.tsv | cut -f 4,8 > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.100kbInterval.tsv
 
 		# closest gene body (9), TSS (10), whether eGene has TSS within 100 kb (11)
 		# how to handle cases where two genes or TSSs are equidistant? currently reporting only first (can do all, but leads to variants being counted multiple times)
-		cat {input.variantsByTissue} | bedtools closest -t first -a stdin -b {input.geneUniverse} | cut -f 1-4,6,7,12 | bedtools closest -t first -a stdin -b {params.outDir}/{wildcards.method}/eGenePrediction/temp.TSS.tsv | cut -f  1-7,11 > {params.outDir}/{wildcards.method}/eGenePrediction/temp.closest.tsv
+		cat {input.variantsByTissue} | bedtools closest -t first -a stdin -b {input.geneUniverse} | cut -f 1-4,6,7,12 | bedtools closest -t first -a stdin -b {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.TSS.tsv | cut -f  1-7,11 > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.closest.tsv
 		
-		Rscript {params.codeDir}/TSS_close.R --variants {params.outDir}/{wildcards.method}/eGenePrediction/temp.closest.tsv --TSSint {params.outDir}/{wildcards.method}/eGenePrediction/temp.100kbInterval.tsv > {output.variantsByTissueProximal}
+		Rscript {params.codeDir}/TSS_close.R --variants {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.closest.tsv --TSSint {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.100kbInterval.tsv > {output.variantsByTissueProximal}
 		
-		rm {params.outDir}/{wildcards.method}/eGenePrediction/temp.TSS.tsv
-		rm {params.outDir}/{wildcards.method}/eGenePrediction/temp.100kbInterval.tsv
-		rm {params.outDir}/{wildcards.method}/eGenePrediction/temp.closest.tsv
+		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.TSS.tsv
+		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.100kbInterval.tsv
+		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.closest.tsv
 		
 		""")
 
@@ -108,13 +108,13 @@ rule make_prediction_table:
 		
 		# intersect predictions with relevant variants 
 		cat {input.variantsByTissueProximal} | cut -f 1-4 | sed 1d | sort -k 1,1 -k2,2n | uniq > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
-		cat {input.predictionsByBiosample} | bedtools intersect -wa -wb -a {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv -b stdin | cut -f 4,8 > {params.outDir}/{wildcards.method}/eGenePrediction/temp.predictionTargetGenes.tsv
+		cat {input.predictionsByBiosample} | bedtools intersect -wa -wb -a {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv -b stdin | cut -f 4,8 > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
 		
 		# classify variants	
-		Rscript {params.codeDir}/classify_enhancer_predictions.R --variants {input.variantsByTissueProximal} --pred {params.outDir}/{wildcards.method}/eGenePrediction/temp.predictionTargetGenes.tsv > {output.predTable}
+		Rscript {params.codeDir}/classify_enhancer_predictions.R --variants {input.variantsByTissueProximal} --pred {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv > {output.predTable}
 		
 		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
-		rm {params.outDir}/{wildcards.method}/eGenePrediction/temp.predictionTargetGenes.tsv
+		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
 		""")
 
 # generate plot of prediction rates across all methods and tissues

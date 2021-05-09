@@ -30,6 +30,7 @@ library(stringr)
 library(viridis)
 library(htmltools)
 library(reactable)
+library(egg)
 
 # input arguments
 tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
@@ -37,7 +38,15 @@ varPerTissue = (snakemake@input$variantsPerGTExTissue) %>% strsplit(" ") %>% unl
 methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
 predictionMetricsFile = (snakemake@input$predictionMetrics) 
 sensitivitiesFile = (snakemake@input$sensitivitiesTable) 
-GTExNameKey = data.frame(GTExTissue=c("Cells_EBV-transformed_lymphocytes", "Liver", "Thyroid"), GTExName=c("EBV-transformed\nlymphocytes", "Liver", "Thyroid"))
+
+
+df = read.table(predictionMetricsFile, header=TRUE, sep='\t') %>%
+  setNames(c('GTExTissue','metric', 'predictionMethod', 'value'))
+df[df=="Cells_EBV-transformed_lymphocytes"] = "LCLs"
+
+nTissues = data.frame(df$GTExTissue) %>% distinct() %>% nrow()
+ht = 1.5*nTissues
+
 ```
 
 
@@ -213,12 +222,7 @@ for (i in 1:length(methods)) {
 The enhancer-gene prediction methods can also be evaluated on how well they predict the effect of fine-mapped GTEx eQTLs. The following metrics were calculated for several pairs of matching biosamples and GTEx tissues. First, we assess the sensitvity of methods by comparing the fraction of variants from a tissue that fall in enhancers predicted in a matching biosample (left), and the fraction of variants that fall in an enhancer linked to the variant's eGene (right).  
 
 
-```{r predictionGraph, echo=FALSE, fig.width=9, fig.cap=cap}
-
-df = read.table(predictionMetricsFile, header=TRUE, sep='\t') %>%
-  setNames(c('GTExTissue','metric', 'predictionMethod', 'value')) %>%
-  left_join(GTExNameKey, by=c("GTExTissue"))
-df$GTExTissue=df$GTExName
+```{r predictionGraph, echo=FALSE, fig.width=9, fig.height=ht, fig.cap=c(cap1, cap2)}
 
  # graph variant capture, prediction rate across all methods and tissues
   small.rates = filter(df, metric %in% c("% variants in any enhancer","Prediction rate"))
@@ -227,21 +231,44 @@ df$GTExTissue=df$GTExName
                                          "Prediction rate"="Overlaps predicted enhancer \nlinked to correct gene"))
   sr = ggplot(small.rates, aes(x=metric, y=value, fill=predictionMethod)) + 
     geom_bar(stat="identity", position="dodge", width=0.8) + 
-     geom_text(aes(label = round(value,2)), vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
+     geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
     facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + theme(axis.text.y=element_text(hjust=1))+
     scale_fill_viridis(discrete=TRUE,option='viridis',name='Method') + ylim(0,0.2)
   
-  print(sr)
-  cap = "Fig. 6. Bar plots showing: the fraction of fine-mapped, distal noncoding eQTL variants with a posterior threshold greater than 0.5 from a certain GTEx tissue that overlap any predicted enhancers in a matching cell type (left), and the fraction of variants overlapping predicted enhancers linked to the variant's eGene (right)."
+  # graph prediction rate given variant is in enhancer
+  pred.rate = filter(df, metric!="Positive predictive value", metric!="Prediction rate", metric!="% variants in any enhancer")
+  pred.rate$method.color = pred.rate$predictionMethod
+  for (i in 1:nrow(pred.rate)){
+    if (pred.rate$predictionMethod[i]=="Proximity"){
+    pred.rate$predictionMethod[i] = pred.rate$metric[i]
+    pred.rate$metric[i] = "Prediction rate given variant in enhancer"
+    }
+  }
+  pred.rate = filter(pred.rate, metric=="Prediction rate given variant in enhancer")
+
+pr = ggplot(pred.rate, aes(x=predictionMethod, y=value, fill=method.color))+
+   geom_bar(stat="identity", position="dodge", width=0.8) + 
+  geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
+  facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Prediction rate given variant in enhancer') +
+  theme(axis.text.x=element_text(angle=60, hjust=1), legend.position='none') + 
+    scale_fill_viridis(discrete=TRUE,option='viridis',name='Method') + ylim(0,1.1)
+
+print(sr)
+print(pr)
+
+cap1 = "Fig. 6. Bar plots showing: the fraction of fine-mapped, distal noncoding eQTL variants with a posterior threshold greater than 0.5 from a certain GTEx tissue that overlap any predicted enhancers in a matching cell type and the fraction of variants overlapping predicted enhancers linked to the variant's eGene."
+cap2 = "Fig. 7. Bar plot showing the prediction rate of a variant's eGene, given that it falls in an enhancer."
   
 ```
+
 
 Next, we compare the the specificity of the methods in  predicting variant-gene links by calculating the positive predictive value (PPV). It is important to note that since the eQTL dataset does not represent a complete list of "true positive" variant-gene links, the PPV should be interpreted with caution here. However, it provides a useful metric to compare the relative performance of methods. 
 
 In this analysis, we first noted that 1) a single variant may be connected to multiple eGenes, and 2) each enhancer prediction may be connected to multiple target genes. Each variant and all of its associated eGenes is considered as a unit, while each enhancer-target gene link is considered as a distinct prediction. A correct prediction is defined as an enhancer-target gene pair that contains a variant linked to the same gene, and PPV was calculated as: PPV = (# correct predictions)/(# total predictions). As a point of reference, the PPV of predicting that a variant is linked to every gene with a transcription start site within 100 kb was included for each tissue.  
 
 
-```{r ppvGraph, echo=FALSE, fig.width=9, fig.cap=cap}
+```{r ppvGraph, echo=FALSE, fig.width=9, fig.height=ht, fig.cap=cap}
+
 # graph positive predictive value
 df.ppv = filter(df, metric=="Positive predictive value")
     
@@ -250,13 +277,13 @@ df.ppv$method=as.factor(df.ppv$predictionMethod);
 
 ppv = ggplot(df.ppv, aes(x=method, y=value, fill=predictionMethod)) +  
   geom_bar(stat="identity", position="dodge", width=0.8) + 
-  geom_text(aes(label = round(value,2)), vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
+  geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
   facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Positive predictive value') + 
       theme(axis.text.x = element_text(angle=60,hjust=1), legend.position='none', axis.text.y=element_text(hjust=1)) + 
       scale_fill_viridis(discrete=TRUE,option='viridis') + ylim(0,1)
 
 print(ppv)
-cap="Fig. 7. Bar plots showing the positive predictive value (PPV) for each method for linking a variant to its eGene. Each variant and all of its associated eGenes were considered a unit, and each enhancer-target gene connection for an enhancer overlapping a variant was considered as a single prediction. PPV was thus calculated as (# correct predictions)/(# total predictions). The PPV for the proximity-based method of linking a variant to every gene with a TSS within 100 kb of the variant was calculated as (# variants with eGene having a TSS within 100 kb)/(sum of # TSSs within 100 kb of each variants)."
+cap="Fig. 8. Bar plots showing the positive predictive value (PPV) for each method for linking a variant to its eGene. Each variant and all of its associated eGenes were considered a unit, and each enhancer-target gene connection for an enhancer overlapping a variant was considered as a single prediction. PPV was thus calculated as (# correct predictions)/(# total predictions). The PPV for the proximity-based method of linking a variant to every gene with a TSS within 100 kb of the variant was calculated as (# variants with eGene having a TSS within 100 kb)/(sum of # TSSs within 100 kb of each variants)."
 ```
 
 ```{r, include=FALSE}

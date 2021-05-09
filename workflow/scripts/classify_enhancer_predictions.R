@@ -3,7 +3,8 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
   library(optparse)
-  library(stringr)})
+  library(stringr)
+  library(gdata)})
 
 
 main <- function() {
@@ -25,7 +26,8 @@ main <- function() {
     if (nrow(temp)==0){
       variants$predictionClass[i] = 'noOverlap'
       variants$nEnhancers[i]=0
-    } else if (is.element(variants$eGene[i], temp$targetGene)) {
+    # } else if (is.element(variants$eGene[i], temp$targetGene)) {
+    } else if (any(gdata::startsWith(str=temp$targetGene, pattern=variants$eGene[i]))) {
       variants$predictionClass[i] = 'inEnhancer-correctGene'
       variants$nEnhancers[i] = nrow(temp)
     } else {

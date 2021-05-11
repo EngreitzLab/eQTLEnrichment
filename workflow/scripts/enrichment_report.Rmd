@@ -15,8 +15,9 @@ output: html_document
 
 
 ```{r setup, include=FALSE, echo=FALSE}
-
+### SET UP 
 knitr::opts_chunk$set(error = TRUE)
+
 
 # load libraries
 library(plyr)
@@ -36,20 +37,207 @@ library(egg)
 tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
 varPerTissue = (snakemake@input$variantsPerGTExTissue) %>% strsplit(" ") %>% unlist()
 methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
-predictionMetricsFile = (snakemake@input$predictionMetrics) 
-sensitivitiesFile = (snakemake@input$sensitivitiesTable) 
+predictionMetricsFile = (snakemake@input$predictionMetrics)
+sensitivitiesFile = (snakemake@input$sensitivitiesTable)
 
+### GENERATE ALL PLOTS
+## variants per GTEx tissue
+# aggregate data
+var.all = read.table(file = varPerTissue[1],
+                     header = TRUE,
+                     stringsAsFactors = FALSE)
+var.all$method = methods[1]
+if (length(methods) > 1) {
+  for (i in 2:length(methods)) {
+    temp = read.table(file = varPerTissue[i],
+                      header = TRUE,
+                      stringsAsFactors = FALSE)
+    temp$method = methods[i]
+    var.all = rbind(var.all, temp)
+  }
+}
+colnames(var.all) = c('GTExTissue', 'nVariants', 'method')
 
-df = read.table(predictionMetricsFile, header=TRUE, sep='\t') %>%
-  setNames(c('GTExTissue','metric', 'predictionMethod', 'value'))
-df[df=="Cells_EBV-transformed_lymphocytes"] = "LCLs"
+var.all$GTExTissue = fct_reorder(var.all$GTExTissue, var.all$nVariants, min)
+varPerGTExTissue = ggplot(var.all, aes(x = GTExTissue, y = nVariants)) + geom_point() +
+  theme_minimal() + ylab('# variants in \n GTEx tissue') +  xlab('') +
+  theme(
+    axis.text.x = element_text(angle = 60, hjust = 1),
+    axis.text = element_text(size = rel(.75)),
+    axis.title = element_text(size = rel(1))
+  ) +
+  ylim(0, max(var.all$nVariants))
 
+## enrichment CDF and boxplots
+# aggregate data
+enr.all = read.table(
+  tables[1],
+  header = TRUE,
+  stringsAsFactors = FALSE,
+  fill = TRUE
+) %>% drop_na()
+enr.all$method = methods[1]
+if (length(methods) > 1) {
+  for (i in 2:length(methods)) {
+    temp = read.table(
+      file = tables[i],
+      header = TRUE,
+      stringsAsFactors = FALSE,
+      fill = TRUE
+    ) %>% drop_na()
+    temp$method = methods[i]
+    enr.all = rbind(enr.all, temp)
+  }
+}
+enr.all = enr.all[order(enr.all$enrichment), ]
+max.enr = max(enr.all$enrichment)
+
+# cdf plot
+enrLabel = 'Enrichment\n(GTEx variants/all common variants)'
+cdf = ggplot(enr.all, aes(x = enrichment, col = method)) + stat_ecdf(geom = "step") +
+  ylab('Cumulative fraction') + xlab(enrLabel) +
+  theme_minimal() + scale_color_viridis(discrete = TRUE, name = 'Method') +
+  theme()
+
+# boxplot
+boxplot = ggplot(enr.all, aes(
+  x = method,
+  y = enrichment,
+  fill = method,
+  text = paste(
+    "GTExTissue:",
+    GTExTissue,
+    "\nBiosample:",
+    BiosampleName,
+    "\nEnrichment:",
+    enrichment
+  )
+)) +
+  geom_boxplot() + geom_point(alpha = 0) +
+  theme_minimal() + ylab(enrLabel) + xlab('') +
+  scale_fill_viridis(discrete = TRUE) +
+  #theme(legend.position='none', axis.text.x=element_text(angle=60,hjust=1))
+  theme(legend.position = 'none')
+boxplot.summary = ggplot(enr.all, aes(x = method, y = enrichment, fill =
+                                        method)) +
+  geom_boxplot() +
+  theme_minimal() + ylab(enrLabel) + xlab('') +
+  scale_fill_viridis(discrete = TRUE) +
+  theme(legend.position = 'none', axis.text.x=element_blank())
+
+## variant capture and predition rate
+# read in data, set names if necessary
+df = read.table(predictionMetricsFile, header = TRUE, sep = '\t') %>%
+  setNames(c('GTExTissue', 'metric', 'predictionMethod', 'value'))
+df[df == "Cells_EBV-transformed_lymphocytes"] = "LCLs"
+
+# subset data from all  metrics
+small.rates = filter(df, metric %in% c("% variants in any enhancer", "Prediction rate"))
+small.rates$metric = plyr::revalue(
+  small.rates$metric,
+  c(
+    "% variants in any enhancer" = "Overlaps predicted enhancer",
+    "Prediction rate" = "Overlaps predicted enhancer \nlinked to correct gene"
+  )
+)
+
+# graph variant capture & overall prediction rate
+sr = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
+  geom_bar(stat = "identity",
+           position = "dodge",
+           width = 0.8) +
+  geom_text(
+    aes(label = round(value, 2)),
+    size = 3,
+    vjust = -0.4,
+    stat = "identity",
+    position = position_dodge(0.8)
+  ) +
+  facet_grid(GTExTissue ~ ., scales = 'fixed') + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + theme(axis.text.y =
+                                                                                                                                                                         element_text(hjust = 1)) +
+  scale_fill_viridis(discrete = TRUE,
+                     option = 'viridis',
+                     name = 'Method') + ylim(0, 0.2)
+
+sr.average = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
+  geom_bar(stat = "identity",
+           position = "dodge",
+           width = 0.8) +
+  theme_minimal() + xlab('') + ylab('Average fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + theme(axis.text.y = element_text(hjust = 1)) +
+  scale_fill_viridis(discrete = TRUE,
+                     option = 'viridis',
+                     name = 'Method') + ylim(0, 0.2)
+
+# subset and reformat prediction rate given variant in enhancer
+pred.rate = filter(
+  df,
+  metric != "Positive predictive value",
+  metric != "Prediction rate",
+  metric != "% variants in any enhancer"
+)
+pred.rate$method.color = pred.rate$predictionMethod
+for (i in 1:nrow(pred.rate)) {
+  if (pred.rate$predictionMethod[i] == "Proximity") {
+    pred.rate$predictionMethod[i] = pred.rate$metric[i]
+    pred.rate$metric[i] = "Prediction rate given variant in enhancer"
+  }
+}
+pred.rate = filter(pred.rate, metric == "Prediction rate given variant in enhancer")
+
+# graph prediction rate given variant is in enhancer
+pr = ggplot(pred.rate,
+            aes(x = predictionMethod, y = value, fill = method.color)) +
+  geom_bar(stat = "identity",
+           position = "dodge",
+           width = 0.8) +
+geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
+  facet_grid(GTExTissue ~ ., scales = 'fixed') + theme_minimal() + xlab('') + ylab('Prediction rate given variant in enhancer') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1),
+        legend.position = 'none') +
+  scale_fill_viridis(discrete = TRUE,
+                     option = 'viridis',
+                     name = 'Method') + ylim(0, 1.1)
+
+# calculate figure height based on num tissues used
 nTissues = data.frame(df$GTExTissue) %>% distinct() %>% nrow()
-ht = 1.5*nTissues
+ht = 1.5 * nTissues
+
+## graph PPV
+# subset data
+df.ppv = filter(df, metric == "Positive predictive value")
+df.ppv$method = as.factor(df.ppv$predictionMethod)
+
+
+ppv = ggplot(df.ppv, aes(x = method, y = value, fill = predictionMethod)) +
+  geom_bar(stat = "identity",
+           position = "dodge",
+           width = 0.8) +
+  geom_text(
+    aes(label = round(value, 2)),
+    size = 3,
+    vjust = -0.4,
+    stat = "identity",
+    position = position_dodge(0.8)
+  ) +
+  facet_grid(GTExTissue ~ ., scales = 'fixed') + theme_minimal() + xlab('') + ylab('Positive predictive value') +
+  theme(
+    axis.text.x = element_text(angle = 60, hjust = 1),
+    legend.position = 'none',
+    axis.text.y = element_text(hjust = 1)
+  ) +
+  scale_fill_viridis(discrete = TRUE, option = 'viridis') + ylim(0, 1)
 
 ```
 
+# Summary: Enrichment and prediction of eQTLs
+```{r summary, echo=FALSE, fig.width=14, fig.cap=cap}
 
+ggarrange(boxplot.summary, sr.average, nrow=1, ncol=2)
+
+cap = "a. Boxplots showing distribution of enrichment values at each GTEx tissue/biosample intersetion for each enhancer-gene prediction method. Enrichment values were calculated as described below. b. Bar plots showing fraction of variants from a given GTEx tissue overlapping all enhancers predicted in a matching cell type (left), or overlapping enhancers linked to the variant's eGene (right). Rates shown are an average over all GTEx tissue/biosample pairings considered."
+```
+
+---
 # GTEx fine-mapped eQTL variants
 The following analyses use the [version 8 GTEx Consortium data](https://science.sciencemag.org/content/369/6509/1318) to benchmark enhancer-gene prediction methods. This dataset was generated from 15,201 RNA-seq samples from 49 tissues of 838 postmortem donors, which were used to discover cis-eQTLs for 18,262 protein-coding and 5006 lincRNA genes. The eQTLs were fine-mapped by SuSiE to identify likely causal variants (cite Jacob Ulirsch and Hilary Finucane). The diversity of tissues represented offer a uniquely valuable resource to evaluate the cell-type specificity of enhancer-gene prediction methods. In the following analyses, we considered fine-mapped eQTL variants that met the following criteria:  
 
@@ -59,30 +247,11 @@ The following analyses use the [version 8 GTEx Consortium data](https://science.
 - linked to a gene considered by the prediction method being considered  
 - linked to a highly-expressed gene for that tissue (median TPM > 1)  
 
-The following shows the number of variants in each of the GTEx tissues that were used. [Why is this important?] 
+The following shows the number of variants in each of the GTEx tissues that were used. 
 
 ```{r varPerTissue, echo=FALSE, fig.width=10, fig.cap=cap}
-# aggregate data
-  var.all = read.table(file=varPerTissue[1], header=TRUE, stringsAsFactors=FALSE)
-  var.all$method = methods[1]
-  if (length(methods)>1){
-    for (i in 2:length(methods)){
-        temp = read.table(file=varPerTissue[i], header=TRUE, stringsAsFactors = FALSE)
-        temp$method = methods[i]
-        var.all = rbind(var.all, temp)
-    }
-  }
 
-colnames(var.all) = c('GTExTissue','nVariants', 'method')
-
-var.all$GTExTissue = fct_reorder(var.all$GTExTissue, var.all$nVariants, min)
-g = ggplot(var.all, aes(x=GTExTissue, y=nVariants)) + geom_point() + 
-  theme_minimal() + ylab('# variants in \n GTEx tissue') +  xlab('') +
-  theme(axis.text.x = element_text(angle=60, hjust=1), 
-        axis.text=element_text(size=rel(.75)), 
-        axis.title=element_text(size=rel(1))) +
-  ylim(0,max(var.all$nVariants))
-ggplotly(g)
+ggplotly(varPerGTExTissue)
 
 cap = "Fig. 1. Number of distinct distal noncoding, fine-mapped GTEx variants in a credible set with a posterior threshold greater than 0.5 in each GTEx tissue."
 
@@ -97,27 +266,6 @@ E(G,B) = [(# variants in G overlapping enhancers in B)/(# variants in G)]/[(# co
 The distribution of enrichment values were compared by plotting the cumulative density function for each method. The curves shifted furthest to the right had larger proportions of higher enrichment values, suggesting stronger specificity at predicting the regions where variants are concentrated.
 ```{r cdf, echo=FALSE, warning=FALSE, fig.cap=cap}
 
-# aggregate data
-  enr.all = read.table(tables[1], header=TRUE, stringsAsFactors = FALSE, fill = TRUE) %>% drop_na()
-  enr.all$method = methods[1]
-  if(length(methods)>1){
-      for (i in 2:length(methods)){
-        temp = read.table(file=tables[i], header=TRUE, stringsAsFactors = FALSE, fill=TRUE) %>% drop_na()
-        temp$method = methods[i]
-        enr.all = rbind(enr.all, temp)
-    }
-  }
-
-  enr.all = enr.all[order(enr.all$enrichment),]
-  max.enr = max(enr.all$enrichment)
-  
-  # plot cdf
-  enrLabel = 'Enrichment\n(GTEx variants/all common variants)'
-  
-  cdf = ggplot(enr.all, aes(x=enrichment, col=method)) + stat_ecdf(geom = "step") + 
-      ylab('Cumulative fraction') + xlab(enrLabel) + 
-      theme_minimal() + scale_color_viridis(discrete=TRUE,name='Method') + 
-      theme()
   ggplotly(cdf)
   
   cap = "Fig. 2. Cumulative density function graph showing distribution of enrichment values at each GTEx tissue/biosample intersections across the different enhancer-gene prediction methods. The enrichment E of variants from each GTEx tissue, G, in enhancers for each biosample, B, included in the prediction dataset was computed as:
@@ -127,15 +275,7 @@ E(G,B) = [(# variants in G overlapping enhancers in B)/(# variants in G)]/[(# co
 Comparing the distribution of enrichment values between prediction methods, we can see whether the strongest enrichments occur between matching biosamples and tissues, which suggests that the method can make cell-type specific predictions.
 ```{r boxPlot, warning=FALSE, echo=FALSE, fig.cap=cap}
 
-bp = ggplot(enr.all, aes(x=method, y=enrichment, fill=method, 
-                         text=paste("GTExTissue:",GTExTissue,"\nBiosample:", BiosampleName,"\nEnrichment:", enrichment))) +
-              geom_boxplot() + geom_point(alpha=0) +
-              theme_minimal() + ylab(enrLabel) + xlab('') + 
-              scale_fill_viridis(discrete=TRUE) + 
-              #theme(legend.position='none', axis.text.x=element_text(angle=60,hjust=1))
-              theme(legend.position='none')
-
-ggplotly(bp, tooltip='text')
+ggplotly(boxplot, tooltip='text')
 
 cap = "Fig. 3. Boxplots showing distribution of enrichment values for each enhancer-gene prediction method. Enrichment values were calculated as described above."
 ```
@@ -219,39 +359,9 @@ for (i in 1:length(methods)) {
 ```
 
 # Prediction of variant eGenes
-The enhancer-gene prediction methods can also be evaluated on how well they predict the effect of fine-mapped GTEx eQTLs. The following metrics were calculated for several pairs of matching biosamples and GTEx tissues. First, we assess the sensitvity of methods by comparing the fraction of variants from a tissue that fall in enhancers predicted in a matching biosample (left), and the fraction of variants that fall in an enhancer linked to the variant's eGene (right).  
-
+The enhancer-gene prediction methods can also be evaluated on how well they predict the effect of fine-mapped GTEx eQTLs. The following metrics were calculated for several pairs of matching biosamples and GTEx tissues. First, we assess the sensitvity of methods by comparing the fraction of variants from a tissue that fall in enhancers predicted in a matching biosample and the fraction of variants that fall in an enhancer linked to the variant's eGene.  
 
 ```{r predictionGraph, echo=FALSE, fig.width=9, fig.height=ht, fig.cap=c(cap1, cap2)}
-
- # graph variant capture, prediction rate across all methods and tissues
-  small.rates = filter(df, metric %in% c("% variants in any enhancer","Prediction rate"))
-  small.rates$metric = plyr::revalue(small.rates$metric, 
-                                       c("% variants in any enhancer"="Overlaps predicted enhancer",
-                                         "Prediction rate"="Overlaps predicted enhancer \nlinked to correct gene"))
-  sr = ggplot(small.rates, aes(x=metric, y=value, fill=predictionMethod)) + 
-    geom_bar(stat="identity", position="dodge", width=0.8) + 
-     geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
-    facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + theme(axis.text.y=element_text(hjust=1))+
-    scale_fill_viridis(discrete=TRUE,option='viridis',name='Method') + ylim(0,0.2)
-  
-  # graph prediction rate given variant is in enhancer
-  pred.rate = filter(df, metric!="Positive predictive value", metric!="Prediction rate", metric!="% variants in any enhancer")
-  pred.rate$method.color = pred.rate$predictionMethod
-  for (i in 1:nrow(pred.rate)){
-    if (pred.rate$predictionMethod[i]=="Proximity"){
-    pred.rate$predictionMethod[i] = pred.rate$metric[i]
-    pred.rate$metric[i] = "Prediction rate given variant in enhancer"
-    }
-  }
-  pred.rate = filter(pred.rate, metric=="Prediction rate given variant in enhancer")
-
-pr = ggplot(pred.rate, aes(x=predictionMethod, y=value, fill=method.color))+
-   geom_bar(stat="identity", position="dodge", width=0.8) + 
-  geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
-  facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Prediction rate given variant in enhancer') +
-  theme(axis.text.x=element_text(angle=60, hjust=1), legend.position='none') + 
-    scale_fill_viridis(discrete=TRUE,option='viridis',name='Method') + ylim(0,1.1)
 
 print(sr)
 print(pr)
@@ -269,20 +379,8 @@ In this analysis, we first noted that 1) a single variant may be connected to mu
 
 ```{r ppvGraph, echo=FALSE, fig.width=9, fig.height=ht, fig.cap=cap}
 
-# graph positive predictive value
-df.ppv = filter(df, metric=="Positive predictive value")
-    
-#reorder method factor for graphing
-df.ppv$method=as.factor(df.ppv$predictionMethod); 
-
-ppv = ggplot(df.ppv, aes(x=method, y=value, fill=predictionMethod)) +  
-  geom_bar(stat="identity", position="dodge", width=0.8) + 
-  geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
-  facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Positive predictive value') + 
-      theme(axis.text.x = element_text(angle=60,hjust=1), legend.position='none', axis.text.y=element_text(hjust=1)) + 
-      scale_fill_viridis(discrete=TRUE,option='viridis') + ylim(0,1)
-
 print(ppv)
+
 cap="Fig. 8. Bar plots showing the positive predictive value (PPV) for each method for linking a variant to its eGene. Each variant and all of its associated eGenes were considered a unit, and each enhancer-target gene connection for an enhancer overlapping a variant was considered as a single prediction. PPV was thus calculated as (# correct predictions)/(# total predictions). The PPV for the proximity-based method of linking a variant to every gene with a TSS within 100 kb of the variant was calculated as (# variants with eGene having a TSS within 100 kb)/(sum of # TSSs within 100 kb of each variants)."
 ```
 

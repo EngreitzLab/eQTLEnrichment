@@ -104,22 +104,16 @@ boxplot = ggplot(enr.all, aes(
   x = method,
   y = enrichment,
   fill = method,
-  text = paste(
-    "GTExTissue:",
-    GTExTissue,
-    "\nBiosample:",
-    BiosampleName,
-    "\nEnrichment:",
-    enrichment
+  text = paste("GTExTissue:", GTExTissue,"\nBiosample:", BiosampleName,"\nEnrichment:",enrichment
   )
 )) +
   geom_boxplot() + geom_point(alpha = 0) +
   theme_minimal() + ylab(enrLabel) + xlab('') +
   scale_fill_viridis(discrete = TRUE) +
-  #theme(legend.position='none', axis.text.x=element_text(angle=60,hjust=1))
-  theme(legend.position = 'none')
-boxplot.summary = ggplot(enr.all, aes(x = method, y = enrichment, fill =
-                                        method)) +
+  theme(legend.position='none', axis.text.x=element_text(angle=60,hjust=1))
+  #theme(legend.position = 'none')
+
+boxplot.summary = ggplot(enr.all, aes(x = method, y = enrichment, fill = method)) +
   geom_boxplot() +
   theme_minimal() + ylab(enrLabel) + xlab('') +
   scale_fill_viridis(discrete = TRUE) +

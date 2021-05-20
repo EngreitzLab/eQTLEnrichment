@@ -1,0 +1,23 @@
+name: eQTLEnv
+dependencies:
+ - r-base
+ - r-tidyverse
+ - r-optparse
+ - r-egg
+ - r-viridis
+ - r-stringr
+ - r-gdata
+ - bioconductor-biomart
+ - r-markdown
+ - r-reactable
+ - plotly
+ - r-heatmaply
+ - cairo
+ - pandoc
+ - samtools
+ - bedtools
+ - numpy
+ - pandas
+ - snakemake
+ - csvtk
+

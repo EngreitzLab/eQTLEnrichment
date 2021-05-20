@@ -8,7 +8,7 @@ include: "./rules/eQTL_predictions.smk"
 include: "./rules/eQTL_enrichment.smk"
 
 # config file containing samples & parameters
-configfile: "../config/config.yml"
+# configfile: "../config/config.yml"
 
 # generate output files
 variantsByTissueFiles = []

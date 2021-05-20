@@ -27,14 +27,15 @@ rule split_variants_by_tissue:
 		outDir = config["outDir"]
 	output:
 		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.filteredVariants.tsv")
-	run:
-		shell("""
+	conda: 
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	shell:
+		"""
 		set +o pipefail;
+		# input variant file columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (gene hgnc), 7 (PIP)
+		cat {input.filteredGTExVariantsFinal} | awk -v var={wildcards.GTExTissue} '$5==var' | sort -k1,1 -k2,2n > {output.variantsByTissue}
 		
- 	   # input variant file columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (gene hgnc), 7 (PIP)
-	   cat {input.filteredGTExVariantsFinal} | awk -v var={wildcards.GTExTissue} '$5==var' | sort -k1,1 -k2,2n > {output.variantsByTissue}
-	   
-		""")
+		"""
 
 # add columns to variant files with proximal genes, proximal TSS, TSS within 100 kb (filter reference gene files to gene universe)
 # run once per method x tissue
@@ -49,8 +50,10 @@ rule add_proximal_genes:
 		outDir = config["outDir"],
 	output:
 		variantsByTissueProximal = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.filteredVariants.proximal.tsv")
-	run:
-		shell("""
+	conda: 
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	shell:
+		"""
 		set +o pipefail;
 		
 		# filter TSS to gene universe
@@ -69,7 +72,7 @@ rule add_proximal_genes:
 		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.100kbInterval.tsv
 		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.closest.tsv
 		
-		""")
+		"""
 
 # split enhancer predictions to invidual biosamples needed for predictions and filter to gene universe
 # run once per method x tissue
@@ -81,15 +84,16 @@ rule filter_enhancer_predictions:
 		codeDir = config["outDir"]
 	output:	
 		predictionsByBiosample = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{Biosample}.filteredPredictions.tsv")
-	run:
-		shell(
+	conda: 
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	shell:
 		"""
 		set +o pipefail;
 		
 		# filter predictions
 		zcat {input.predictionsSorted} |  awk -v awkvar={wildcards.Biosample} '$4==awkvar' | cut -f 1,2,3,5 | sort -k1,1 -k2,2n | uniq > {output.predictionsByBiosample}
 		
-		""")
+		"""
 
 # generate list of variants with proximal genes and where the variant is located with respect to the enhancer predictions for each pairing of GTEx tissue/biosample 
 rule make_prediction_table:
@@ -101,8 +105,9 @@ rule make_prediction_table:
 		codeDir = config["codeDir"],
 	output:
 		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv")
-	run:
-		shell(
+	conda: 
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	shell:
 		"""
 		set +o pipefail;
 		
@@ -115,7 +120,7 @@ rule make_prediction_table:
 		
 		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
 		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
-		""")
+		"""
 
 # generate plot of prediction rates across all methods and tissues
 rule plot_prediction_rates:
@@ -128,14 +133,16 @@ rule plot_prediction_rates:
 		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
 		PPVPlot = os.path.join(config["outDir"],"PPV.pdf"),
 		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv")
-	run:
-		shell("""
+	conda: 
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	shell:
+		"""
 		set +o pipefail;
 		
 		Rscript {params.codeDir}/plot_prediction_rates.R --tables "{input.allTables}" --out {params.outDir}
-		""")
+		"""
+		
 # generate sensitivity plots
-# rewrite with script
 rule plot_sensitivities:
 	input:
 		allTables=predTablesFiles
@@ -145,5 +152,7 @@ rule plot_sensitivities:
 	output:
 		allSensPlots = sensitivityPlotsFiles,
 		sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv")
+	conda: 
+		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:
 		os.path.join(config["codeDir"], "plot_sensitivities.R")

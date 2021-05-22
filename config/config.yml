@@ -1,124 +1,22 @@
 ## FILE LOCATIONS
-
 outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.testConda"
 codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/scripts"
 envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/envs"
+methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/config/config-methods.tsv"
 GTExVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/data/Ulirsch-eQTL/200207/GTEx_30tissues_release1.tsv.gz"
 bgVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/all.bg.SNPs.sorted.bed.gz"
 chrSizes: "/oak/stanford/groups/engreitz/Projects/GWAS/201216_ABCPipelineTest/Test_data/sizes_sorted"
 partition: "/oak/stanford/groups/engreitz/Projects/GWAS/191223_Partitioning/200523-ABCPartition/partition/PartitionCombined.bed"
 TSS: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.TSS500bp.sorted.bed"
 
-
-## TISSUE- AND METHOD-SPECIFIC PARAMETERS
-# list of methods to run
-methods: [ABC_altTSS_SP, ChromHMM2017, EpiMap]
-methodsOther: [ABC_origTSS_noSP, ABC_origTSS_SP, ABC_origTSS_dual, ABC_altTSS_noSP, ABC_altTSS_SP, ABC_altTSS_dual]
-GTExTissues: [Brain_Cortex, Prostate, Muscle_Skeletal, Artery_Tibial, Skin_Not_Sun_Exposed_Suprapubic, Esophagus_Muscularis, Brain_Cerebellum, Pituitary, Adipose_Subcutaneous, Pancreas, Spleen, Adrenal_Gland, Testis, Lung, Skin_Sun_Exposed_Lower_leg, Heart_Atrial_Appendage, Adipose_Visceral_Omentum, Esophagus_Mucosa, Thyroid, Brain_Nucleus_accumbens_basal_ganglia, Colon_Sigmoid, Breast_Mammary_Tissue, Artery_Aorta, Cells_EBV-transformed_lymphocytes, Heart_Left_Ventricle, Artery_Coronary, Esophagus_Gastroesophageal_Junction, Nerve_Tibial, Liver, Whole_Blood, Colon_Transverse, Stomach]
-
 # GTEx expression data
 GTExExpression: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_median_tpm.gct"
 GTExGeneUniverse: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/gencode.v26.genes.bed"
 
-# gzipped prediction file locations
-predFile:
- ABC: "/oak/stanford/groups/engreitz/Projects/ABC/191216_ABC/summary/AllPredictions.txt.gz"
- EpiMap: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/enhancerPredictions_Ben-all.bed.gz"
- ChromHMM2017: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/ChromHMM2017_Appended.txt.gz"
- ABCShrunk500: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/AllPredictions.AvgHiC.ABC0.015.500.txt.gz"
- ABC_origTSS_noSP: "/oak/stanford/groups/engreitz/Users/sheth/20210509_ABC_origTSS/AllPredictions.txt.gz"
- ABC_origTSS_SP: "/oak/stanford/groups/engreitz/Users/sheth/20210509_ABC_origTSS/AllPredictionsSP.txt.gz"
- ABC_altTSS_noSP: "/oak/stanford/groups/engreitz/Users/sheth/20210509_ABC_altTSS/AllPredictions.txt.gz"
- ABC_altTSS_SP: "/oak/stanford/groups/engreitz/Users/sheth/20210509_ABC_altTSS/AllPredictionsSP.txt.gz"
- ABC_origTSS_dual: "/oak/stanford/groups/engreitz/Users/sheth/20210509_ABC_origTSS/AllPredictionsDual.txt.gz"
- ABC_altTSS_dual: "/oak/stanford/groups/engreitz/Users/sheth/20210509_ABC_altTSS/AllPredictionsDual.txt.gz"
+# list of methods to run
+methods: [ABC_altTSS_SP]
+methodsCompare: [ABC_altTSS_SP, ChromHMM2017, EpiMap]
+methodsOther: [ABC_origTSS_noSP, ABC_origTSS_SP, ABC_origTSS_dual, ABC_altTSS_noSP, ABC_altTSS_SP, ABC_altTSS_dual]
 
- 
- # gene universe for each method
-geneUniverse:
- ABCShrunk500: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed" 
- EpiMap: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed" 
- ChromHMM2017: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed" 
- ABC_origTSS_noSP: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed" 
- ABC_origTSS_SP: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed" 
- ABC_altTSS_noSP: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed" 
- ABC_altTSS_SP: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed" 
- ABC_origTSS_dual: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed" 
- ABC_altTSS_dual: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.sorted.bed"
+GTExTissues: [Brain_Cortex, Prostate, Muscle_Skeletal, Artery_Tibial, Skin_Not_Sun_Exposed_Suprapubic, Esophagus_Muscularis, Brain_Cerebellum, Pituitary, Adipose_Subcutaneous, Pancreas, Spleen, Adrenal_Gland, Testis, Lung, Skin_Sun_Exposed_Lower_leg, Heart_Atrial_Appendage, Adipose_Visceral_Omentum, Esophagus_Mucosa, Thyroid, Brain_Nucleus_accumbens_basal_ganglia, Colon_Sigmoid, Breast_Mammary_Tissue, Artery_Aorta, Cells_EBV-transformed_lymphocytes, Heart_Left_Ventricle, Artery_Coronary, Esophagus_Gastroesophageal_Junction, Nerve_Tibial, Liver, Whole_Blood, Colon_Transverse, Stomach]
 
-## PARAMETERS FOR INDIVIDUAL RULES
-enrichment_heatmaps:
- sampleKey:
-  ABC: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/CellTypes.Annotated.ABCPaper.csv"
-  EpiMap: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/bssid_legend.csv"
-  ChromHMM2017: "/oak/stanford/groups/engreitz/Users/sheth/ReferenceFiles/EID-legend.csv"
-  ABCShrunk500: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/CellTypes.Annotated.ABCPaper.csv"
-  ABC_origTSS_noSP: NA
-  ABC_origTSS_SP: NA
-  ABC_altTSS_noSP: NA
-  ABC_altTSS_SP: NA
-  ABC_origTSS_dual: NA
-  ABC_altTSS_dual: NA
-
- sampleID:
-  ABC: CellType
-  EpiMap: BSSID
-  ChromHMM2017: EID
-  ABCShrunk500: CellType
-  ABC_origTSS_noSP: NA
-  ABC_origTSS_SP: NA
-  ABC_altTSS_noSP: NA
-  ABC_altTSS_SP: NA
-  ABC_origTSS_dual: NA
-  ABC_altTSS_dual: NA
-
- sampleName:
-  ABC: NA
-  EpiMap: SampleName
-  ChromHMM2017: Epigenome.Mnemonic
-  ABCShrunk500: NA
-  ABC_origTSS_noSP: NA
-  ABC_origTSS_SP: NA
-  ABC_altTSS_noSP: NA
-  ABC_altTSS_SP: NA
-  ABC_origTSS_dual: NA
-  ABC_altTSS_dual: NA
-
- sampleCategory:
-  ABC: Categorical.CellTypeMergedPrimary
-  EpiMap: Group
-  ChromHMM2017: Group
-  ABCShrunk500: Categorical.CellTypeMergedPrimary
-  ABC_origTSS_noSP: NA
-  ABC_origTSS_SP: NA
-  ABC_altTSS_noSP: NA
-  ABC_altTSS_SP: NA
-  ABC_origTSS_dual: NA
-  ABC_altTSS_dual: NA
-
-predRates:
- mapGTExTissues:
-  ABC: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid]
-  EpiMap: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid, Pancreas]
-  ChromHMM2017: [Cells_EBV-transformed_lymphocytes, Liver, Pancreas]
-  ABCShrunk500: [Cells_EBV-transformed_lymphocytes, Liver, Thyroid, Pancreas]
-  ABC_origTSS_noSP: [Cells_EBV-transformed_lymphocytes, Liver, Pancreas]
-  ABC_origTSS_SP: [Cells_EBV-transformed_lymphocytes, Liver, Pancreas]
-  ABC_altTSS_noSP: [Cells_EBV-transformed_lymphocytes, Liver, Pancreas]
-  ABC_altTSS_SP: [Cells_EBV-transformed_lymphocytes, Liver, Pancreas]
-  ABC_origTSS_dual: [Cells_EBV-transformed_lymphocytes, Liver, Pancreas]
-  ABC_altTSS_dual: [Cells_EBV-transformed_lymphocytes, Liver, Pancreas]
-  full_list: [Cells_EBV-transformed_lymphocytes, Liver, Pancreas, Adrenal_Gland, Lung, Esophagus_Mucosa, Colon_Sigmoid, Breast_Mammary_Tissue, Heart_Left_Ventricle, Artery_Coronary, Whole_Blood, Stomach]
- 
- mapBiosamples:
-  ABC: [GM12878-Roadmap, liver-ENCODE, thyroid_gland-ENCODE]
-  EpiMap: [BSS00439, BSS01158, BSS01831, BSS00122]
-  ChromHMM2017: [E116, E066, E098]
-  ABCShrunk500: [GM12878-Roadmap, liver-ENCODE, thyroid_gland-ENCODE, pancreas-Roadmap]
-  ABC_origTSS_noSP: [GM12878, Hepatocyte, pancreas_male_adult]
-  ABC_origTSS_SP: [GM12878, Hepatocyte, pancreas_male_adult]
-  ABC_altTSS_noSP: [GM12878, Hepatocyte, pancreas_male_adult]
-  ABC_altTSS_SP: [GM12878, Hepatocyte, pancreas_male_adult]
-  ABC_origTSS_dual: [GM12878, Hepatocyte, pancreas_male_adult]
-  ABC_altTSS_dual: [GM12878, Hepatocyte, pancreas_male_adult]
-  full_list: [GM12878, Hepatocyte, pancreas_male_adult, adrenal_gland, left_lung, esophagus_muscularis_mucosa_male_adult, sigmoid_colon_female_adult, mammary_epithelial_cell_female, heart_left_ventricle, coronary_artery, CD14+_monocytes_from_male_peripheral_blood, stomach_female_fetal_96-98_days]

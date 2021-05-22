@@ -3,12 +3,18 @@
 import pandas as pd
 from os.path import join
 
+# config file containing samples & parameters
+# configfile: "../config/config.yml"
+
+# load prediction method config file
+methods_config_file = config["methodsTable"]
+methods_config = pd.read_table(methods_config_file).set_index("method", drop=False)
+methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
+methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
+
 # import workflows
 include: "./rules/eQTL_predictions.smk"
 include: "./rules/eQTL_enrichment.smk"
-
-# config file containing samples & parameters
-# configfile: "../config/config.yml"
 
 # generate output files
 variantsByTissueFiles = []
@@ -19,15 +25,15 @@ sensitivityPlotsFiles = []
 
 for x in config["methods"]:
 	# list of variant files
-	variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.filteredVariants.tsv"), GTExTissue=config["predRates"]["mapGTExTissues"][x]))
+	variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.filteredVariants.tsv"), GTExTissue=methods_config.loc[x, "GTExTissue_map"]))
 	# list of variant files with proximal genes
-	variantsByTissueProximalFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.filteredVariants.proximal.tsv"), GTExTissue=config["predRates"]["mapGTExTissues"][x]))
+	variantsByTissueProximalFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.filteredVariants.proximal.tsv"), GTExTissue=methods_config.loc[x, "GTExTissue_map"]))
 	# list of filtered prediction files
-	predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{Biosample}.filteredPredictions.tsv"), Biosample=config["predRates"]["mapBiosamples"][x]))
+	predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{Biosample}.filteredPredictions.tsv"), Biosample=methods_config.loc[x, "biosample_map"]))
 	# list of prediction tables
-	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=config["predRates"]["mapGTExTissues"][x], Biosample=config["predRates"]["mapBiosamples"][x]))
+	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
 	# list of output plot names
-	sensitivityPlotsFiles.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=config["predRates"]["mapGTExTissues"][x], method=x))
+	sensitivityPlotsFiles.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=methods_config.loc[x, "GTExTissue_map"], method=x))
 	
 
 rule all:
@@ -45,9 +51,9 @@ rule all:
 		variantsPerGTExTissue = expand(os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"), method=config["methods"]),
 		commonVarPerBiosample = expand(os.path.join(config["outDir"], "{method}", "commonVarPerBiosample.tsv"), method=config["methods"]),
 		enrichmentTable = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"), method=config["methods"]),
-		#basesPerEnhancerSet = expand(os.path.join(config["outDir"], "{method}/basesPerEnhancerSet.tsv"), method=config["methods"]),
-		#heatmapFull = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.full.pdf"), method=config["methods"]),
-		#heatmapAggregated = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.aggregated.pdf"), method=config["methods"]),
+		basesPerEnhancerSet = expand(os.path.join(config["outDir"], "{method}/basesPerEnhancerSet.tsv"), method=config["methods"]),
+		heatmapFull = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.full.pdf"), method=config["methods"]),
+		heatmapAggregated = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.aggregated.pdf"), method=config["methods"]),
 		cdf = os.path.join(config["outDir"], "cdf.pdf"),
 		density = os.path.join(config["outDir"], "density.pdf"),
 		boxplot = os.path.join(config["outDir"], "boxplot.pdf"),
@@ -56,7 +62,7 @@ rule all:
 		variantsByTissueProximal = variantsByTissueProximalFiles,
 		predictionsByBiosample = predictionsByBiosampleFiles,
 		predTables = predTablesFiles,
-		sensitivityPlots = sensitivityPlotsFiles,
+		#sensitivityPlots = sensitivityPlotsFiles,
 		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
 		PPVPlot = os.path.join(config["outDir"], "PPV.pdf"),
 		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv"),

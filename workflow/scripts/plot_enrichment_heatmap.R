@@ -24,7 +24,7 @@ main <- function() {
     file.name = opt$table; enhancer.size = opt$enhancersizes;  sample.key = opt$samplekey; out.file = opt$outfile
     cellID = opt$cellid; sample.name = opt$category; max.color=opt$maxcolor
     
-    enrMatrix = read.csv(file=file.name, sep='\t', header=TRUE, stringsAsFactors = FALSE) %>% 
+    enrMatrix = read.table(file=file.name, header=TRUE, stringsAsFactors = FALSE) %>% 
         filter(enrichment!='NA') %>% dplyr::select(-BiosampleName)
 
     if (is.na(max.color) || max.color=='nan') {
@@ -32,7 +32,7 @@ main <- function() {
     }
     
     # add category/sample name
-    if (is.na(sample.name) || sample.name=="NA" || sample.name=="nan"){
+    if (is.na(sample.name) || sample.name=="None" || sample.name=="nan"){
         enrMatrix$Category = enrMatrix$Biosample
     } else {
         cat.data = read.csv(sample.key, sep=',', header=TRUE) %>% dplyr::select(cellID, sample.name);
@@ -41,7 +41,7 @@ main <- function() {
     }
     
     # add base pairs per  biosample
-    bp.data = read.csv(enhancer.size, sep='\t', header=FALSE)
+    bp.data = read.table(enhancer.size, header=FALSE)
     colnames(bp.data) = c('Biosample','EnhancerMb')
     bp.data$EnhancerMb = bp.data$EnhancerMb/1E6
     enrMatrix = left_join(enrMatrix, bp.data)

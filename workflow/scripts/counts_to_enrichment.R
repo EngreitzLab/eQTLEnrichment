@@ -1,10 +1,9 @@
-# input arguments: count matrix, common var per  biosample, variants per GTEx tissue, total common variants, variantSet
-# output matrix with columns: GTExTissue, Biosample, nVariantsOverlappingEnhancers, nVariantsGTExTissue, nCommonVariantsOverlappingEnhancers, nCommonVariants, enrichment
-suppressPackageStartupMessages({library(dplyr)
+suppressPackageStartupMessages({
+  library(dplyr)
   library(tidyr)
   library(stringr)})
 
-  main <- function() {
+main <- function() {
   ## get files from snakemake
   countFile = (snakemake@input$countMatrix)
   biosampleFile = (snakemake@input$samples)
@@ -40,8 +39,7 @@ suppressPackageStartupMessages({library(dplyr)
 	enrMatrix$enrichment = enrMatrix$nVariantsOverlappingEnhancers/enrMatrix$nVariantsGTExTissue/(enrMatrix$nCommonVariantsOverlappingEnhancers/enrMatrix$nCommonVariants)
 
 	# add sample name
-	if (is.na(sampleName) || sampleName=="NA" || sampleName=='nan'){
-	#if (is.na(sampleName)){
+	if (is.na(sampleName) || sampleName=="None"){
 	  enrMatrix$BiosampleName = enrMatrix$Biosample
 	} else {
 	  cat.data = read.csv(sampleKeyFile, sep=',', header=TRUE) %>% dplyr::select(sampleID, sampleName);

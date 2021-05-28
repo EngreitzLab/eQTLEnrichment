@@ -23,7 +23,7 @@ main <- function() {
         filteredKey = filter(sampleKey, biosample==this.biosample)
         this.TSS = filteredKey$TSSFile[1]
         # if blank, use default; if not
-        if (is.na(this.TSS) || this.TSS=="None") {
+        if (is.na(this.TSS) || this.TSS=="None" || this.TSS=="") {
           TSS.file =  method.TSS.file
         } else {
           TSS.file = this.TSS
@@ -42,7 +42,7 @@ main <- function() {
        filteredKey = filter(sampleKey, biosample==this.biosample)
        this.genes = filteredKey$geneFile[1]
        # if blank, use default; if not
-       if (is.na(this.genes) || this.genes=="None") {
+       if (is.na(this.genes) || this.genes=="None" || this.genes=="") {
           gene.file = method.geneUniverse.file
        } else {
          gene.file = this.genes
@@ -60,6 +60,23 @@ main <- function() {
   colnames(TSS) = c("chr", "start", "end", "gene", "score", "strand")
   genes = read.table(file=gene.file, header=FALSE)
   colnames(genes) = c("chr", "start", "end", "gene", "score", "strand")
+  
+  # make sure gene column of TSS is actually gene name
+  for (i in 1:nrow(TSS)){
+    y = str_split(TSS$gene[i], "-") %>% unlist()
+    if (length(y)>1){
+      z = str_split(y[2], "_") %>% unlist()
+      TSS$gene[i] = z[2]
+    }
+  }
+  
+  # make sure gene column of gene list is actually gene name
+  for (i in 1:nrow(genes)){
+    y = str_split(genes$gene[i], "-") %>% unlist()
+    if (length(y)>1){
+      genes$gene[i] = y[1]
+    }
+  }
   
   # filter
   TSS = filter(TSS, gene %in% GTEx.geneUniverse$gene)

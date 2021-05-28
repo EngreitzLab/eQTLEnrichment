@@ -14,7 +14,7 @@ GTExExpression: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resour
 GTExGeneUniverse: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/gencode.v26.genes.bed"
 
 # list of methods to run
-methods: [ABCShrunk500]
+methods: [ABCShrunk500, ABC_altTSS_SP]
 methodsCompare: [ABC_altTSS_SP, ChromHMM2017, EpiMap]
 methodsOther: [ABC_origTSS_noSP, ABC_origTSS_SP, ABC_origTSS_dual, ABC_altTSS_noSP, ABC_altTSS_SP, ABC_altTSS_dual]
 

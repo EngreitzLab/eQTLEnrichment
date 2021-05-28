@@ -5,6 +5,7 @@ dependencies:
  - r-optparse
  - r-egg
  - r-viridis
+ - r-tidyr
  - r-stringr
  - r-gdata
  - bioconductor-biomart

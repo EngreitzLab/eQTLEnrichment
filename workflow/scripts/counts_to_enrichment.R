@@ -11,8 +11,6 @@ main <- function() {
   varPerGTExTissueFile = (snakemake@input$variantsPerGTExTissue)
   GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist %>% sort()
   sampleKeyFile = (snakemake@params$sampleKey)
-  sampleID = (snakemake@params$sampleID)
-  sampleName = (snakemake@params$sampleName)
   outFile = (snakemake@output$enrichmentTable)
   totalCommonVar = 9765167
   
@@ -37,14 +35,17 @@ main <- function() {
 	enrMatrix = left_join(enrMatrix, commonVarPerBiosample, by='Biosample')
 	enrMatrix$nCommonVariants = totalCommonVar
 	enrMatrix$enrichment = enrMatrix$nVariantsOverlappingEnhancers/enrMatrix$nVariantsGTExTissue/(enrMatrix$nCommonVariantsOverlappingEnhancers/enrMatrix$nCommonVariants)
-
-	# add sample name
-	if (is.na(sampleName) || sampleName=="None"){
-	  enrMatrix$BiosampleName = enrMatrix$Biosample
+	
+	if (is.na(sampleKeyFile)){
+	  enrMatrix$sampleName = enrMatrix$Biosample
 	} else {
-	  cat.data = read.csv(sampleKeyFile, sep=',', header=TRUE) %>% dplyr::select(sampleID, sampleName);
-	  colnames(cat.data) = c('Biosample','BiosampleName') 
-	  enrMatrix = left_join(enrMatrix, cat.data, by='Biosample') %>% drop_na()
+	  cat.data = read.table(sampleKeyFile, header=TRUE, sep="\t", fill=TRUE)
+	  if ("sampleName" %in% colnames(cat.data)){
+	    cat.data = dplyr::select(cat.data, biosample, sampleName)
+	    enrMatrix = left_join(enrMatrix, cat.data, by=c('Biosample'='biosample'))
+	  } else {
+	    enrMatrix$sampleName = enrMatrix$Biosample
+	  }
 	}
 	
 	# write table

@@ -18,7 +18,6 @@ output: html_document
 ### SET UP 
 knitr::opts_chunk$set(error = TRUE)
 
-
 # load libraries
 library(plyr)
 library(dplyr)
@@ -104,7 +103,7 @@ boxplot = ggplot(enr.all, aes(
   x = method,
   y = enrichment,
   fill = method,
-  text = paste("GTExTissue:", GTExTissue,"\nBiosample:", BiosampleName,"\nEnrichment:",enrichment
+  text = paste("GTExTissue:", GTExTissue,"\nBiosample:", sampleName,"\nEnrichment:",enrichment
   )
 )) +
   geom_boxplot() + geom_point(alpha = 0) +
@@ -287,8 +286,8 @@ htmltools::tagList(reactable(matrix()))
 for (i in 1:length(methods)) {
   cat("  \n###",  methods[i], "  \n")
   table.current = read.table(tables[i], header=TRUE, fill=TRUE) %>% dplyr::select(-nCommonVariants) %>% drop_na()
-  table.current$Biosample=table.current$BiosampleName
-  table.current=dplyr::select(table.current,-BiosampleName)
+  table.current$Biosample=table.current$sampleName
+  table.current=dplyr::select(table.current,-sampleName)
   cat("  \n")
   
   cat(knitr::knit_print(reactable(table.current, striped=TRUE, searchable=TRUE, filterable=TRUE,
@@ -312,7 +311,7 @@ for (i in 1:length(methods)) {
   cat("  \n###",  methods[i], "  \n")
   table.current = read.table(tables[i], header=TRUE, fill=TRUE) %>% drop_na()
   max.color = ceiling(quantile(table.current$enrichment, 0.95))
-  hm.df = dplyr::select(table.current, BiosampleName, GTExTissue, enrichment)
+  hm.df = dplyr::select(table.current, sampleName, GTExTissue, enrichment)
   colnames(hm.df) = c('name','variable','value')
   cat(knitr::knit_print(heatmaply(long_data=hm.df, show_dendrogram = c(FALSE,FALSE),
             label_names=c('Biosample','GTExTissue','Enrichment'), 
@@ -336,7 +335,7 @@ for (i in 1:length(methods)) {
   table.current = read.table(tables[i], fill=TRUE, header=TRUE) %>% drop_na()
  
   m = ggplot(table.current, aes(x=GTExTissue, y=enrichment, fill=GTExTissue, 
-                         text=paste("GTExTissue:",GTExTissue,"\nBiosample:", BiosampleName,"\nEnrichment:", enrichment))) +
+                         text=paste("GTExTissue:",GTExTissue,"\nBiosample:", sampleName,"\nEnrichment:", enrichment))) +
               geom_boxplot() + geom_point(alpha=0) +
               theme_minimal() + ylab(enrLabel) + xlab('') + ylim(0, max.enr) +
               scale_fill_viridis(discrete=TRUE, option='plasma') + 

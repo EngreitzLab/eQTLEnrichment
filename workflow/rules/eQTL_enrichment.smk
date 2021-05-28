@@ -1,9 +1,14 @@
+# load prediction method config file
+methods_config_file = config["methodsTable"]
+methods_config = pd.read_table(methods_config_file).set_index("method", drop=False)
+methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
+methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 
 # get list of genes considered by GTEx and by the prediction method
 # run once per method
 rule make_gene_universes:
 	input: 
- 		methodGeneUniverse = lambda wildcards: config["geneUniverse"][wildcards.method],
+ 		methodGeneUniverse = lambda wildcards: methods_config.loc[wildcards.method, "geneUniverse"],
 		GTExGeneUniverse = config["GTExGeneUniverse"]
 	params:
 		outDir = config["outDir"],
@@ -24,7 +29,7 @@ rule make_gene_universes:
 # run once per prediction method
 rule sort_predictions:
 	input:
-		predFile = lambda wildcards: config["predFile"][wildcards.method],
+		predFile = lambda wildcards: methods_config.loc[wildcards.method, "predFile"],
 		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
 	params:
 		codeDir = config["codeDir"],
@@ -115,7 +120,7 @@ rule filter_variants_to_gene_universe:
 		"""
 	
 # intersect predictions and GTEx variants
-# run once per  method
+# run once per method
 rule intersect_variants_predictions:
 	input:
 		predictionsSorted = os.path.join(config["outDir"], "{method}", "enhancerPredictions.sorted.bed.gz"),
@@ -128,38 +133,11 @@ rule intersect_variants_predictions:
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
 		"""
-		# columns of output: 1-3 (variant loc), 4 (variant hgID), 5 (variant tissue), 6 (egene), 7 (variant PIP), 8 (eGene TPM), 9-11 (enhancer loc), 12 (enhancer cell type), 13 (enhancer target gene hgnc)
+		# columns of output: 1-3 (variant loc), 4 (variant hgID), 5 (variant tissue), 6 (eGene), 7 (variant PIP), 8 (eGene TPM), 9-11 (enhancer loc), 12 (enhancer cell type), 13 (enhancer target gene hgnc)
 		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {input.filteredGTExVariantsFinal} -b stdin | gzip > {output.variantsPredictionsInt}
 		"""
 
-# make count matrix
-# once per method
-rule compute_count_matrix_old:
-	input:
-		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "GTExVariants-enhancerPredictionsInt.tsv.gz"),
-		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
-	params:
-		outDir = config["outDir"],
-		GTExTissues=config["GTExTissues"]
-	output: 
-		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrixOld.tsv")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	shell:
-		"""			
-		set +o pipefail;
-		
-		biosamples=$(awk 'BEGIN {{ ORS=" " }} {{ print }}' {input.samples})
-		for sample in $biosamples
-		do
-		# columns of output: 1-3 (variant loc), 4 (variant hgID), 5 (variant tissue), 6 (egene), 7 (variant PIP), 8 (eGene TPM), 9-11 (enhancer loc), 12 (enhancer cell type), 13 (enhancer target gene hgnc)
-			# filter for cell type, select just variant hgID and tissue, deduplicate (through uniq)
-			# print counts per GTEx tissue, sort (alphabetically by first tissue), print only count, then print all numbers in a row in matrix
-			zcat {input.variantsPredictionsInt} | awk -v awkvar=$sample '$12==awkvar' | cut -f 4,5 | sort -k1 | uniq | awk '{{a[$2]++}} END {{for(i in a) print i" "a[i]}}' | sort -k1 | cut -d' ' -f2 | awk 'BEGIN {{ ORS = "\\t" }} {{ print }}' >> {output.countMatrix}
-			printf "\\n" >> {output.countMatrix}
-		done
-		"""
-			
+# compute count matrix (number of eQTLSs in predicted enhancers at every GTEx tissue/biosample intersection)	
 rule compute_count_matrix:
 	input:
 		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "GTExVariants-enhancerPredictionsInt.tsv.gz"),
@@ -257,9 +235,7 @@ rule compute_enrichment_matrix:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"],
 		GTExTissues = config["GTExTissues"],
-		sampleKey = lambda wildcards: config["enrichment_heatmaps"]["sampleKey"][wildcards.method],
-		sampleID = lambda wildcards: config["enrichment_heatmaps"]["sampleID"][wildcards.method],
-		sampleName = lambda wildcards: config["enrichment_heatmaps"]["sampleName"][wildcards.method]
+		sampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"],
 	output: 
 		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv")
 	conda: 
@@ -275,10 +251,7 @@ rule plot_enrichment_heatmaps:
 	params:
 		basesPerEnhancerSet = os.path.join(config["outDir"], "{method}", "basesPerEnhancerSet.tsv"),
 		codeDir = config["codeDir"],
-		sampleKey = lambda wildcards: config["enrichment_heatmaps"]["sampleKey"][wildcards.method],
-		sampleID = lambda wildcards: config["enrichment_heatmaps"]["sampleID"][wildcards.method],
-		sampleName = lambda wildcards: config["enrichment_heatmaps"]["sampleName"][wildcards.method],
-		sampleCategory = lambda wildcards: config["enrichment_heatmaps"]["sampleCategory"][wildcards.method]
+		sampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"]
 	output: 
 		heatmapFull = os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.full.pdf"),
 		heatmapAggregated = os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.aggregated.pdf")
@@ -289,10 +262,10 @@ rule plot_enrichment_heatmaps:
 		set +o pipefail;
 			
 		# plot full heat map
-		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapFull} --samplekey {params.sampleKey} --cellid {params.sampleID} --category {params.sampleName} --enhancersizes {params.basesPerEnhancerSet}
+		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapFull} --samplekey {params.sampleKey} --enhancersizes {params.basesPerEnhancerSet}  --useCategory "False"
 			
 		# plot aggregated heat map
-		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapAggregated} --samplekey {params.sampleKey} --cellid {params.sampleID} --category {params.sampleCategory} --enhancersizes {params.basesPerEnhancerSet}
+		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapAggregated} --samplekey {params.sampleKey} --enhancersizes {params.basesPerEnhancerSet} --useCategory "True"
 			
 		"""
 			

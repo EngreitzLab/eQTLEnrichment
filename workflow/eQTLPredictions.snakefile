@@ -25,9 +25,9 @@ sensitivityPlotsFiles = []
 
 for x in config["methods"]:
 	# list of variant files
-	variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.filteredVariants.tsv"), GTExTissue=methods_config.loc[x, "GTExTissue_map"]))
+	variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
 	# list of variant files with proximal genes
-	variantsByTissueProximalFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.filteredVariants.proximal.tsv"), GTExTissue=methods_config.loc[x, "GTExTissue_map"]))
+	variantsByTissueProximalFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.proximal.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
 	# list of filtered prediction files
 	predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{Biosample}.filteredPredictions.tsv"), Biosample=methods_config.loc[x, "biosample_map"]))
 	# list of prediction tables
@@ -62,7 +62,7 @@ rule all:
 		variantsByTissueProximal = variantsByTissueProximalFiles,
 		predictionsByBiosample = predictionsByBiosampleFiles,
 		predTables = predTablesFiles,
-		#sensitivityPlots = sensitivityPlotsFiles,
+		sensitivityPlots = sensitivityPlotsFiles,
 		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
 		PPVPlot = os.path.join(config["outDir"], "PPV.pdf"),
 		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv"),

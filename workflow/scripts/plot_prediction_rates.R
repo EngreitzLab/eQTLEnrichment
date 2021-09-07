@@ -26,7 +26,6 @@ main <- function() {
     
     for (x in GTExTissues$X1) {
       # select a table
-      
       temp = tables[str_detect(tables, x)]
       temp = read.table(file=temp[1],header=TRUE,stringsAsFactors=FALSE)
       
@@ -34,6 +33,7 @@ main <- function() {
       closest.gene.rate = nrow(filter(temp, closestGene==eGene))/nrow(temp)
       closest.TSS.rate = nrow(filter(temp, closestTSS==eGene))/nrow(temp)
       nearby.TSS.rate = nrow(filter(temp, nearbyTSS==TRUE))/nrow(temp)
+      any.TSS.near = nrow(filter(temp, nTSSnear>0))/nrow(temp)
       # positive predictive value = TP/(TP+FP)
       denom = dplyr::select(temp, chr, start, end, nTSSnear) %>% distinct() 
       nearby.TSS.PPV = nrow(filter(temp, nearbyTSS==TRUE))/sum(denom$nTSSnear)
@@ -42,7 +42,8 @@ main <- function() {
       df = add_row(df, GTExTissue=x, metric="Closest gene body", method="Proximity", value=closest.gene.rate) %>%
         add_row(GTExTissue=x, metric="Closest TSS", method="Proximity", value=closest.TSS.rate) %>%
         add_row(GTExTissue=x, metric="TSS within 100 kb", method="Proximity", value=nearby.TSS.rate) %>%
-        add_row(GTExTissue=x, metric="Positive predictive value", method="Proximity", value=nearby.TSS.PPV)
+        add_row(GTExTissue=x, metric="Positive predictive value", method="Proximity", value=nearby.TSS.PPV) %>%
+        add_row(GTExTissue=x, metric="Variants with any TSS within 100 kb", method="Proximity", value=any.TSS.near)
     }
     colnames(df) = c("GTExTissue", "metric", "method","value")
     df = filter(df, GTExTissue!="temp")

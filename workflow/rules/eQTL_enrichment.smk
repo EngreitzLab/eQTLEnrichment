@@ -247,9 +247,9 @@ rule compute_enrichment_matrix:
 # run once per method
 rule plot_enrichment_heatmaps:
 	input: 
-		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv")
+		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"),
+		basesPerEnhancerSet = os.path.join(config["outDir"], "{method}", "basesPerEnhancerSet.tsv")
 	params:
-		basesPerEnhancerSet = os.path.join(config["outDir"], "{method}", "basesPerEnhancerSet.tsv"),
 		codeDir = config["codeDir"],
 		sampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"]
 	output: 
@@ -262,10 +262,10 @@ rule plot_enrichment_heatmaps:
 		set +o pipefail;
 			
 		# plot full heat map
-		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapFull} --samplekey {params.sampleKey} --enhancersizes {params.basesPerEnhancerSet}  --useCategory "False"
+		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapFull} --samplekey {params.sampleKey} --enhancersizes {input.basesPerEnhancerSet}  --useCategory "False"
 			
 		# plot aggregated heat map
-		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapAggregated} --samplekey {params.sampleKey} --enhancersizes {params.basesPerEnhancerSet} --useCategory "True"
+		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapAggregated} --samplekey {params.sampleKey} --enhancersizes {input.basesPerEnhancerSet} --useCategory "True"
 			
 		"""
 			

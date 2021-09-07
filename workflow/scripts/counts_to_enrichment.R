@@ -36,7 +36,7 @@ main <- function() {
 	enrMatrix$nCommonVariants = totalCommonVar
 	enrMatrix$enrichment = enrMatrix$nVariantsOverlappingEnhancers/enrMatrix$nVariantsGTExTissue/(enrMatrix$nCommonVariantsOverlappingEnhancers/enrMatrix$nCommonVariants)
 	
-	if (is.na(sampleKeyFile)){
+	if (is.na(sampleKeyFile) || sampleKeyFile=="None"){
 	  enrMatrix$sampleName = enrMatrix$Biosample
 	} else {
 	  cat.data = read.table(sampleKeyFile, header=TRUE, sep="\t", fill=TRUE)

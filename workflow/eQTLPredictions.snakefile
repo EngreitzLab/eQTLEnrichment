@@ -8,7 +8,8 @@ from os.path import join
 
 # load prediction method config file
 methods_config_file = config["methodsTable"]
-methods_config = pd.read_table(methods_config_file).set_index("method", drop=False)
+methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
+#methods_config = pd.read_table(methods_config_file).set_index("method", drop=False)
 methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
 methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 

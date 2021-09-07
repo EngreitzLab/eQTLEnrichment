@@ -1,6 +1,7 @@
 # load prediction method config file
 methods_config_file = config["methodsTable"]
-methods_config = pd.read_table(methods_config_file).set_index("method", drop=False)
+methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
+#methods_config = pd.read_table(methods_config_file).set_index("method", drop=False)
 methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
 methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 
@@ -13,7 +14,7 @@ sensitivityPlotsFiles = []
 
 for x in config["methods"]:
 	# list of variant files
-	#variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
+	#variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"])),
 	# list of variant files with proximal genes
 	#variantsByTissueProximalFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.proximal.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
 	# list of filtered prediction files
@@ -46,12 +47,12 @@ rule split_variants_by_tissue:
 rule get_TSS_gene_files:
 	input:
 		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.tsv"),
-		sampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"],
 		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
 	params:
+		sampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"],
 		TSS = config["TSS"],
 		GTExGeneUniverse = config["GTExGeneUniverse"],
-		codeDir = config["codeDir"],
+		codeDir = config["codeDir"]
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	output:

@@ -24,7 +24,7 @@ main <- function() {
     sampleKeyFile = opt$samplekey; out.file = opt$outfile
     max.color=opt$maxcolor; useCat = opt$useCategory
     
-    enrMatrix = read.table(file=file.name, header=TRUE, stringsAsFactors = FALSE) %>% 
+    enrMatrix = read.table(file=file.name, header=TRUE, stringsAsFactors = FALSE, fill=TRUE) %>% 
         filter(enrichment!='NA')
 
     if (is.na(max.color) || max.color=='nan') {
@@ -32,7 +32,7 @@ main <- function() {
     }
     
     ## add category/sample name
-    if (is.na(sampleKeyFile)){
+    if (is.na(sampleKeyFile) || sampleKeyFile=="None"){
         enrMatrix$sampleCategory = enrMatrix$sampleName
     } else {
         cat.data = read.table(sampleKeyFile, header=TRUE, sep="\t", fill=TRUE)
@@ -43,7 +43,7 @@ main <- function() {
             enrMatrix$sampleCategory = enrMatrix$sampleName
         }
     }
-    # add base pairs per  biosample
+    # add base pairs per biosample
     bp.data = read.table(enhancer.size, header=FALSE)
     colnames(bp.data) = c('Biosample','EnhancerMb')
     bp.data$EnhancerMb = bp.data$EnhancerMb/1E6

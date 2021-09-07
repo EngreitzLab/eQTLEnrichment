@@ -1,7 +1,7 @@
 ---
 title: "eQTL enrichment analysis"
 author: "Maya Sheth"
-date: "4/1/2021"
+date: "07/23/2021"
 output: html_document
 ---
 ```{css echo=FALSE}
@@ -43,13 +43,13 @@ sensitivitiesFile = (snakemake@input$sensitivitiesTable)
 ## variants per GTEx tissue
 # aggregate data
 var.all = read.table(file = varPerTissue[1],
-                     header = TRUE,
+                     header = FALSE,
                      stringsAsFactors = FALSE)
 var.all$method = methods[1]
 if (length(methods) > 1) {
   for (i in 2:length(methods)) {
     temp = read.table(file = varPerTissue[i],
-                      header = TRUE,
+                      header = FALSE,
                       stringsAsFactors = FALSE)
     temp$method = methods[i]
     var.all = rbind(var.all, temp)
@@ -90,6 +90,8 @@ if (length(methods) > 1) {
 }
 enr.all = enr.all[order(enr.all$enrichment), ]
 max.enr = max(enr.all$enrichment)
+write.table(enr.all, file='/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.test.NEW/enrTablePlotting.tsv', 
+            quote=FALSE, sep='\t', col.names=TRUE, row.names=FALSE)
 
 # cdf plot
 enrLabel = 'Enrichment\n(GTEx variants/all common variants)'
@@ -128,11 +130,11 @@ df[df == "Cells_EBV-transformed_lymphocytes"] = "LCLs"
 small.rates = filter(df, metric %in% c("% variants in any enhancer", "Prediction rate"))
 small.rates$metric = plyr::revalue(
   small.rates$metric,
-  c(
-    "% variants in any enhancer" = "Overlaps predicted enhancer",
-    "Prediction rate" = "Overlaps predicted enhancer \nlinked to correct gene"
-  )
-)
+  c("% variants in any enhancer" = "Overlaps predicted enhancer",
+    "Prediction rate" = "Overlaps predicted enhancer \nlinked to correct gene"))
+write.table(small.rates, file='/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.test.NEW/predTablePlotting.tsv', 
+            quote=FALSE, sep='\t', col.names=TRUE, row.names=FALSE)
+
 
 # graph variant capture & overall prediction rate
 sr = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
@@ -184,7 +186,7 @@ pr = ggplot(pred.rate,
            position = "dodge",
            width = 0.8) +
 geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", position=position_dodge(0.8)) +
-  facet_grid(GTExTissue ~ ., scales = 'fixed') + theme_minimal() + xlab('') + ylab('Prediction rate given variant in enhancer') +
+  facet_grid(GTExTissue ~ ., scales = 'fixed') + theme_minimal() + xlab('') + ylab('Fraction of variants in enhancers linked to correct gene') +
   theme(axis.text.x = element_text(angle = 60, hjust = 1),
         legend.position = 'none') +
   scale_fill_viridis(discrete = TRUE,
@@ -192,8 +194,36 @@ geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", po
                      name = 'Method') + ylim(0, 1.1)
 
 # calculate figure height based on num tissues used
+tissueSet = data.frame(df$GTExTissue) %>% distinct()
 nTissues = data.frame(df$GTExTissue) %>% distinct() %>% nrow()
+
 ht = 1.5 * nTissues
+
+## scatter plots of fraction variants in enhancers vs fraction variants in enhancers correctly predicted
+# pull together data table with tissue, method, fraction variants in "enhancer", fraction variants correctly predicted
+df.scatter = data.frame('temp','temp',1,1)
+    colnames(df.scatter) = c("GTExTissue", "predictionMethod", "fEnhancer","fCorrect")
+for (i in 1:nTissues){
+  this.tissue = tissueSet$df.GTExTissue[i]
+  this.closest.gene = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Closest gene body")
+  this.closest.TSS = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Closest TSS")
+  this.near.TSS.correct = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="TSS within 100 kb")
+  this.near.TSS.any = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Variants with any TSS within 100 kb")
+
+  df.scatter = add_row(df.scatter, GTExTissue=this.tissue, predictionMethod="Closest gene body", fEnhancer=1, fCorrect=this.closest.gene$value) %>%
+    add_row(GTExTissue=this.tissue, predictionMethod="Closest TSS", fEnhancer=1, fCorrect=this.closest.TSS$value) %>%
+    add_row(GTExTissue=this.tissue, predictionMethod="TSS within 100 kb", fEnhancer=this.near.TSS.any$value, fCorrect=this.near.TSS.correct$value)
+
+  for (j in 1:length(methods)){
+    this.method = methods[[j]]
+    this.overlap = filter(df, GTExTissue==this.tissue, predictionMethod==this.method, metric=="% variants in any enhancer")
+    this.correct = filter(df, GTExTissue==this.tissue, predictionMethod==this.method, metric=="Prediction rate given variant in enhancer")
+    df.scatter = add_row(df.scatter, GTExTissue=this.tissue, predictionMethod=this.method, 
+                         fEnhancer=this.overlap$value, fCorrect=this.correct$value)
+  }
+}
+df.scatter=filter(df.scatter, GTExTissue!="temp")
+write.table(df.scatter, file="/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.compareTSS-131.NEW/testScatterData.tsv", quote=FALSE,sep="\t")
 
 ## graph PPV
 # subset data
@@ -359,7 +389,7 @@ The enhancer-gene prediction methods can also be evaluated on how well they pred
 print(sr)
 print(pr)
 
-cap1 = "Fig. 6. Bar plots showing: the fraction of fine-mapped, distal noncoding eQTL variants with a posterior threshold greater than 0.5 from a certain GTEx tissue that overlap any predicted enhancers in a matching cell type and the fraction of variants overlapping predicted enhancers linked to the variant's eGene."
+cap1 = "Fig. 6. Bar plots showing: the fraction of fine-mapped, distal noncoding eQTL variants with a posterior threshold greater than 0.5 from a certain GTEx tissue that overlap any predicted enhancers in a matching cell type and the fraction of variants overlapping predicted enhancers linked to the variant's eGene. Note that the 'Closest TSS' predictor only considers genes expressed with a median TPM>1 in the corresponding GTEx tissue. "
 cap2 = "Fig. 7. Bar plot showing the prediction rate of a variant's eGene, given that it falls in an enhancer."
   
 ```

@@ -9,16 +9,16 @@ suppressPackageStartupMessages({
 
 main <- function() {
   this.biosample = (snakemake@wildcards$biosample)
-  sampleKeyFile = (snakemake@input$sampleKey)
+  sampleKeyFile = (snakemake@params$sampleKey)
   method.geneUniverse.file = (snakemake@input$geneUniverse)
   method.TSS.file = (snakemake@params$TSS)
   GTEx.geneUniverse.file = (snakemake@params$GTExGeneUniverse)
 
   ## decide on TSS file to use
-   if (is.na(sampleKeyFile)) {
+   if (is.na(sampleKeyFile) || sampleKeyFile=="None") {
      TSS.file =  method.TSS.file
      } else {
-        sampleKey = read.table(sampleKeyFile, header=TRUE, fill=TRUE, row.names=NULL)
+        sampleKey = read.table(sampleKeyFile, header=TRUE, fill=TRUE, row.names=NULL, sep='\t')
         if ("TSSFile" %in% colnames(sampleKey)){
         filteredKey = filter(sampleKey, biosample==this.biosample)
         this.TSS = filteredKey$TSSFile[1]
@@ -34,10 +34,10 @@ main <- function() {
     }
  
   ## decide on gene file to use
-   if (is.na(sampleKeyFile)) {
+   if (is.na(sampleKeyFile) || sampleKeyFile=="None") {
      gene.file = method.geneUniverse.file
    } else {
-     sampleKey = read.table(sampleKeyFile, header=TRUE, sep="\t", fill=TRUE)
+     sampleKey = read.table(sampleKeyFile, header=TRUE, row.names=NULL, fill=TRUE, sep='\t')
      if ("geneFile" %in% colnames(sampleKey)){
        filteredKey = filter(sampleKey, biosample==this.biosample)
        this.genes = filteredKey$geneFile[1]
@@ -69,7 +69,7 @@ main <- function() {
       TSS$gene[i] = z[2]
     }
   }
-  
+
   # make sure gene column of gene list is actually gene name
   for (i in 1:nrow(genes)){
     y = str_split(genes$gene[i], "-") %>% unlist()
@@ -77,11 +77,13 @@ main <- function() {
       genes$gene[i] = y[1]
     }
   }
-  
-  # filter
-  TSS = filter(TSS, gene %in% GTEx.geneUniverse$gene)
-  genes = filter(genes, gene %in% GTEx.geneUniverse$gene)
 
+  # filter
+  #TSS = dplyr::filter(TSS, is.element(gene,GTEx.geneUniverse$gene))
+  TSS = TSS[is.element(TSS$gene, GTEx.geneUniverse$gene), ]
+  #genes = dplyr::filter(genes, iselement(gene, GTEx.geneUniverse$gene))
+  genes = genes[is.element(genes$gene, GTEx.geneUniverse$gene), ]
+  
   write.table(TSS, file=snakemake@output$specificTSSFile, sep="\t", quote=F, row.names=F, col.names=F)
   write.table(genes, file=snakemake@output$specificGeneFile, sep="\t", quote=F, row.names=F, col.names=F)
   

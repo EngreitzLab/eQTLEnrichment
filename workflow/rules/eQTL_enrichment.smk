@@ -1,6 +1,6 @@
 # load prediction method config file
 methods_config_file = config["methodsTable"]
-methods_config = pd.read_table(methods_config_file).set_index("method", drop=False)
+methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
 methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
 methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 
@@ -274,6 +274,7 @@ rule plot_enrichment_heatmaps:
 rule plot_comparisons:
 	input: 
 		enrichmentTables = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"), method=config["methods"]),
+		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
 	params:
 		methods = config["methods"],
 		codeDir = config["codeDir"],
@@ -293,7 +294,8 @@ rule generate_report:
 		enrichmentTables = expand(os.path.join(config["outDir"],"{method}", "enrichmentTable.tsv"), method=config["methods"]),
 		variantsPerGTExTissue = expand(os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"), method=config["methods"]),
 		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv"),
-		sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv")
+		sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv"),
+		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
 	params:
 		names = config["methods"]
 	output:
@@ -302,3 +304,20 @@ rule generate_report:
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script: 
 		os.path.join(config["codeDir"], "enrichment_report.Rmd")
+		
+# generate color palette (run once overall)
+colors = []
+for x in config["methods"]:
+	# list of color inputs
+	colors.append(methods_config.loc[x, "color"])
+	
+rule generate_color_palette:
+	params:
+		user_inputs = colors,
+		names = config["methods"]
+	output:
+		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
+	conda: 
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	script: 
+		os.path.join(config["codeDir"], "color_palette.R")

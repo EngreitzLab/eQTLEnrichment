@@ -9,7 +9,6 @@ from os.path import join
 # load prediction method config file
 methods_config_file = config["methodsTable"]
 methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
-#methods_config = pd.read_table(methods_config_file).set_index("method", drop=False)
 methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
 methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 
@@ -35,6 +34,7 @@ for x in config["methods"]:
 	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
 	# list of output plot names
 	sensitivityPlotsFiles.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=methods_config.loc[x, "GTExTissue_map"], method=x))
+
 	
 
 rule all:
@@ -67,7 +67,8 @@ rule all:
 		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
 		PPVPlot = os.path.join(config["outDir"], "PPV.pdf"),
 		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv"),
-		sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv")
+		sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv"),
+		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
 		
 ################################################################################################################################
 

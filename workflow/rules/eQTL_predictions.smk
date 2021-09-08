@@ -151,7 +151,8 @@ rule make_prediction_table:
 # generate plot of prediction rates across all methods and tissues
 rule plot_prediction_rates:
 	input:
-		allTables=predTablesFiles
+		allTables=predTablesFiles,
+		colorPalette=os.path.join(config["outDir"], "colorPalette.rds")
 	params:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]
@@ -165,13 +166,14 @@ rule plot_prediction_rates:
 		"""
 		set +o pipefail;
 		
-		Rscript {params.codeDir}/plot_prediction_rates.R --tables "{input.allTables}" --out {params.outDir}
+		Rscript {params.codeDir}/plot_prediction_rates.R --tables "{input.allTables}" --out {params.outDir} --colors {input.colorPalette}
 		"""
 		
 # generate sensitivity plots
 rule plot_sensitivities:
 	input:
-		allTables=predTablesFiles
+		allTables=predTablesFiles,
+		colorPalette=os.path.join(config["outDir"], "colorPalette.rds")
 	params:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]

@@ -10,6 +10,9 @@ suppressPackageStartupMessages({
 main <- function() {
   tables = (snakemake@input$allTables) %>% strsplit(" ") %>% unlist()
   outDir = (snakemake@params$outDir)
+  cpFile = (snakemake@input$colorPalette)
+            
+  cpList = readRDS(cpFile)
   
   dir.create(file.path(outDir, "sensitivityPlots"), showWarnings=FALSE)
   
@@ -119,7 +122,8 @@ main <- function() {
         graph.title = paste0('eGene prediction rates for ', tissue.i, ' variants\noverlapping ', method.i, ' enhancers (n=', nVar, ")")
         g.specific = ggplot(df.specific, aes(x=metric, y=value, fill=method)) + 
           geom_bar(stat="identity", position="dodge", width=0.5) + ylab('Sensitivity') +
-          theme_minimal() +  ylim(0,1) + ggtitle(graph.title) + scale_fill_viridis(discrete = TRUE) +
+          theme_minimal() +  ylim(0,1) + ggtitle(graph.title) + 
+          scale_fill_manual(values=cpList) +
           theme(axis.text.x = element_text(angle = 60,hjust=1), axis.title.x = element_blank(), 
                 text = element_text(size=14),
                 plot.title= element_text(size=14),

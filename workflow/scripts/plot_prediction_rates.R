@@ -10,12 +10,14 @@ suppressPackageStartupMessages({
 main <- function() {
   option_list <- list(
     make_option(c("--tables"), type="character", default=NA, help="tsv with variants"),
-    make_option(c("--out"), type="character", default=NA, help="output directory"))
+    make_option(c("--out"), type="character", default=NA, help="output directory"),
+    make_option(c("--colors"), type="character", default=NA, help=".rds for color palette"))
   
     opt = parse_args(OptionParser(option_list=option_list))
     outDir = opt$out; outFile.pred = paste0(outDir, "/predictionRates.pdf"); outFile.PPV = paste0(outDir, "/PPV.pdf")
     tables = strsplit(opt$tables, " ") %>% unlist()
-    
+    cpList = readRDS(opt$colors)
+
     # get list of GTEx tissues represented
     GTExTissues = str_split(tables, '/') %>% data.frame() %>% t()
     GTExTissues = GTExTissues[,ncol(GTExTissues)] %>% str_split('\\.') %>% data.frame() %>% t() %>% data.frame() %>% dplyr::select(X1) %>% distinct()
@@ -47,6 +49,7 @@ main <- function() {
     }
     colnames(df) = c("GTExTissue", "metric", "method","value")
     df = filter(df, GTExTissue!="temp")
+    
     # read in prediction rates from each method
     for (fileName in tables){
       predTable = read.table(file=fileName, header=TRUE, stringsAsFactors=FALSE)
@@ -78,7 +81,9 @@ main <- function() {
       facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + 
       #theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=8)) +
       theme(text = element_text(size = rel(4)), axis.text.y=element_text(size=rel(2.5)),legend.text=element_text(size=rel(2.5))) +
-      scale_fill_viridis(discrete=TRUE,option='viridis',name='Method')
+      #scale_fill_viridis(discrete=TRUE,option='viridis',name='Method')
+      scale_fill_manual(values=cpList,name='Method')
+    
   
     pdf(file=outFile.pred,width=8,height=nrow(GTExTissues)*2); print(sr); dev.off()
     
@@ -87,13 +92,14 @@ main <- function() {
     
     #reorder method factor for graphing
     df.ppv$method=as.factor(df.ppv$method); 
-
     ppv = ggplot(df.ppv, aes(x=method, y=value, fill=method)) + 
       geom_bar(stat="identity", position="dodge", width=0.5) + 
       facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Positive predictive value') + 
       #theme(axis.text.x = element_text(size=8,angle=60,hjust=1), axis.text.y = element_text(size=8), legend.position='none') +
       theme(text = element_text(size = rel(4)),axis.text.x = element_text(angle=60,hjust=1), legend.position='none') + 
-      scale_fill_viridis(discrete=TRUE,option='viridis')
+      #scale_fill_viridis(discrete=TRUE,option='viridis')
+      scale_fill_manual(values=cpList)
+    
     pdf(file=outFile.PPV,width=8,height=nrow(GTExTissues)*2); print(ppv); dev.off()
     
     # print table

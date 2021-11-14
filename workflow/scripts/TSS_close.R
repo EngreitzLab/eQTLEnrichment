@@ -15,9 +15,9 @@ main <- function() {
   opt = parse_args(OptionParser(option_list=option_list))
   varFile = opt$variants; intFile = opt$TSSint
   
-  variants = read.csv(file=varFile, sep='\t',header=FALSE, stringsAsFactor=FALSE); 
+  variants = read.csv(file=varFile, sep='\t',header=FALSE, stringsAsFactor=FALSE, fill=TRUE); 
   colnames(variants)=c('chr','start','end','unique_id','eGene','PIP','closestGene','closestTSS')
-  TSSint = read.csv(file=intFile, sep='\t',header=FALSE, stringsAsFactor=FALSE)
+  TSSint = read.csv(file=intFile, sep='\t',header=FALSE, stringsAsFactor=FALSE, fill=TRUE)
   colnames(TSSint) = c('unique_id','closeTSS')
   
   for (i in 1:nrow(variants)) {

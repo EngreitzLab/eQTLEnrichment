@@ -85,7 +85,7 @@ main <- function() {
       scale_fill_manual(values=cpList,name='Method')
     
   
-    pdf(file=outFile.pred,width=8,height=nrow(GTExTissues)*2); print(sr); dev.off()
+    pdf(file=outFile.pred,width=8,height=nrow(GTExTissues)*2+2); print(sr); dev.off()
     
     # graph positive predictive value
     df.ppv = filter(df, metric=="Positive predictive value")
@@ -95,12 +95,10 @@ main <- function() {
     ppv = ggplot(df.ppv, aes(x=method, y=value, fill=method)) + 
       geom_bar(stat="identity", position="dodge", width=0.5) + 
       facet_grid(GTExTissue~., scales='fixed') + theme_minimal() + xlab('') + ylab('Positive predictive value') + 
-      #theme(axis.text.x = element_text(size=8,angle=60,hjust=1), axis.text.y = element_text(size=8), legend.position='none') +
       theme(text = element_text(size = rel(4)),axis.text.x = element_text(angle=60,hjust=1), legend.position='none') + 
-      #scale_fill_viridis(discrete=TRUE,option='viridis')
       scale_fill_manual(values=cpList)
     
-    pdf(file=outFile.PPV,width=8,height=nrow(GTExTissues)*2); print(ppv); dev.off()
+    pdf(file=outFile.PPV,width=8,height=nrow(GTExTissues)*2+2); print(ppv); dev.off()
     
     # print table
     df$metric = str_remove(df$metric, "\n")

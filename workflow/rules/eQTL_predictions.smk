@@ -95,8 +95,8 @@ rule add_proximal_genes:
 		
 		Rscript {params.codeDir}/TSS_close.R --variants {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.closest.tsv --TSSint {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.100kbInterval.tsv > {output.variantsByTissueProximal}
 		
-		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.100kbInterval.tsv
-		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.closest.tsv
+		#rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.100kbInterval.tsv
+		#rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.closest.tsv
 		
 		"""
 

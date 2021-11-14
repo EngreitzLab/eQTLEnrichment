@@ -4,7 +4,7 @@ import pandas as pd
 from os.path import join
 
 # config file containing samples & parameters
-# configfile: "../config/config.yml"
+# configfile: "../config/config-hg38.yml"
 
 # load prediction method config file
 methods_config_file = config["methodsTable"]
@@ -52,9 +52,9 @@ rule all:
 		variantsPerGTExTissue = expand(os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"), method=config["methods"]),
 		commonVarPerBiosample = expand(os.path.join(config["outDir"], "{method}", "commonVarPerBiosample.tsv"), method=config["methods"]),
 		enrichmentTable = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"), method=config["methods"]),
-		basesPerEnhancerSet = expand(os.path.join(config["outDir"], "{method}/basesPerEnhancerSet.tsv"), method=config["methods"]),
-		heatmapFull = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.full.pdf"), method=config["methods"]),
-		heatmapAggregated = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.aggregated.pdf"), method=config["methods"]),
+		#basesPerEnhancerSet = expand(os.path.join(config["outDir"], "{method}/basesPerEnhancerSet.tsv"), method=config["methods"]),
+		#heatmapFull = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.full.pdf"), method=config["methods"]),
+		#heatmapAggregated = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.aggregated.pdf"), method=config["methods"]),
 		cdf = os.path.join(config["outDir"], "cdf.pdf"),
 		density = os.path.join(config["outDir"], "density.pdf"),
 		boxplot = os.path.join(config["outDir"], "boxplot.pdf"),

@@ -37,7 +37,7 @@ tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
 varPerTissue = (snakemake@input$variantsPerGTExTissue) %>% strsplit(" ") %>% unlist()
 methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
 predictionMetricsFile = (snakemake@input$predictionMetrics)
-sensitivitiesFile = (snakemake@input$sensitivitiesTable)
+#sensitivitiesFile = (snakemake@input$sensitivitiesTable)
 cpFile = snakemake@input$colorPalette
 
 ### GENERATE ALL PLOTS
@@ -154,7 +154,7 @@ sr = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
   ) + facet_grid(GTExTissue ~ ., scales = 'fixed') + theme_minimal() + xlab('') + 
   ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + 
   theme(axis.text.y = element_text(hjust = 1)) +
-  scale_fill_manual(values=cpList, name='Method') + ylim(0, 0.2)
+  scale_fill_manual(values=cpList, name='Method') + ylim(0, 0.35)
   #scale_fill_viridis(discrete = TRUE, option = 'viridis', name = 'Method') + 
 
 sr.average = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
@@ -162,9 +162,9 @@ sr.average = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMet
            position = "dodge",
            width = 0.8) +
   theme_minimal() + xlab('') + ylab('Average fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + theme(axis.text.y = element_text(hjust = 1)) +
-    scale_fill_manual(values=cpList, name='Method') +
+    scale_fill_manual(values=cpList, name='Method')
   #scale_fill_viridis(discrete = TRUE, option = 'viridis', name = 'Method') +
-  ylim(0, 0.2)
+  #ylim(0, 0.2)
 
 # subset and reformat prediction rate given variant in enhancer
 pred.rate = filter(
@@ -201,7 +201,7 @@ print(head(pr))
 tissueSet = data.frame(df$GTExTissue) %>% distinct()
 nTissues = data.frame(df$GTExTissue) %>% distinct() %>% nrow()
 
-ht = 1.5 * nTissues
+ht = 1.5 * nTissues + 5
 
 ## scatter plots of fraction variants in enhancers vs fraction variants in enhancers correctly predicted
 # pull together data table with tissue, method, fraction variants in "enhancer", fraction variants correctly predicted
@@ -458,9 +458,9 @@ The following table includes the prediction rate of a method in linking a varian
 
   metrics = read.table(sensitivitiesFile, header=TRUE, sep='\t') %>%
   dplyr::select(GTExTissue, methodDefiningVariantSet, nVariants, predictionMethod, predictionRate)
-
+   
   cat(knitr::knit_print(reactable(metrics, striped=TRUE, searchable=TRUE, filterable=TRUE,
-                                  defaultPageSize=5, resizable=TRUE, 
+                                  defaultPageSize=5, resizable=TRUE,
                           columns = list(GTExTissue = colDef(name = "GTEx tissue"),
                           methodDefiningVariantSet = colDef(name = "Method defining variant set"),
                           nVariants = colDef(name = "# variants", maxWidth=100),

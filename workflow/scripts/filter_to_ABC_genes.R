@@ -15,10 +15,10 @@ main <- function() {
   opt = parse_args(OptionParser(option_list=option_list))
   inFile=opt$input; col = opt$col; ABC.gene.file=opt$genes; idType=opt$id
 
-  df = read.table(inFile, header=FALSE)
+  df = read.table(inFile, header=FALSE, fill=TRUE)
   
   # read ABC data
-  ABC.genes = read.table(ABC.gene.file, header=FALSE)
+  ABC.genes = read.table(ABC.gene.file, header=FALSE, fill=TRUE)
   if (ncol(ABC.genes)>1){
     ABC.genes = dplyr::select(ABC.genes, chr='V1',start='V2',end='V3',hgnc.IDs='V4')
   } else {

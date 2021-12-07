@@ -1,13 +1,15 @@
 suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
-  library(stringr)})
+  library(stringr)
+  library(readr)})
 
 main <- function() {
   ## get files from snakemake
+  method = (snakemake@wildcards$method)
+  outDir = (snakemake@params$outDir)
   countFile = (snakemake@input$countMatrix)
   biosampleFile = (snakemake@input$samples)
-  commonVarFile = (snakemake@input$commonVarPerBiosample)
   varPerGTExTissueFile = (snakemake@input$variantsPerGTExTissue)
   GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist %>% sort()
   sampleKeyFile = (snakemake@params$sampleKey)
@@ -16,13 +18,34 @@ main <- function() {
   
 	## read in files
   # count matrix
-  biosamples = read.table(biosampleFile, header=FALSE, stringsAsFactors=FALSE)
+  biosamples = read.table(file=biosampleFile, header=FALSE, stringsAsFactors=FALSE) %>% setNames(c("Biosample"))
+
   # each row = biosample, each col = tissue
-	countMatrix = read.table(countFile, header=TRUE, stringsAsFactors=FALSE)
+	countMatrix = read.table(file=countFile, header=TRUE, stringsAsFactors=FALSE)
 
 	# common variants by tissue/biosample
-	commonVarPerBiosample = read.table(commonVarFile, header=FALSE,stringsAsFactors=FALSE)
-	colnames(commonVarPerBiosample) = c('nCommonVariantsOverlappingEnhancers','Biosample')
+	# loop through biosamples and make this 
+	for (i in 1:nrow(biosamples)){
+    sample.this = biosamples$Biosample[i]
+    # read in count file
+    file.this = file.path(outDir, method, sample.this, "commonVarPerBiosample.tsv")
+    file.size = file.info(file.this)$size
+    size.threshold = 10
+    if (file.size<size.threshold){
+      counts.this = data.frame(matrix(nrow=1, ncol=2)) %>% setNames(c('nCommonVariantsOverlappingEnhancers','Biosample'))
+      counts.this$nCommonVariantsOverlappingEnhancers[1]=0
+      counts.this$Biosample[1]=sample.this
+    } else {
+      counts.this = read_table(file=file.this, col_names=FALSE) %>% setNames(c('nCommonVariantsOverlappingEnhancers','Biosample'))
+    }
+    
+     if (i==1){
+      commonVarPerBiosample=counts.this
+    }
+    else{
+      commonVarPerBiosample=rbind(commonVarPerBiosample, counts.this)
+    }
+	}
 
 	# variants by tissue
 	variantsByGTExTissue = read.table(varPerGTExTissueFile, header=FALSE, stringsAsFactors=FALSE); 

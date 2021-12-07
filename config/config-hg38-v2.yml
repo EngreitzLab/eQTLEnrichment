@@ -1,8 +1,8 @@
 # FILE LOCATIONS
-outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/2021_1130_threshold"
-codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/scripts"
-envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/envs"
-methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/config/config-baseline-predictors.tsv"
+outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-byBiosample/eQTLEnrichment/workflow/2021_1130_threshold"
+codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-byBiosample/eQTLEnrichment/workflow/scripts"
+envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-byBiosample/eQTLEnrichment/workflow/envs"
+methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-byBiosample/eQTLEnrichment/config/config-baseline-predictors.tsv"
 GTExVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/GTExVariants/GTEx_30tissues_hg38.tsv.gz"
 bgVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/backgroundSNPs/all.bg.SNPs.hg38.baseline.v1.1.bed.sorted"
 chrSizes: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/hg38.chrom.sizes"

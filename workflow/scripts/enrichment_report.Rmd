@@ -98,7 +98,7 @@ write.table(enr.all, file='/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichm
 enrLabel = 'Enrichment\n(GTEx variants/all common variants)'
 cdf = ggplot(enr.all, aes(x = enrichment, col = method)) + stat_ecdf(geom = "step") +
   ylab('Cumulative fraction') + xlab(enrLabel) +
-  theme_minimal() + #scale_color_viridis(discrete = TRUE, name = 'Method') +
+  theme_minimal() + 
   scale_color_manual(values=cpList, name='Method') +
   theme()
 
@@ -120,7 +120,6 @@ boxplot = ggplot(enr.all, aes(
 boxplot.summary = ggplot(enr.all, aes(x = method, y = enrichment, fill = method)) +
   geom_boxplot() +
   theme_minimal() + ylab(enrLabel) + xlab('') +
-  #scale_fill_viridis(discrete = TRUE) +
   scale_fill_manual(values=cpList) +
   theme(legend.position = 'none', axis.text.x=element_blank())
 
@@ -155,7 +154,6 @@ sr = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
   ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + 
   theme(axis.text.y = element_text(hjust = 1)) +
   scale_fill_manual(values=cpList, name='Method') + ylim(0, 0.35)
-  #scale_fill_viridis(discrete = TRUE, option = 'viridis', name = 'Method') + 
 
 sr.average = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
   geom_bar(stat = "identity",
@@ -163,8 +161,6 @@ sr.average = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMet
            width = 0.8) +
   theme_minimal() + xlab('') + ylab('Average fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + theme(axis.text.y = element_text(hjust = 1)) +
     scale_fill_manual(values=cpList, name='Method')
-  #scale_fill_viridis(discrete = TRUE, option = 'viridis', name = 'Method') +
-  #ylim(0, 0.2)
 
 # subset and reformat prediction rate given variant in enhancer
 pred.rate = filter(
@@ -194,7 +190,6 @@ geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", po
         legend.position = 'none') +
   scale_fill_manual(values=cpList, name='Method') +
   ylim(0, 1.1)
-  #scale_fill_viridis(discrete = TRUE, option = 'viridis', name = 'Method') +
 print(head(pr))
 
 # calculate figure height based on num tissues used
@@ -205,29 +200,29 @@ ht = 1.5 * nTissues + 5
 
 ## scatter plots of fraction variants in enhancers vs fraction variants in enhancers correctly predicted
 # pull together data table with tissue, method, fraction variants in "enhancer", fraction variants correctly predicted
-df.scatter = data.frame('temp','temp',1,1)
-    colnames(df.scatter) = c("GTExTissue", "predictionMethod", "fEnhancer","fCorrect")
-for (i in 1:nTissues){
-  this.tissue = tissueSet$df.GTExTissue[i]
-  this.closest.gene = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Closest gene body")
-  this.closest.TSS = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Closest TSS")
-  this.near.TSS.correct = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="TSS within 100 kb")
-  this.near.TSS.any = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Variants with any TSS within 100 kb")
-
-  df.scatter = add_row(df.scatter, GTExTissue=this.tissue, predictionMethod="Closest gene body", fEnhancer=1, fCorrect=this.closest.gene$value) %>%
-    add_row(GTExTissue=this.tissue, predictionMethod="Closest TSS", fEnhancer=1, fCorrect=this.closest.TSS$value) %>%
-    add_row(GTExTissue=this.tissue, predictionMethod="TSS within 100 kb", fEnhancer=this.near.TSS.any$value, fCorrect=this.near.TSS.correct$value)
-
-  for (j in 1:length(methods)){
-    this.method = methods[[j]]
-    this.overlap = filter(df, GTExTissue==this.tissue, predictionMethod==this.method, metric=="% variants in any enhancer")
-    this.correct = filter(df, GTExTissue==this.tissue, predictionMethod==this.method, metric=="Prediction rate given variant in enhancer")
-    df.scatter = add_row(df.scatter, GTExTissue=this.tissue, predictionMethod=this.method, 
-                         fEnhancer=this.overlap$value, fCorrect=this.correct$value)
-  }
-}
-df.scatter=filter(df.scatter, GTExTissue!="temp")
-write.table(df.scatter, file="/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.compareTSS-131.NEW/testScatterData.tsv", quote=FALSE,sep="\t")
+# df.scatter = data.frame('temp','temp',1,1)
+#     colnames(df.scatter) = c("GTExTissue", "predictionMethod", "fEnhancer","fCorrect")
+# for (i in 1:nTissues){
+#   this.tissue = tissueSet$df.GTExTissue[i]
+#   this.closest.gene = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Closest gene body")
+#   this.closest.TSS = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Closest TSS")
+#   this.near.TSS.correct = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="TSS within 100 kb")
+#   this.near.TSS.any = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Variants with any TSS within 100 kb")
+# 
+#   df.scatter = add_row(df.scatter, GTExTissue=this.tissue, predictionMethod="Closest gene body", fEnhancer=1, fCorrect=this.closest.gene$value) %>%
+#     add_row(GTExTissue=this.tissue, predictionMethod="Closest TSS", fEnhancer=1, fCorrect=this.closest.TSS$value) %>%
+#     add_row(GTExTissue=this.tissue, predictionMethod="TSS within 100 kb", fEnhancer=this.near.TSS.any$value, fCorrect=this.near.TSS.correct$value)
+# 
+#   for (j in 1:length(methods)){
+#     this.method = methods[[j]]
+#     this.overlap = filter(df, GTExTissue==this.tissue, predictionMethod==this.method, metric=="% variants in any enhancer")
+#     this.correct = filter(df, GTExTissue==this.tissue, predictionMethod==this.method, metric=="Prediction rate given variant in enhancer")
+#     df.scatter = add_row(df.scatter, GTExTissue=this.tissue, predictionMethod=this.method, 
+#                          fEnhancer=this.overlap$value, fCorrect=this.correct$value)
+#   }
+# }
+# df.scatter=filter(df.scatter, GTExTissue!="temp")
+# write.table(df.scatter, file="/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.compareTSS-131.NEW/testScatterData.tsv", quote=FALSE,sep="\t")
 
 ## graph PPV
 # subset data
@@ -252,7 +247,6 @@ ppv = ggplot(df.ppv, aes(x = method, y = value, fill = predictionMethod)) +
     legend.position = 'none',
     axis.text.y = element_text(hjust = 1)
   ) +  scale_fill_manual(values=cpList) + ylim(0, 1)
-  #scale_fill_viridis(discrete = TRUE, option = 'viridis')
 
 ```
 
@@ -456,17 +450,17 @@ cat(knitr::knit_print(reactable(df.metric, striped=TRUE, searchable=TRUE, filter
 The following table includes the prediction rate of a method in linking a variant to the correct eGene, given the set of variants that fall in enhancers for a given method. If a variant in this set is not predicted to be in an enhancer for the method being evaluated, it was assumed to be an incorrect prediction. The large variance in prediction rate depending on which method is used to define the variant set is likely because the different prediction methods usually capture distinct variants.  
 ```{r sensitivitiesTable, results='asis', echo=FALSE, fig.width=7, fig.height=5}
 
-  metrics = read.table(sensitivitiesFile, header=TRUE, sep='\t') %>%
-  dplyr::select(GTExTissue, methodDefiningVariantSet, nVariants, predictionMethod, predictionRate)
-   
-  cat(knitr::knit_print(reactable(metrics, striped=TRUE, searchable=TRUE, filterable=TRUE,
-                                  defaultPageSize=5, resizable=TRUE,
-                          columns = list(GTExTissue = colDef(name = "GTEx tissue"),
-                          methodDefiningVariantSet = colDef(name = "Method defining variant set"),
-                          nVariants = colDef(name = "# variants", maxWidth=100),
-                          predictionMethod = colDef(name = "Prediction method"),
-                          predictionRate = colDef(name="eGene prediction rate", format=colFormat(digits=2))))))
-  cat("  \n")
-  cat("  \n")
+  # metrics = read.table(sensitivitiesFile, header=TRUE, sep='\t') %>%
+  # dplyr::select(GTExTissue, methodDefiningVariantSet, nVariants, predictionMethod, predictionRate)
+  #  
+  # cat(knitr::knit_print(reactable(metrics, striped=TRUE, searchable=TRUE, filterable=TRUE,
+  #                                 defaultPageSize=5, resizable=TRUE,
+  #                         columns = list(GTExTissue = colDef(name = "GTEx tissue"),
+  #                         methodDefiningVariantSet = colDef(name = "Method defining variant set"),
+  #                         nVariants = colDef(name = "# variants", maxWidth=100),
+  #                         predictionMethod = colDef(name = "Prediction method"),
+  #                         predictionRate = colDef(name="eGene prediction rate", format=colFormat(digits=2))))))
+  # cat("  \n")
+  # cat("  \n")
 
 ```

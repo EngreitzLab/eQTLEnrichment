@@ -1,8 +1,8 @@
 # FILE LOCATIONS
-outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.test.NEW"
+outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.test"
 codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/scripts"
 envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/envs"
-methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/config/config-methods.tsv"
+methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/config/config-baseline-predictors.tsv"
 GTExVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/data/Ulirsch-eQTL/200207/GTEx_30tissues_release1.tsv.gz"
 bgVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/all.bg.SNPs.sorted.bed.gz"
 chrSizes: "/oak/stanford/groups/engreitz/Projects/GWAS/201216_ABCPipelineTest/Test_data/sizes_sorted"
@@ -14,11 +14,7 @@ GTExExpression: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resour
 GTExGeneUniverse: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/gencode.v26.genes.bed"
 
 # list of methods to run
-methods: [ChromHMM2017, EpiMap, ABC_altTSSNew-131]
-methods131: [ABCShrunk500-131, ABC_refseqTSS-131, ABC_rampageTSS-131, ABC_altTSS-131, ABC_rampageProcessed-131]
-methodsENCODE: [ABCShrunk500-131, ABC_refseqTSS-encode, ABC_rampageTSS-encode, ABC_altTSS-encode]
-methodsCompare: [ABC_altTSS_SP, ChromHMM2017, EpiMap]
-methodsOther: [ABC_origTSS_noSP, ABC_origTSS_SP, ABC_origTSS_dual, ABC_altTSS_noSP, ABC_altTSS_SP, ABC_altTSS_dual]
+methods: [dist_to_gene, dist_to_tss, nearest_gene, nearest_tss, reads_by_dist_to_tss_norm, reads_by_dist_to_tss, within_100kb_of_tss]
 
 GTExTissues: [Brain_Cortex, Prostate, Muscle_Skeletal, Artery_Tibial, Skin_Not_Sun_Exposed_Suprapubic, Esophagus_Muscularis, Brain_Cerebellum, Pituitary, Adipose_Subcutaneous, Pancreas, Spleen, Adrenal_Gland, Testis, Lung, Skin_Sun_Exposed_Lower_leg, Heart_Atrial_Appendage, Adipose_Visceral_Omentum, Esophagus_Mucosa, Thyroid, Brain_Nucleus_accumbens_basal_ganglia, Colon_Sigmoid, Breast_Mammary_Tissue, Artery_Aorta, Cells_EBV-transformed_lymphocytes, Heart_Left_Ventricle, Artery_Coronary, Esophagus_Gastroesophageal_Junction, Nerve_Tibial, Liver, Whole_Blood, Colon_Transverse, Stomach]
 

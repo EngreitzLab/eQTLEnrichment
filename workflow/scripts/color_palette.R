@@ -36,7 +36,7 @@ main <- function() {
   
   # add standards
   #standards = data.frame(method=c("TSS within 100 kb", "Closest TSS", "Closest gene body", "Proximity"),
-                         hex = c("#7A7A7A", "#A8A8A8", "#CDCDCD", "#E2E2E2"))
+  #                       hex = c("#7A7A7A", "#A8A8A8", "#CDCDCD", "#E2E2E2"))
   #cp = rbind(cp, standards)
   #cpList = split(f=cp$method, x=cp$hex)
   

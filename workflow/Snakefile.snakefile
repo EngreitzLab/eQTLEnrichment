@@ -21,7 +21,9 @@ include: "./scripts/add_biosamples_to_config.py"
 variantsByTissueFiles = []
 variantsByTissueProximalFiles = []
 predictionsByBiosampleFiles = []
+predTablesForCalcsFiles = []
 predTablesFiles = []
+thresholdTableFiles = []
 sensitivityPlotsFiles = []
 varIntFiles = []
 commonVarFiles = []
@@ -37,6 +39,7 @@ for x in config["methods"]:
 	predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "enhancerPredictions.sorted.bed.gz"), biosample=methods_config.loc[x, "biosample_map"]))
 	# list of prediction tables
 	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
+	predTablesForCalcsFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.forCalcs.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
 	# list of output plot names
 	sensitivityPlotsFiles.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=methods_config.loc[x, "GTExTissue_map"], method=x))
 	# list of variant-prediction intersections
@@ -44,12 +47,14 @@ for x in config["methods"]:
 	commonVarFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "commonVarPerBiosample.tsv"), biosample=methods_config.loc[x, "biosamples"]))	
 	predThresholdedFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "enhancerPredictions.thresholded.bed.gz"), biosample=methods_config.loc[x, "biosamples"]))
 	basesPerSetFiles.extend(expand(os.path.join(config["outDir"], x, "biosample", "basesPerEnhancerSet.tsv"), biosample=methods_config.loc[x, "biosamples"]))	
+	thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{Biosample}.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
 
 rule first:
 	input:
 		geneUniverses = expand(os.path.join(config["outDir"], "{method}", "geneUniverse.tsv"), method=config["methods"]),
 		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv"),
 		predictionsThresholded = predThresholdedFiles,
+		predTablesForCalcs = predTablesForCalcsFiles,
 		samples = expand(os.path.join(config["outDir"], "{method}", "biosampleList.tsv"), method=config["methods"]),
 		filteredGTExVar = os.path.join(config["outDir"], "generalReference/GTExVariants.filtered.PIP0.5.distalNoncoding.tsv.gz"),
 		partitionDistalNoncoding = os.path.join(config["outDir"], "generalReference", "Partition.distalNoncoding.bed"),
@@ -75,18 +80,15 @@ rule third:
 
 rule fourth:
 	input:
-		#heatmapFull = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.full.pdf"), method=config["methods"]),
-		#heatmapAggregated = expand(os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.aggregated.pdf") method=config["methods"]),
 		variantsByTissue = variantsByTissueFiles,
-		#variantsByTissueProximal = variantsByTissueProximalFiles,
 		predictionsByBiosample = predictionsByBiosampleFiles,
 		predTables = predTablesFiles,
-		#sensitivityPlots = sensitivityPlotsFiles,
+		thresholdTables = thresholdTableFiles,
 		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
 		PPVPlot = os.path.join(config["outDir"], "PPV.pdf"),
 		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv"),
 		#sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv"),
-		enrichmentReport = os.path.join(config["outDir"], "enrichment_report.html"),
+		enrichmentReport = os.path.join(config["outDir"], "enrichment_report.html")
 		
 ################################################################################################################################
 

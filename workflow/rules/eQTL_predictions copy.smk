@@ -29,7 +29,7 @@ for x in config["methods"]:
 # calculate thresholds for baseline predictors, averaged across tissues
 rule calculate_threshold:
 	input: 
-		thresholdTables = thresholdTableFiles
+		thresholdTable = thresholdTableFiles
 	params:
 		ourDir = config["outDir"]
 	conda: 
@@ -129,7 +129,8 @@ rule add_proximal_genes:
 		
 		"""
 
-rule make_prediction_table_for_calcs:
+# generate list of variants with proximal genes and where the variant is located with respect to the enhancer predictions for each pairing of GTEx tissue/biosample 
+rule make_prediction_table:
 	input:
 		#variantsByTissueProximal = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.proximal.tsv"),
 		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.tsv"),
@@ -139,7 +140,7 @@ rule make_prediction_table_for_calcs:
 		outDir = config["outDir"],
 		codeDir = config["codeDir"],
 	output:
-		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.forCalcs.tsv"),
+		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.tsv"),
 		thresholdTable = os.path.join(config["outDir"], "thresholdTables", "{method}", "{GTExTissue}.{biosample}.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
@@ -153,38 +154,7 @@ rule make_prediction_table_for_calcs:
 		zcat {input.predictionsByBiosample} | bedtools intersect -wa -wb -a {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv -b stdin | cut -f 4,9,10 > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
 		
 		# classify variants	
-		
-		Rscript {params.codeDir}/classify_enhancer_predictions_calcs.R --variants {input.variantsByTissue} --pred {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv --outDir {params.outDir} --outThresh {output.thresholdTable}  --biosample {wildcards.biosample} > {output.predTable}
-		
-		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
-		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
-		"""
-		
-rule make_prediction_table_actual:
-	input:
-		#variantsByTissueProximal = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.proximal.tsv"),
-		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.tsv"),
-		predictionsByBiosample =  os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed.gz"),
-		
-	params:
-		outDir = config["outDir"],
-		codeDir = config["codeDir"],
-	output:
-		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.tsv"),
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	shell:
-		"""
-		set +o pipefail;
-		
-		# intersect predictions with relevant variants 
-		cat {input.variantsByTissue} | cut -f 1-4 | sed 1d | sort -k 1,1 -k2,2n | uniq > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv		
-		
-		zcat {input.predictionsByBiosample} | bedtools intersect -wa -wb -a {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv -b stdin | cut -f 4,9,10 > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
-		
-		# classify variants	
-		
-		Rscript {params.codeDir}/classify_enhancer_predictions.R --variants {input.variantsByTissue} --pred {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv --outDir {params.outDir}  --biosample {wildcards.biosample} > {output.predTable}
+		Rscript {params.codeDir}/classify_enhancer_predictions.R --variants {input.variantsByTissue} --pred {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv --outDir {params.outDir} --outThresh {output.thresholdTable} > {output.predTable}
 		
 		#rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
 		#rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv

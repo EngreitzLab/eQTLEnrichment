@@ -10,7 +10,7 @@ suppressPackageStartupMessages({library(dplyr)
   #dfFile = (snakemake@input$variantsPredictionsInt)
   method = (snakemake@wildcards$method)
   biosampleFile = (snakemake@input$samples)
-  GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist %>% sort()
+  GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist() %>% sort()
   outDir = (snakemake@params$outDir)
   outFile = (snakemake@output$countMatrix)
   

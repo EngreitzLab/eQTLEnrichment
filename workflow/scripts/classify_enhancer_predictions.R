@@ -14,10 +14,18 @@ main <- function() {
   
   
   opt = parse_args(OptionParser(option_list=option_list))
-  varFile = opt$variants; predictionsInt = opt$pred;
+  varFile = opt$variants; predictionsIntFile = opt$pred;
   
-  variants = read.table(file=varFile,header=TRUE, stringsAsFactor=FALSE); 
-  predictionsInt = read.table(file=predictionsInt,header=FALSE, stringsAsFactor=FALSE)
+  variants = read.table(file=varFile,header=FALSE, stringsAsFactor=FALSE); 
+  colnames(variants) = c("chr", "start", "end", "unique_id", "GTExTissue", "eGene", "PIP", "TPM")
+  
+  predIntSize = file.info(predictionsIntFile)$size
+  size.threshold=50
+  if (predIntSize<size.threshold){
+    predictionsInt=matrix(nrow=1,ncol=3) %>% data.frame()
+  } else {
+    predictionsInt = read.table(file=predictionsIntFile,header=FALSE, stringsAsFactor=FALSE)
+  }
   colnames(predictionsInt) = c('unique_id','targetGene')
     
   for (i in 1:nrow(variants)) {

@@ -37,7 +37,7 @@ tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
 varPerTissue = (snakemake@input$variantsPerGTExTissue) %>% strsplit(" ") %>% unlist()
 methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
 predictionMetricsFile = (snakemake@input$predictionMetrics)
-sensitivitiesFile = (snakemake@input$sensitivitiesTable)
+#sensitivitiesFile = (snakemake@input$sensitivitiesTable)
 cpFile = snakemake@input$colorPalette
 
 ### GENERATE ALL PLOTS
@@ -112,15 +112,12 @@ boxplot = ggplot(enr.all, aes(
 )) +
   geom_boxplot() + geom_point(alpha = 0) +
   theme_minimal() + ylab(enrLabel) + xlab('') +
-  #scale_fill_viridis(discrete = TRUE) +
   scale_fill_manual(values=cpList) +
   theme(legend.position='none', axis.text.x=element_text(angle=60,hjust=1))
-  #theme(legend.position = 'none')
 
 boxplot.summary = ggplot(enr.all, aes(x = method, y = enrichment, fill = method)) +
   geom_boxplot() +
   theme_minimal() + ylab(enrLabel) + xlab('') +
-  #scale_fill_viridis(discrete = TRUE) +
   scale_fill_manual(values=cpList) +
   theme(legend.position = 'none', axis.text.x=element_blank())
 
@@ -136,9 +133,6 @@ small.rates$metric = plyr::revalue(
   small.rates$metric,
   c("% variants in any enhancer" = "Overlaps predicted enhancer",
     "Prediction rate" = "Overlaps predicted enhancer \nlinked to correct gene"))
-write.table(small.rates, file='/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.test.NEW/predTablePlotting.tsv', 
-            quote=FALSE, sep='\t', col.names=TRUE, row.names=FALSE)
-
 
 # graph variant capture & overall prediction rate
 sr = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
@@ -155,7 +149,6 @@ sr = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
   ylab('Fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + 
   theme(axis.text.y = element_text(hjust = 1)) +
   scale_fill_manual(values=cpList, name='Method') + ylim(0, 0.2)
-  #scale_fill_viridis(discrete = TRUE, option = 'viridis', name = 'Method') + 
 
 sr.average = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMethod)) +
   geom_bar(stat = "identity",
@@ -163,7 +156,6 @@ sr.average = ggplot(small.rates, aes(x = metric, y = value, fill = predictionMet
            width = 0.8) +
   theme_minimal() + xlab('') + ylab('Average fraction of fine-mapped, distal noncoding\neQTL variants with PIP >= 0.5') + theme(axis.text.y = element_text(hjust = 1)) +
     scale_fill_manual(values=cpList, name='Method') +
-  #scale_fill_viridis(discrete = TRUE, option = 'viridis', name = 'Method') +
   ylim(0, 0.2)
 
 # subset and reformat prediction rate given variant in enhancer
@@ -194,40 +186,12 @@ geom_text(aes(label = round(value,2)), size=3, vjust = -0.4, stat="identity", po
         legend.position = 'none') +
   scale_fill_manual(values=cpList, name='Method') +
   ylim(0, 1.1)
-  #scale_fill_viridis(discrete = TRUE, option = 'viridis', name = 'Method') +
-print(head(pr))
 
 # calculate figure height based on num tissues used
 tissueSet = data.frame(df$GTExTissue) %>% distinct()
 nTissues = data.frame(df$GTExTissue) %>% distinct() %>% nrow()
 
-ht = 1.5 * nTissues
-
-## scatter plots of fraction variants in enhancers vs fraction variants in enhancers correctly predicted
-# pull together data table with tissue, method, fraction variants in "enhancer", fraction variants correctly predicted
-df.scatter = data.frame('temp','temp',1,1)
-    colnames(df.scatter) = c("GTExTissue", "predictionMethod", "fEnhancer","fCorrect")
-for (i in 1:nTissues){
-  this.tissue = tissueSet$df.GTExTissue[i]
-  this.closest.gene = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Closest gene body")
-  this.closest.TSS = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Closest TSS")
-  this.near.TSS.correct = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="TSS within 100 kb")
-  this.near.TSS.any = filter(df, GTExTissue==this.tissue, predictionMethod=="Proximity", metric=="Variants with any TSS within 100 kb")
-
-  df.scatter = add_row(df.scatter, GTExTissue=this.tissue, predictionMethod="Closest gene body", fEnhancer=1, fCorrect=this.closest.gene$value) %>%
-    add_row(GTExTissue=this.tissue, predictionMethod="Closest TSS", fEnhancer=1, fCorrect=this.closest.TSS$value) %>%
-    add_row(GTExTissue=this.tissue, predictionMethod="TSS within 100 kb", fEnhancer=this.near.TSS.any$value, fCorrect=this.near.TSS.correct$value)
-
-  for (j in 1:length(methods)){
-    this.method = methods[[j]]
-    this.overlap = filter(df, GTExTissue==this.tissue, predictionMethod==this.method, metric=="% variants in any enhancer")
-    this.correct = filter(df, GTExTissue==this.tissue, predictionMethod==this.method, metric=="Prediction rate given variant in enhancer")
-    df.scatter = add_row(df.scatter, GTExTissue=this.tissue, predictionMethod=this.method, 
-                         fEnhancer=this.overlap$value, fCorrect=this.correct$value)
-  }
-}
-df.scatter=filter(df.scatter, GTExTissue!="temp")
-write.table(df.scatter, file="/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.compareTSS-131.NEW/testScatterData.tsv", quote=FALSE,sep="\t")
+ht = 1.5 * nTissues +5
 
 ## graph PPV
 # subset data
@@ -401,8 +365,7 @@ cap2 = "Fig. 7. Bar plot showing the prediction rate of a variant's eGene, given
 
 Next, we compare the the specificity of the methods in  predicting variant-gene links by calculating the positive predictive value (PPV). It is important to note that since the eQTL dataset does not represent a complete list of "true positive" variant-gene links, the PPV should be interpreted with caution here. However, it provides a useful metric to compare the relative performance of methods. 
 
-In this analysis, we first noted that 1) a single variant may be connected to multiple eGenes, and 2) each enhancer prediction may be connected to multiple target genes. Each variant and all of its associated eGenes is considered as a unit, while each enhancer-target gene link is considered as a distinct prediction. A correct prediction is defined as an enhancer-target gene pair that contains a variant linked to the same gene, and PPV was calculated as: PPV = (# correct predictions)/(# total predictions). As a point of reference, the PPV of predicting that a variant is linked to every gene with a transcription start site within 100 kb was included for each tissue.  
-
+In this analysis, we first noted that 1) a single variant may be connected to multiple eGenes, and 2) each enhancer prediction may be connected to multiple target genes. Each variant and all of its associated eGenes is considered as a unit, while each enhancer-target gene link is considered as a distinct prediction. A correct prediction is defined as an enhancer-target gene pair that contains a variant linked to the same gene, and PPV was calculated as: PPV = (# correct predictions)/(# total predictions). 
 
 ```{r ppvGraph, echo=FALSE, fig.width=9, fig.height=ht, fig.cap=cap}
 
@@ -447,25 +410,6 @@ cat(knitr::knit_print(reactable(df.metric, striped=TRUE, searchable=TRUE, filter
           columns = list(GTExTissue = colDef(name = "GTEx tissue"),
                           predictionMethod = colDef(name = "Prediction method")))))
 
-  cat("  \n")
-  cat("  \n")
-
-```
-
-## Sensitivities
-The following table includes the prediction rate of a method in linking a variant to the correct eGene, given the set of variants that fall in enhancers for a given method. If a variant in this set is not predicted to be in an enhancer for the method being evaluated, it was assumed to be an incorrect prediction. The large variance in prediction rate depending on which method is used to define the variant set is likely because the different prediction methods usually capture distinct variants.  
-```{r sensitivitiesTable, results='asis', echo=FALSE, fig.width=7, fig.height=5}
-
-  metrics = read.table(sensitivitiesFile, header=TRUE, sep='\t') %>%
-  dplyr::select(GTExTissue, methodDefiningVariantSet, nVariants, predictionMethod, predictionRate)
-
-  cat(knitr::knit_print(reactable(metrics, striped=TRUE, searchable=TRUE, filterable=TRUE,
-                                  defaultPageSize=5, resizable=TRUE, 
-                          columns = list(GTExTissue = colDef(name = "GTEx tissue"),
-                          methodDefiningVariantSet = colDef(name = "Method defining variant set"),
-                          nVariants = colDef(name = "# variants", maxWidth=100),
-                          predictionMethod = colDef(name = "Prediction method"),
-                          predictionRate = colDef(name="eGene prediction rate", format=colFormat(digits=2))))))
   cat("  \n")
   cat("  \n")
 

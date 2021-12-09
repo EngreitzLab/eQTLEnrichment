@@ -294,7 +294,7 @@ rule generate_report:
 		enrichmentTables = expand(os.path.join(config["outDir"],"{method}", "enrichmentTable.tsv"), method=config["methods"]),
 		variantsPerGTExTissue = expand(os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"), method=config["methods"]),
 		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv"),
-		sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv"),
+		#sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv"),
 		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
 	params:
 		names = config["methods"]

@@ -1,22 +1,20 @@
 # FILE LOCATIONS
-outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/results.testSampleKey"
-codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/scripts"
-envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/workflow/envs"
-methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/config/config-methods.tsv"
-GTExVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/data/Ulirsch-eQTL/200207/GTEx_30tissues_release1.tsv.gz"
-bgVariants: "/oak/stanford/groups/engreitz/Projects/GWAS/210208_Benchmarking/data/all.bg.SNPs.sorted.bed.gz"
-chrSizes: "/oak/stanford/groups/engreitz/Projects/GWAS/201216_ABCPipelineTest/Test_data/sizes_sorted"
-partition: "/oak/stanford/groups/engreitz/Projects/GWAS/191223_Partitioning/200523-ABCPartition/partition/PartitionCombined.bed"
-TSS: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/RefSeqCurated.170308.bed.CollapsedGeneBounds.TSS500bp.sorted.bed"
+outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-hg38/eQTLEnrichment/workflow/2021_1209_ABConly"
+codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-hg38/eQTLEnrichment/workflow/scripts"
+envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-hg38/eQTLEnrichment/workflow/envs"
+methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-hg38/eQTLEnrichment/config/config-methods.tsv"
+GTExVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/GTExVariants/GTEx_30tissues_hg38.tsv.gz"
+bgVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/backgroundSNPs/all.bg.SNPs.hg38.baseline.v1.1.bed.sorted"
+chrSizes: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/hg38.chrom.sizes"
+partition: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/genomePartition/2021_1020_results_allPermutations/PartitionCombined.bed"
+TSS: "/oak/stanford/groups/akundaje/kmualim/GWAS_test/Test_data/RefSeqCurated.170308.bed.CollapsedGeneBounds.hg38.TSS500bp.bed"
 
 # GTEx expression data
 GTExExpression: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_median_tpm.gct"
-GTExGeneUniverse: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/gencode.v26.genes.bed"
+GTExGeneUniverse: "/oak/stanford/groups/akundaje/kmualim/GWAS_test/Test_data/RefSeqCurated.170308.bed.CollapsedGeneBounds.hg38.bed"
 
 # list of methods to run
-methods: [ABCShrunk500, ABC_altTSS_SP]
-methodsCompare: [ABC_altTSS_SP, ChromHMM2017, EpiMap]
-methodsOther: [ABC_origTSS_noSP, ABC_origTSS_SP, ABC_origTSS_dual, ABC_altTSS_noSP, ABC_altTSS_SP, ABC_altTSS_dual]
+methods: [ABC_20210712_hg38ENCODE_RefSeq]
 
 GTExTissues: [Brain_Cortex, Prostate, Muscle_Skeletal, Artery_Tibial, Skin_Not_Sun_Exposed_Suprapubic, Esophagus_Muscularis, Brain_Cerebellum, Pituitary, Adipose_Subcutaneous, Pancreas, Spleen, Adrenal_Gland, Testis, Lung, Skin_Sun_Exposed_Lower_leg, Heart_Atrial_Appendage, Adipose_Visceral_Omentum, Esophagus_Mucosa, Thyroid, Brain_Nucleus_accumbens_basal_ganglia, Colon_Sigmoid, Breast_Mammary_Tissue, Artery_Aorta, Cells_EBV-transformed_lymphocytes, Heart_Left_Ventricle, Artery_Coronary, Esophagus_Gastroesophageal_Junction, Nerve_Tibial, Liver, Whole_Blood, Colon_Transverse, Stomach]
 

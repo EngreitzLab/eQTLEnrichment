@@ -23,22 +23,22 @@ main <- function() {
   df = data.frame('temp','temp','temp',1)
   colnames(df) = c("GTExTissue", "metric", "method","value")
   
-  for (x in GTExTissues$X1) {
-    # select a table
-    temp = tables[str_detect(tables, x)]
-    temp = read.table(file=temp[1],header=TRUE,stringsAsFactors=FALSE)
-    
-    # calculate rates
-    closest.gene.rate = nrow(filter(temp, closestGene==eGene))/nrow(temp)
-    closest.TSS.rate = nrow(filter(temp, closestTSS==eGene))/nrow(temp)
-    nearby.TSS.rate = nrow(filter(temp, nearbyTSS==TRUE))/nrow(temp)
-    # add to df
-    df = add_row(df, GTExTissue=x, metric="Closest gene body", method="Proximity", value=closest.gene.rate) %>%
-      add_row(GTExTissue=x, metric="Closest TSS", method="Proximity", value=closest.TSS.rate) %>%
-      add_row(GTExTissue=x, metric="TSS within 100 kb", method="Proximity", value=nearby.TSS.rate)
-  }
-  colnames(df) = c("GTExTissue", "metric", "method","value")
-  df = filter(df, GTExTissue!='temp')
+  # for (x in GTExTissues$X1) {
+  #   # select a table
+  #   temp = tables[str_detect(tables, x)]
+  #   temp = read.table(file=temp[1],header=TRUE,stringsAsFactors=FALSE)
+  #   
+  #   # calculate rates
+  #   closest.gene.rate = nrow(filter(temp, closestGene==eGene))/nrow(temp)
+  #   closest.TSS.rate = nrow(filter(temp, closestTSS==eGene))/nrow(temp)
+  #   nearby.TSS.rate = nrow(filter(temp, nearbyTSS==TRUE))/nrow(temp)
+  #   # add to df
+  #   df = add_row(df, GTExTissue=x, metric="Closest gene body", method="Proximity", value=closest.gene.rate) %>%
+  #     add_row(GTExTissue=x, metric="Closest TSS", method="Proximity", value=closest.TSS.rate) %>%
+  #     add_row(GTExTissue=x, metric="TSS within 100 kb", method="Proximity", value=nearby.TSS.rate)
+  # }
+  # colnames(df) = c("GTExTissue", "metric", "method","value")
+  # df = filter(df, GTExTissue!='temp')
 
     # read in prediction rates from each method
   for (fileName in tables){
@@ -100,22 +100,22 @@ main <- function() {
         }
         df.specific = filter(df.specific, GTExTissue!='temp')
     
-        # add proximity rates for this tissue & this method
-        t = read.table(file=key.table, header=TRUE, stringsAsFactors=FALSE)
-        t = suppressMessages(left_join(var.set, t)); 
-        
-        closest.gene.rate = nrow(filter(t, closestGene==eGene))/nrow(t)
-        closest.TSS.rate = nrow(filter(t, closestTSS==eGene))/nrow(t)
-        nearby.TSS.rate = nrow(filter(t, nearbyTSS==TRUE))/nrow(t)
-        
-        
-        df.specific = add_row(df.specific, GTExTissue=tissue.i, metric="Closest gene body", method="Proximity", value=closest.gene.rate) %>% add_row(GTExTissue=tissue.i, metric="Closest TSS", method="Proximity", value=closest.TSS.rate) %>% add_row(GTExTissue=tissue.i, metric="Any TSS within 100 kb", method="Proximity", value=nearby.TSS.rate)
-        df.record = add_row(df.record, GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
-      nVariants=nrow(var.set), predictionMethod='Closest gene', predictionRate=closest.gene.rate) %>%
-          add_row(GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
-                  nVariants=nrow(var.set), predictionMethod='Closest TSS', predictionRate=closest.TSS.rate) %>%
-          add_row(GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
-                  nVariants=nrow(var.set), predictionMethod='Any TSS within 100 kb', predictionRate=nearby.TSS.rate)
+      #   # add proximity rates for this tissue & this method
+      #   t = read.table(file=key.table, header=TRUE, stringsAsFactors=FALSE)
+      #   t = suppressMessages(left_join(var.set, t)); 
+      #   
+      #   closest.gene.rate = nrow(filter(t, closestGene==eGene))/nrow(t)
+      #   closest.TSS.rate = nrow(filter(t, closestTSS==eGene))/nrow(t)
+      #   nearby.TSS.rate = nrow(filter(t, nearbyTSS==TRUE))/nrow(t)
+      #   
+      #   
+      #   df.specific = add_row(df.specific, GTExTissue=tissue.i, metric="Closest gene body", method="Proximity", value=closest.gene.rate) %>% add_row(GTExTissue=tissue.i, metric="Closest TSS", method="Proximity", value=closest.TSS.rate) %>% add_row(GTExTissue=tissue.i, metric="Any TSS within 100 kb", method="Proximity", value=nearby.TSS.rate)
+      #   df.record = add_row(df.record, GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
+      # nVariants=nrow(var.set), predictionMethod='Closest gene', predictionRate=closest.gene.rate) %>%
+      #     add_row(GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
+      #             nVariants=nrow(var.set), predictionMethod='Closest TSS', predictionRate=closest.TSS.rate) %>%
+      #     add_row(GTExTissue=tissue.i, methodDefiningVariantSet=method.i,
+      #             nVariants=nrow(var.set), predictionMethod='Any TSS within 100 kb', predictionRate=nearby.TSS.rate)
         # graph
         df.specific$value=as.numeric(df.specific$value)
         nVar = nrow(var.set); 

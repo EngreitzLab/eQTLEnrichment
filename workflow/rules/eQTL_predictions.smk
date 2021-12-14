@@ -31,7 +31,8 @@ rule calculate_threshold:
 	input: 
 		thresholdTables = thresholdTableFiles
 	params:
-		ourDir = config["outDir"]
+		ourDir = config["outDir"],
+		overlapRate = config["overlapsPredictedEnhancerRate"]
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	output:

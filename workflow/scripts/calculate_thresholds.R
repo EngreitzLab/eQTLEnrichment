@@ -8,6 +8,7 @@ main <- function() {
 # inputs
   thresholdFiles  = {snakemake@input$thresholdTables} %>% as.character() %>% strsplit(", ") %>% unlist() %>% data.frame() %>% setNames(c("fileName"))
   outFile = {snakemake@output$thresholds}
+  rate = {snakemake@params$overlapRate}
 
   # iterate through the four methods
   thresholds = data.frame(matrix(data=0, nrow=4, ncol=2)) %>% setNames(c("method", "threshold"))
@@ -19,9 +20,9 @@ main <- function() {
     #print(tables.this)
     for (j in 1:nrow(tables.this)){
       df = read.table(tables.this$fileName[j], header=TRUE, sep="\t")
-      # find cut-off value for 0.2
+      # find cut-off value for [rate]
       df = df[order(df$prediction.rate.inEnhancer),] # sort df in ascending order of prediction.rate.inEnhancer
-      df.filtered = filter(df, prediction.rate.inEnhancer>=0.2)  # filter to rate above desired value
+      df.filtered = filter(df, prediction.rate.inEnhancer>=rate)  # filter to rate above desired value
       #if there are no thresholds with a rate above the value
       # choose the threshold with the highest rate (last in the df)
       # otherwise, choose the lowest threshold in the filtered df

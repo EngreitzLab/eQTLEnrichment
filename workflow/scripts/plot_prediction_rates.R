@@ -49,7 +49,7 @@ main <- function() {
     #     add_row(GTExTissue=x, metric="Variants with any TSS within 100 kb", method="Proximity", value=any.TSS.near)
     # }
     # colnames(df) = c("GTExTissue", "metric", "method","value")
-    # df = filter(df, GTExTissue!="temp")
+    df = filter(df, GTExTissue!="temp")
     
     # read in prediction rates from each method
     for (fileName in tables){

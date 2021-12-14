@@ -90,5 +90,14 @@ rule fourth:
 		#sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv"),
 		enrichmentReport = os.path.join(config["outDir"], "enrichment_report.html")
 		
+rule ER_only:
+	input:
+		cdf = os.path.join(config["outDir"], "cdf.pdf"),
+		density = os.path.join(config["outDir"], "density.pdf"),
+		boxplot = os.path.join(config["outDir"], "boxplot.pdf"),
+		colorPalette = os.path.join(config["outDir"], "colorPalette.rds"),
+		enrichmentReport = os.path.join(config["outDir"], "enrichment_report.html")
+	
+		
 ################################################################################################################################
 

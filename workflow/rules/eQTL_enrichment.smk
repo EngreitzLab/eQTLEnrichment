@@ -40,7 +40,7 @@ rule get_biosamples:
 # run once per prediction method
 rule sort_predictions:
 	input:
-		predFile = os.path.join("/oak/stanford/groups/engreitz/Users/sheth/EGBM_simple_predictors/results/predictors/", "{biosample}", "{method}.tsv.gz"),
+		predFile = lambda wildcards: methods_config.loc[wildcards.method, "predFiles"][wildcards.biosample],
 		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
 	params:
 		codeDir = config["codeDir"],
@@ -215,7 +215,8 @@ rule compute_common_var_overlap:
 		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
 	params:
 		outDir = config["outDir"],
-		codeDir = config["codeDir"]
+		codeDir = config["codeDir"],
+		chrSizes = config["chrSizes"]
 	output:
 		commonVarPerBiosample = os.path.join(config["outDir"], "{method}", "{biosample}", "commonVarPerBiosample.tsv")
 	conda: 
@@ -224,7 +225,7 @@ rule compute_common_var_overlap:
 		"""			
 		set +o pipefail;
 					
-		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a stdin -b {input.commonVarDistalNoncoding}| cut -f 4 | sort | uniq -c > {output.commonVarPerBiosample}
+		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a stdin -b {input.commonVarDistalNoncoding}| cut -f 4 | sort | uniq -c > {output.commonVarPerBiosample}
 		"""
 		
 # compute number of base pairs in each enhancer set for heatmaps

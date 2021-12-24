@@ -9,15 +9,16 @@ main <- function() {
   thresholdFiles  = {snakemake@input$thresholdTables} %>% as.character() %>% strsplit(", ") %>% unlist() %>% data.frame() %>% setNames(c("fileName"))
   outFile = {snakemake@output$thresholds}
   rate = {snakemake@params$overlapRate}
+  methods = {snakemake@params$methods}
 
   # iterate through the four methods
-  thresholds = data.frame(matrix(data=0, nrow=4, ncol=2)) %>% setNames(c("method", "threshold"))
-  thresholds$method = c("dist_to_gene", "dist_to_tss", "reads_by_dist_to_tss", "reads_by_dist_to_tss_norm")
+  thresholds = data.frame(matrix(data=0, nrow=length(methods), ncol=2)) %>% setNames(c("method", "threshold"))
+  thresholds$method = methods
+
   for (i in 1:nrow(thresholds)){
     # filter list of files to this method
     tables.this = filter(thresholdFiles, str_detect(string=fileName, pattern=paste0("/",thresholds$method[i], "/")))
     # loop through files (each a different tissue)
-    #print(tables.this)
     for (j in 1:nrow(tables.this)){
       df = read.table(tables.this$fileName[j], header=TRUE, sep="\t")
       # find cut-off value for [rate]

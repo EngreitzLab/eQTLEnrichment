@@ -94,7 +94,7 @@ write_table <- function() {
     }
 
   }
-  else {
+  else if (method=="nearest_gene" || method=="nearest_tss" || method=="within_100kb_of_tss"){
     v = data.frame(matrix(0, nrow = x, ncol = 5)) %>% setNames(c("threshold", "prediction.rate.GivenEnhancer",
                                                                  "prediction.rate.total", "prediction.rate.inEnhancer",
                                                                  "nVariants"))
@@ -109,6 +109,18 @@ write_table <- function() {
     v$prediction.rate.total[2] = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(predTable)
     v$prediction.rate.inEnhancer[2] =nrow(filter(predTable,predictionClass!='noOverlap'))/nrow(predTable)
     v$nVariants[2]= nrow(predTable)
+  } else {
+    v = data.frame(matrix(0, nrow = x, ncol = 5)) %>% setNames(c("threshold", "prediction.rate.GivenEnhancer",
+                                                                 "prediction.rate.total", "prediction.rate.inEnhancer",
+                                                                 "nVariants"))
+    v$threshold = seq(from=0, to=max(predictionsInt$Score), length.out=x)
+    for (i in 1:x){
+      predTable = dplyr::filter(variants, Score>v$threshold[i])
+      v$prediction.rate.GivenEnhancer[i] = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(filter(predTable,predictionClass!='noOverlap'))
+      v$prediction.rate.total[i] = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(predTable)
+      v$prediction.rate.inEnhancer[i] =nrow(filter(predTable,predictionClass!='noOverlap'))/nrow(predTable)
+      v$nVariants[i]= nrow(predTable)
+    }
   }
 
   if (method %in% c("reads_by_dist_to_tss", "reads_by_dist_to_tss_norm", "dist_to_gene", "dist_to_tss")) {

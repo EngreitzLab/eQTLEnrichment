@@ -1,7 +1,6 @@
 # load prediction method config file
 methods_config_file = config["methodsTable"]
 methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
-#methods_config = pd.read_table(methods_config_file).set_index("method", drop=False)
 methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
 methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 
@@ -32,7 +31,8 @@ rule calculate_threshold:
 		thresholdTables = thresholdTableFiles
 	params:
 		ourDir = config["outDir"],
-		overlapRate = config["overlapsPredictedEnhancerRate"]
+		overlapRate = config["overlapsPredictedEnhancerRate"],
+		methods = config["methods"]
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	output:
@@ -46,7 +46,8 @@ rule threshold_predictions:
 		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
 		thresholds = os.path.join(config["outDir"], "thresholdTables", "calculatedThresholds.tsv")
 	params:
-		ourDir = config["outDir"]
+		ourDir = config["outDir"],
+		userThresh = lambda wildcards: methods_config.loc[wildcards.method, "threshold"]
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	output:

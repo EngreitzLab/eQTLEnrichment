@@ -15,7 +15,7 @@ methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 # import workflows
 include: "./rules/eQTL_predictions.smk"
 include: "./rules/eQTL_enrichment.smk"
-include: "./scripts/add_biosamples_to_config.py"
+include: "./scripts/add_biosamples_and_files_to_config.py"
 
 # generate output files
 variantsByTissueFiles = []

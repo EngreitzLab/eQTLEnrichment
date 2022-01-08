@@ -20,7 +20,6 @@ include:  "./scripts/generate_threshold_span.py"
 
 # generate output files
 variantsByTissueFiles = []
-variantsByTissueProximalFiles = []
 predictionsByBiosampleFiles = []
 predTablesForCalcsFiles = []
 predTablesFiles = []
@@ -29,26 +28,24 @@ sensitivityPlotsFiles = []
 varIntFiles = []
 commonVarFiles = []
 predThresholdedFiles = []
-basesPerSetFiles = []
+enrichmentTableFiles = []
+countMatrixFiles = []
 
 for x in config["methods"]:
 	# list of variant files
 	variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
-	# list of variant files with proximal genes
-	variantsByTissueProximalFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.proximal.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
 	# list of filtered prediction files
 	predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "enhancerPredictions.sorted.bed.gz"), biosample=methods_config.loc[x, "biosample_map"]))
 	# list of prediction tables
 	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
 	predTablesForCalcsFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.forCalcs.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
-	# list of output plot names
-	sensitivityPlotsFiles.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=methods_config.loc[x, "GTExTissue_map"], method=x))
 	# list of variant-prediction intersections
-	varIntFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz"), biosample=methods_config.loc[x, "biosamples"]))		
-	commonVarFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "commonVarPerBiosample.tsv"), biosample=methods_config.loc[x, "biosamples"]))	
-	predThresholdedFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "enhancerPredictions.thresholded.bed.gz"), biosample=methods_config.loc[x, "biosamples"]))
-	basesPerSetFiles.extend(expand(os.path.join(config["outDir"], x, "biosample", "basesPerEnhancerSet.tsv"), biosample=methods_config.loc[x, "biosamples"]))	
-	thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{Biosample}.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
+	varIntFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "GTExVariants-enhancerPredictionsInt.{threshold}.tsv.gz"), biosample=methods_config.loc[x, "biosamples"], threshold=methods_config.loc[x, "biosamples"]))		
+	commonVarFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "commonVarPerBiosample.{threshold}.tsv"), biosample=methods_config.loc[x, "biosamples"], threshold=methods_config.loc[x, "thresholdSpan"]))	
+	predThresholdedFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "enhancerPredictions.{threshold}.bed.gz"), biosample=methods_config.loc[x, "biosamples"], threshold=methods_config.loc[x, "thresholdSpan"]))
+	thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{biosample}.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
+	enrichmentTablesFiles.extend(expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.{threshold}.tsv"), method=config["methods"], threshold=methods_config.loc[x, "thresholdSpan"]))
+	countMatrixFiles.extend(expand(os.path.join(config["outDir"], "{method}", "count_matrix.{threshold}.tsv"), method=config["methods"], threshold=methods_config.loc[x, "thresholdSpan"]))
 
 rule first:
 	input:
@@ -64,20 +61,14 @@ rule first:
 		variantsPredictionsInt = varIntFiles,
 		variantsPerGTExTissue = expand(os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"), method=config["methods"]),
 		commonVarPerBiosample = commonVarFiles,
-		#basesPerEnhancerSet=basesPerSetFiles
 		
 rule second: 
 	input:
-		countMatrix = expand(os.path.join(config["outDir"], "{method}", "count_matrix.tsv"), method=config["methods"]),
-
+		countMatrix = countMatrixFiles
+		
 rule third: 
 	input:
-		enrichmentTable = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"), method=config["methods"]),
-		cdf = os.path.join(config["outDir"], "cdf.pdf"),
-		density = os.path.join(config["outDir"], "density.pdf"),
-		boxplot = os.path.join(config["outDir"], "boxplot.pdf"),
-		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
-		
+		enrichmentTable = enrichmentTableFiles
 
 rule fourth:
 	input:
@@ -85,19 +76,6 @@ rule fourth:
 		predictionsByBiosample = predictionsByBiosampleFiles,
 		predTables = predTablesFiles,
 		thresholdTables = thresholdTableFiles,
-		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
-		PPVPlot = os.path.join(config["outDir"], "PPV.pdf"),
-		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv"),
-		#sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv"),
-		enrichmentReport = os.path.join(config["outDir"], "enrichment_report.html")
-		
-rule ER_only:
-	input:
-		cdf = os.path.join(config["outDir"], "cdf.pdf"),
-		density = os.path.join(config["outDir"], "density.pdf"),
-		boxplot = os.path.join(config["outDir"], "boxplot.pdf"),
-		colorPalette = os.path.join(config["outDir"], "colorPalette.rds"),
-		enrichmentReport = os.path.join(config["outDir"], "enrichment_report.html")
 	
 		
 ################################################################################################################################

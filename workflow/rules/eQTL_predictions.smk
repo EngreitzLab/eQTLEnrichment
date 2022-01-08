@@ -6,25 +6,22 @@ methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 
 # generate output files
 variantsByTissueFiles = []
-variantsByTissueProximalFiles = []
 predictionsByBiosampleFiles = []
 predTablesFiles = []
 thresholdTableFiles = []
-sensitivityPlotsFiles = []
+predThresholdedFiles = []
 
 for x in config["methods"]:
 	# list of variant files
-	#variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"])),
-	# list of variant files with proximal genes
-	#variantsByTissueProximalFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.proximal.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
+	variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
 	# list of filtered prediction files
-	#predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{biosample}.filteredPredictions.tsv"), biosample=methods_config.loc[x, "biosample_map"]))
+	predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "enhancerPredictions.sorted.bed.gz"), biosample=methods_config.loc[x, "biosample_map"]))
 	# list of prediction tables
 	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
-	# list of sensitivity plot names
-	sensitivityPlotsFiles.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=methods_config.loc[x, "GTExTissue_map"], method=x))
-	thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{Biosample}.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
-	
+	# list of variant-prediction intersections
+	predThresholdedFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "enhancerPredictions.{threshold}.bed.gz"), biosample=methods_config.loc[x, "biosamples"], threshold=methods_config.loc[x, "thresholdSpan"]))
+	thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{biosample}.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
+
 	
 # split variants to tissue (just the ones needed for predictions)
 # run once per method x tissue
@@ -112,7 +109,7 @@ rule make_prediction_table_for_calcs:
 		outDir = config["outDir"],
 		codeDir = config["codeDir"],
 	output:
-		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.forCalcs.tsv"),
+		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.tsv"),
 		thresholdTable = os.path.join(config["outDir"], "thresholdTables", "{method}", "{GTExTissue}.{biosample}.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
@@ -132,70 +129,5 @@ rule make_prediction_table_for_calcs:
 		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
 		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
 		"""
-		
-rule make_prediction_table_actual:
-	input:
-		#variantsByTissueProximal = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.proximal.tsv"),
-		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.tsv"),
-		predictionsByBiosample =  os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed.gz"),
-		
-	params:
-		outDir = config["outDir"],
-		codeDir = config["codeDir"],
-	output:
-		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.tsv"),
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	shell:
-		"""
-		set +o pipefail;
-		
-		# intersect predictions with relevant variants 
-		cat {input.variantsByTissue} | cut -f 1-4 | sed 1d | sort -k 1,1 -k2,2n | uniq > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv		
-		
-		zcat {input.predictionsByBiosample} | bedtools intersect -wa -wb -a {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv -b stdin | cut -f 4,9,10 > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
-		
-		# classify variants	
-		
-		Rscript {params.codeDir}/classify_enhancer_predictions.R --variants {input.variantsByTissue} --pred {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv --outDir {params.outDir}  --biosample {wildcards.biosample} > {output.predTable}
-		
-		#rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
-		#rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
-		"""
 
-# generate plot of prediction rates across all methods and tissues
-rule plot_prediction_rates:
-	input:
-		allTables=predTablesFiles,
-		colorPalette=os.path.join(config["outDir"], "colorPalette.rds")
-	params:
-		codeDir = config["codeDir"],
-		outDir = config["outDir"]
-	output:
-		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
-		PPVPlot = os.path.join(config["outDir"],"PPV.pdf"),
-		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	shell:
-		"""
-		set +o pipefail;
-		
-		Rscript {params.codeDir}/plot_prediction_rates.R --tables "{input.allTables}" --out {params.outDir} --colors {input.colorPalette}
-		"""
-		
-# generate sensitivity plots
-rule plot_sensitivities:
-	input:
-		allTables=predTablesFiles,
-		colorPalette=os.path.join(config["outDir"], "colorPalette.rds")
-	params:
-		codeDir = config["codeDir"],
-		outDir = config["outDir"]
-	output:
-		allSensPlots = sensitivityPlotsFiles,
-		sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	script:
-		os.path.join(config["codeDir"], "plot_sensitivities.R")
+

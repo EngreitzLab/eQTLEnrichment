@@ -127,13 +127,13 @@ rule filter_variants_to_gene_universe:
 # run once per method (per biosample)
 rule intersect_variants_predictions:
 	input:
-		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed.gz"),
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.{threshold}.bed.gz"),
 		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
 	params: 
 		outDir = config["outDir"],
 		chrSizes = config["chrSizes"]
 	output:
-		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz")
+		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.{threshold}.tsv.gz")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
@@ -153,9 +153,10 @@ rule compute_count_matrix:
 		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
 	params:
 		outDir = config["outDir"],
-		GTExTissues=config["GTExTissues"]
+		GTExTissues=config["GTExTissues"],
+		threshold={threshold}
 	output: 
-		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.tsv")
+		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.{threshold}.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:
@@ -191,14 +192,14 @@ rule get_variants_per_GTEx_tissue:
 rule compute_common_var_overlap:
 	input:
 		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncoding.bg.SNPs.bed.gz"),
-		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed.gz"),
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.{threshold}.bed.gz"),
 		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
 	params:
 		outDir = config["outDir"],
 		codeDir = config["codeDir"],
 		chrSizes = config["chrSizes"]
 	output:
-		commonVarPerBiosample = os.path.join(config["outDir"], "{method}", "{biosample}", "commonVarPerBiosample.tsv")
+		commonVarPerBiosample = os.path.join(config["outDir"], "{method}", "{biosample}", "commonVarPerBiosample.{threshold}.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
@@ -207,42 +208,14 @@ rule compute_common_var_overlap:
 					
 		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a stdin -b {input.commonVarDistalNoncoding}| cut -f 4 | sort | uniq -c > {output.commonVarPerBiosample}
 		"""
-		
-# compute number of base pairs in each enhancer set for heatmaps
-# don't run this rule for baseline predictors
-rule compute_enhancer_set_size:
-	input:
-		#predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed.gz"),
-		samples = os.path.join(config["outDir"],"{method}", "biosampleList.tsv")
-	params:
-		chrSizes = config["chrSizes"],
-		outDir = config["outDir"]
-	output:
-		basesPerEnhancerSet = os.path.join(config["outDir"], "{method}", "{biosample}", "basesPerEnhancerSet.tsv")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	shell:
-		"""			
-		set +o pipefail;
-		
-		biosamples=$(awk 'BEGIN {{ ORS=" " }} {{ print }}' {input.samples})
-			
-		for sample in $biosamples
-		do
-			# make list of sizes of enhancer sets for each biosample
-			printf $sample"\\t" >> {output.basesPerEnhancerSet}
-			zcat {params.outDir}/{wildcards.method}/{$sample}.enhancerPredictions.thresholded.bed.gz | bedtools merge -i stdin | awk 'BEGIN {{FS=OFS="\\t"}} {{print $3-$2}}' | awk '{{s+=$1}}END{{print s}}' >> {output.basesPerEnhancerSet}
-		done
-		"""
 
 # generate matrix with enrichment values for each GTEx tissue/biosample intersection
 # run once per method
 rule compute_enrichment_matrix:
 	input: 
-		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.tsv"),
+		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.{threshold}.tsv"),
 		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"),
 		#  read in within method, see note in count matrix
-		#commonVarPerBiosample = expand(os.path.join(config["outDir"], "{method}", "{biosample}", "commonVarPerBiosample.tsv"), biosample=methods_config["biosamples"]),
 		samples = os.path.join(config["outDir"],"{method}", "biosampleList.tsv"),
 	params:
 		codeDir = config["codeDir"],
@@ -250,87 +223,8 @@ rule compute_enrichment_matrix:
 		GTExTissues = config["GTExTissues"],
 		sampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"],
 	output: 
-		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv")
+		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.{threshold}.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script: 
 		os.path.join(config["codeDir"], "counts_to_enrichment.R")
-
-# plot aggregate and full heat maps of enrichment values
-# run once per method
-rule plot_enrichment_heatmaps:
-	input: 
-		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"),
-		basesPerEnhancerSet = os.path.join(config["outDir"], "{method}", "basesPerEnhancerSet.tsv")
-	params:
-		codeDir = config["codeDir"],
-		sampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"]
-	output: 
-		heatmapFull = os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.full.pdf"),
-		heatmapAggregated = os.path.join(config["outDir"], "{method}", "enrichmentHeatmap.aggregated.pdf")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	shell:
-		"""	
-		set +o pipefail;
-			
-		# plot full heat map
-		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapFull} --samplekey {params.sampleKey} --enhancersizes {input.basesPerEnhancerSet}  --useCategory "False"
-			
-		# plot aggregated heat map
-		Rscript {params.codeDir}/plot_enrichment_heatmap.R --table {input.enrichmentTable} --outfile {output.heatmapAggregated} --samplekey {params.sampleKey} --enhancersizes {input.basesPerEnhancerSet} --useCategory "True"
-			
-		"""
-			
-# plot cdf and density graphs comparing enrichments across methods
-# run once overall
-rule plot_comparisons:
-	input: 
-		enrichmentTables = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"), method=config["methods"]),
-		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
-	params:
-		methods = config["methods"],
-		codeDir = config["codeDir"],
-		outDir = config["outDir"]
-	output: 
-		cdf = os.path.join(config["outDir"], "cdf.pdf"),
-		density = os.path.join(config["outDir"], "density.pdf"),
-		boxplot = os.path.join(config["outDir"], "boxplot.pdf")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	script:
-		os.path.join(config["codeDir"], "plot_comparisons.R")
-			
-# html report, run once overall
-rule generate_report:
-	input: 
-		enrichmentTables = expand(os.path.join(config["outDir"],"{method}", "enrichmentTable.tsv"), method=config["methods"]),
-		variantsPerGTExTissue = expand(os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"), method=config["methods"]),
-		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv"),
-		#sensitivitiesTable = os.path.join(config["outDir"],"sensitivitiesTable.tsv"),
-		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
-	params:
-		names = config["methods"]
-	output:
-		enrichmentReport = os.path.join(config["outDir"], "enrichment_report.html")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	script: 
-		os.path.join(config["codeDir"], "enrichment_report.Rmd")
-		
-# generate color palette (run once overall)
-colors = []
-for x in config["methods"]:
-	# list of color inputs
-	colors.append(methods_config.loc[x, "color"])
-	
-rule generate_color_palette:
-	params:
-		user_inputs = colors,
-		names = config["methods"]
-	output:
-		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	script: 
-		os.path.join(config["codeDir"], "color_palette.R")

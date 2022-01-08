@@ -7,6 +7,7 @@ suppressPackageStartupMessages({
 main <- function() {
   ## get files from snakemake
   method = (snakemake@wildcards$method)
+  threshold = (snakemake@wildcards$threshold)
   outDir = (snakemake@params$outDir)
   countFile = (snakemake@input$countMatrix)
   biosampleFile = (snakemake@input$samples)
@@ -28,7 +29,8 @@ main <- function() {
 	for (i in 1:nrow(biosamples)){
     sample.this = biosamples$Biosample[i]
     # read in count file
-    file.this = file.path(outDir, method, sample.this, "commonVarPerBiosample.tsv")
+    file.this = file.path(outDir, method, sample.this, 
+                          paste0("commonVarPerBiosample.", threshold, ".tsv"))
     file.size = file.info(file.this)$size
     size.threshold = 10
     if (file.size<size.threshold){

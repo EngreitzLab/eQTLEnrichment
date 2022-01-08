@@ -9,6 +9,7 @@ suppressPackageStartupMessages({library(dplyr)
   ## get files from snakemake
   #dfFile = (snakemake@input$variantsPredictionsInt)
   method = (snakemake@wildcards$method)
+  threshold = (snakemake@params$threshold)
   biosampleFile = (snakemake@input$samples)
   GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist() %>% sort()
   outDir = (snakemake@params$outDir)
@@ -23,7 +24,8 @@ suppressPackageStartupMessages({library(dplyr)
   
   for (i in 1:length(biosamples)){
     sample.this = biosamples[i]
-    int.file = file.path(outDir, method, sample.this, "GTExVariants-enhancerPredictionsInt.tsv.gz")
+    int.file = file.path(outDir, method, sample.this, 
+                         paste0("GTExVariants-enhancerPredictionsInt.", threshold, ".tsv.gz"))
     size.file = file.info(int.file)$size
     size.threshold = 100 # in bytes, for empty file
     

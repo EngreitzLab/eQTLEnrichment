@@ -58,20 +58,6 @@ rule sort_predictions:
 		rm {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
 			
 		"""
-		
-# gzip thresholds
-rule gzip_thresholds:
-	input:
-		predictionsThresholded = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed")
-	output:
-		predictionsThresholdedGzipped = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed.gz")
-	shell:
-		"""
-			set +o pipefail;
-	
-			gzip -f {input.predictionsThresholded} > {output.predictionsThresholdedGzipped}
-		"""
-	
 
 # filter GTEx variants by PIP, credible set, and to distal noncoding genes; convert ensembl id to hgnc
 # run once overall

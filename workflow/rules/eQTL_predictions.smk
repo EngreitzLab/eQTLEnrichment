@@ -25,35 +25,6 @@ for x in config["methods"]:
 	sensitivityPlotsFiles.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=methods_config.loc[x, "GTExTissue_map"], method=x))
 	thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{Biosample}.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
 	
-# calculate thresholds for baseline predictors, averaged across tissues
-rule calculate_threshold:
-	input: 
-		thresholdTables = thresholdTableFiles
-	params:
-		ourDir = config["outDir"],
-		overlapRate = config["overlapsPredictedEnhancerRate"],
-		methods = config["methods"]
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	output:
-		thresholds = os.path.join(config["outDir"], "thresholdTables", "calculatedThresholds.tsv")
-	script:
-		os.path.join(config["codeDir"], "calculate_thresholds.R")
-
-# threshold baseline predictors by score; otherwise, return unchanged file
-rule threshold_predictions:
-	input: 
-		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
-		thresholds = os.path.join(config["outDir"], "thresholdTables", "calculatedThresholds.tsv")
-	params:
-		ourDir = config["outDir"],
-		userThresh = lambda wildcards: methods_config.loc[wildcards.method, "threshold"]
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	output:
-		predictionsThresholded = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed")
-	script:
-		os.path.join(config["codeDir"], "threshold_predictions.R")
 	
 # split variants to tissue (just the ones needed for predictions)
 # run once per method x tissue

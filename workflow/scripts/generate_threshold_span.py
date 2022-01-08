@@ -5,21 +5,22 @@ import numpy as np
 #methodsFile = "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-thresholding/eQTLEnrichment/config/config-baseline-predictors-newKeys.tsv"
 #methods_config = pd.read_csv(methodsFile, sep='\t')
 
-#nSteps = methods_config['nSteps']
-#maxScore = methods_config['maxScore']
+nSteps = methods_config['nSteps']
+maxScore = methods_config['maxScore']
 
-nSteps = 10
-maxScore = 1000
+thresholdSpans = []
 
-span = linspace(0, maxScore, nSteps)
-# if maxScore/nSteps is greater than 1...
-# create vector and round each value to next greatest integer
+for i in range(len(nSteps)):
+  maxScore.this = maxScore[i]
+  nSteps.this = nSteps[i]
+  if maxScore.this/(nSteps.this-1)>=nSteps.this:
+    span = np.linspace(0, maxScore.this, nSteps.this, dtype=int)
+    span = span.tolist()
+  else:
+    span = np.linspace(0, maxScore.this, nSteps.this)
+    span = [round(elem, ndigits=4) for elem in span] # converts to list
+    
+  thresholdSpans.append(span)
 
-# if maxScore/nSteps is less than 1...
-# create vector and truncate each value to two sig-figs??
-
-print(span)
-
-#methods_config['thresholdSpan'] = span # add span to config
-
-#print(methods_config['thresholdSpan])
+methods_config['thresholdSpan'] = thresholdSpans # add to config
+#print(methods_config['thresholdSpan'])

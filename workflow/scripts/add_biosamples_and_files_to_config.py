@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-#methodsFile = "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-byBiosample/eQTLEnrichment/config/config-baseline-predictors-newKeys.tsv"
+#methodsFile = "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-thresholding/eQTLEnrichment/config/config-baseline-predictors-newKeys.tsv"
 #methods_config = pd.read_csv(methodsFile, sep='\t')
 
 biosampleKeys = methods_config['sampleKey']
@@ -24,4 +24,5 @@ for i in range(len(methods)):
 methods_config['biosamples'] = samples # add samples to config
 methods_config['predFiles'] = files 
 
+#print(methods_config['biosamples'])
 #print(methods_config['predFiles'])

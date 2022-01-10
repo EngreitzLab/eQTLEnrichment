@@ -8,7 +8,7 @@ main <- function() {
   predFile  = {snakemake@input$predictionsSorted}
   outFile = {snakemake@output$predictionsThresholded}
   method = {snakemake@wildcards$method}
-  threshold = {snakemake@params$threshold}
+  threshold = {snakemake@wildcards$threshold}
   
   # read in prediction file
   pred = read.table(file=predFile, sep='\t', header=FALSE) %>% 

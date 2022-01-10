@@ -127,7 +127,7 @@ rule filter_variants_to_gene_universe:
 # run once per method (per biosample)
 rule intersect_variants_predictions:
 	input:
-		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.{threshold}.bed.gz"),
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.{threshold}.bed.gz"),
 		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
 	params: 
 		outDir = config["outDir"],
@@ -148,13 +148,11 @@ rule intersect_variants_predictions:
 # in second rule all	
 rule compute_count_matrix:
 	input:
-		# read these each in within Rscript, using method wildcard and biosample list
-		#variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz"),
+		#threshold = {threshold},
 		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
 	params:
 		outDir = config["outDir"],
 		GTExTissues=config["GTExTissues"],
-		threshold={threshold}
 	output: 
 		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.{threshold}.tsv")
 	conda: 
@@ -192,7 +190,7 @@ rule get_variants_per_GTEx_tissue:
 rule compute_common_var_overlap:
 	input:
 		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncoding.bg.SNPs.bed.gz"),
-		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.{threshold}.bed.gz"),
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.{threshold}.bed.gz"),
 		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
 	params:
 		outDir = config["outDir"],

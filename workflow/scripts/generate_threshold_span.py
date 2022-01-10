@@ -25,5 +25,4 @@ for i in range(len(nSteps)): # iterate through number of methods
   thresholdSpans.append(span) # add that method to the list
 
 methods_config['thresholdSpan'] = thresholdSpans # add to config
-
 #print(methods_config['thresholdSpan'])

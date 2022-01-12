@@ -1,5 +1,4 @@
 # get list of genes considered by GTEx and by the prediction method
-# run once per method
 rule make_gene_universes:
 	input: 
  		methodGeneUniverse = lambda wildcards: methods_config.loc[wildcards.method, "geneUniverse"],
@@ -31,7 +30,6 @@ rule get_biosamples:
 		os.path.join(config["codeDir"], "get_biosamples.R")
 		
 # sort enhancer predictions by chromosome & start location & filter to gene universe, get list of samples
-# run once per prediction method
 rule sort_predictions:
 	input:
 		predFile = lambda wildcards: methods_config.loc[wildcards.method, "predFiles"][wildcards.biosample],
@@ -52,7 +50,6 @@ rule sort_predictions:
 		zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType,TargetGene,Score | sed 1d | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
 			
 		# filter predictions to gene universe
-				
 		Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv --col 5 --genes {input.geneUniverse} --id hgnc | gzip > {output.predictionsSorted}
 			
 		rm {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
@@ -60,7 +57,6 @@ rule sort_predictions:
 		"""
 
 # filter GTEx variants by PIP, credible set, and to distal noncoding genes; convert ensembl id to hgnc
-# run once overall
 rule filter_all_variants:
 	input:
 		GTExVariants = config["GTExVariants"],
@@ -90,7 +86,7 @@ rule filter_all_variants:
 			cat {input.commonVar} | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} -g {params.chrSizes}| gzip > {output.commonVarDistalNoncoding}
 			"""
 
-# filter variants by expression (once overall)
+# filter variants by expression (based on what tissue they are in and GTEx expression data)
 rule filter_variants_by_expression:
 	input: 
 		exprData = config["GTExExpression"],
@@ -104,7 +100,7 @@ rule filter_variants_by_expression:
 	script: 
 		os.path.join(config["codeDir"], "GTEx_expression.R")
 
-# filter to by gene universe (per method)
+# filter variants to by gene universe for each method
 rule filter_variants_to_gene_universe:
 	input:
 		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv"),
@@ -123,8 +119,7 @@ rule filter_variants_to_gene_universe:
 			
 		"""
 	
-# intersect predictions and GTEx variants
-# run once per method (per biosample)
+# intersect predictions for each threshold with GTEx variants
 rule intersect_variants_predictions:
 	input:
 		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.{threshold}.bed.gz"),
@@ -148,7 +143,6 @@ rule intersect_variants_predictions:
 # in second rule all	
 rule compute_count_matrix:
 	input:
-		#threshold = {threshold},
 		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
 	params:
 		outDir = config["outDir"],
@@ -185,8 +179,7 @@ rule get_variants_per_GTEx_tissue:
 		done
 		"""
 			
-# computer number of common variants overlapping enhancers in each biosample
-# run once per method
+# computer number of common variants overlapping enhancers in each biosample for each threshold
 rule compute_common_var_overlap:
 	input:
 		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncoding.bg.SNPs.bed.gz"),
@@ -207,8 +200,7 @@ rule compute_common_var_overlap:
 		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a stdin -b {input.commonVarDistalNoncoding}| cut -f 4 | sort | uniq -c > {output.commonVarPerBiosample}
 		"""
 
-# generate matrix with enrichment values for each GTEx tissue/biosample intersection
-# run once per method
+# generate matrix with enrichment values for each GTEx tissue/biosample intersection for each threshold
 rule compute_enrichment_matrix:
 	input: 
 		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.{threshold}.tsv"),

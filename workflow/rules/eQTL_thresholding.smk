@@ -1,10 +1,9 @@
-# threshold baseline predictors by score; otherwise, return unchanged file
+# threshold predictors by score
 rule threshold_predictions:
 	input: 
 		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
 	params:
 		ourDir = config["outDir"],
-		#threshold = {threshold}
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	output:
@@ -25,10 +24,12 @@ rule gzip_thresholds:
 			gzip -f {input.predictionsThresholded} > {output.predictionsThresholdedGzipped}
 		"""
 		
+# gather data for and plot enrichment recall curves
 rule plot_enrichment_recall:
 	input: 
-		# threshold table files for a given method
+		# threshold table files for a given method and all biosample-tissue pairings
 		thresholdTables = lambda wildcards: expand(os.path.join("thresholdTables", wildcards.method, "{GTExTissue}.{biosample}.tsv"), zip, GTExTissue=methods_config.loc["{method}", "GTExTissue_map"], biosample=methods_config.loc["{method}", "biosamples"]),
+		# enrichment tables for given method and all threhsolds
 		enrichmentTables = lambda wildcards: expand(os.path.join(config["outDir"], wildcards.method, "enrichmentTable.{threshold}.tsv", threshold=methods_config.loc["{method}", "thresholdSpan"]))
 	params:
 		ourDir = config["outDir"]

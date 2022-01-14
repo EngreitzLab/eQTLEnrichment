@@ -44,6 +44,7 @@ rule make_prediction_table_for_calcs:
 	params:
 		outDir = config["outDir"],
 		codeDir = config["codeDir"],
+		span = lambda wildcards: methods_config.loc[wildcards.method, "thresholdSpan"]
 	output:
 		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.tsv"),
 		thresholdTable = os.path.join(config["outDir"], "thresholdTables", "{method}", "{GTExTissue}.{biosample}.tsv")
@@ -59,7 +60,7 @@ rule make_prediction_table_for_calcs:
 		zcat {input.predictionsByBiosample} | bedtools intersect -wa -wb -a {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv -b stdin | cut -f 4,9,10 > {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv
 		
 		# classify variants, generate tables
-		Rscript {params.codeDir}/classify_enhancer_predictions_calcs.R --variants {input.variantsByTissue} --pred {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv --outDir {params.outDir} --outThresh {output.thresholdTable}  --biosample {wildcards.biosample} > {output.predTable}
+		Rscript {params.codeDir}/classify_enhancer_predictions_calcs.R --variants {input.variantsByTissue} --pred {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv --outDir {params.outDir} --outThresh {output.thresholdTable}  --biosample {wildcards.biosample} --span "{params.span}" > {output.predTable}
 		
 		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.uniqueVariants.tsv
 		rm {params.outDir}/{wildcards.method}/eGenePrediction/{wildcards.GTExTissue}.temp.predictionTargetGenes.tsv

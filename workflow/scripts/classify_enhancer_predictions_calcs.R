@@ -85,6 +85,8 @@ suppressPackageStartupMessages({
                                                                "prediction.rate.total", "prediction.rate.inEnhancer",
                                                                "nVariants"))
   v$threshold=as.numeric(span) # set threshold values to numerics
+  print(span)
+  variants$Score = as.numeric(variants$Score) # set scores to numerics
   
   # for predictors where high score is "bad" (distance)
   if (method=="dist_to_gene" || method=="dist_to_tss"){
@@ -107,7 +109,7 @@ suppressPackageStartupMessages({
     }
   }
   # filter out rows with eGenes connected to un-expressed genes, write threshold table to output
-  v = filter(v, !is.na(prediction.rate.inEnhancer))
+  #v = filter(v, !is.na(prediction.rate.inEnhancer))
   fName = file.path(outDir, "thresholdTables", method, paste0(tissue, ".", biosample, ".tsv"))
   write.table(v, file=fName, sep="\t", quote=F, row.names=F, col.names=T)
 

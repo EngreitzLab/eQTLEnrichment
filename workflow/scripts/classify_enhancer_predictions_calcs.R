@@ -27,7 +27,12 @@ suppressPackageStartupMessages({
   colnames(variants) = c("chr", "start", "end", "unique_id", "GTExTissue", "eGene", "PIP", "TPM")
 
   # read in predictions int file, set column names, set score to numeric
-  predictionsInt = read.table(file=predictionsIntFile,header=FALSE, stringsAsFactor=FALSE)
+  fileSize = file.size(predictionsIntFile)
+  if (fileSize < 20){
+    predictionsInt = matrix(0, nrow=1, ncol=3) %>% data.frame()
+  } else {
+    predictionsInt = read.table(file=predictionsIntFile,header=FALSE, stringsAsFactor=FALSE)
+  }
   colnames(predictionsInt) = c('unique_id', 'targetGene', 'Score')
   predictionsInt$Score=as.numeric(predictionsInt$Score)
   

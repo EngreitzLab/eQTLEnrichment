@@ -69,8 +69,15 @@ rule fourth:
 		variantsByTissue = variantsByTissueFiles,
 		predictionsByBiosample = predictionsByBiosampleFiles,
 		predTables = predTablesFiles,
-		thresholdTables = thresholdTableFiles,
-	
+		thresholdTables = thresholdTableFiles
+		
+rule fifth:
+	input:
+		ERCurveMeanFull = expand(os.path.join(config["outDir"], "{method}", "ERCurveMean.full.pdf"), method=config["methods"] ),
+		ERCurveMeanZoom = expand(os.path.join(config["outDir"], "{method}", "ERCurveMean.zoom.pdf"), method=config["methods"]),
+		ERCurveMaxFull = expand(os.path.join(config["outDir"], "{method}", "ERCurveMax.full.pdf"), method=config["methods"]),
+		ERCurveMaxZoom = expand(os.path.join(config["outDir"], "{method}", "ERCurveMax.zoom.pdf"), method=config["methods"]),
+		ERCurveTable = expand(os.path.join(config["outDir"], "{method}", "ERCurveTable.tsv"), method=config["methods"])
 		
 ################################################################################################################################
 

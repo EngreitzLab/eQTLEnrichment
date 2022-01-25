@@ -4,8 +4,9 @@ main <- function() {
     library(tidyr)})
   
   # load data
-  enrichmentTableFiles = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist() %>% data.frame() %>% setNames(c('file'))
   method = (snakemake@wildcards$method)
+  outDir = (snakemake@params$outDir)
+  span = (snakemake@params$span) %>% as.character() %>% strsplit(" ") %>% unlist()
   thresholdTableFiles = (snakemake@input$thresholdTables) %>% strsplit(" ") %>% unlist() %>% data.frame() %>% setNames(c('file'))
   outERCurveMaxFull = (snakemake@output$ERCurveMaxFull)
   outERCurveMeanFull = (snakemake@output$ERCurveMeanFull)
@@ -16,25 +17,33 @@ main <- function() {
   # get list of thresholds
   df = read.table(file=thresholdTableFiles$file[1], header=TRUE, sep="\t") %>% 
     filter(!is.na(prediction.rate.inEnhancer)) %>% unique()
+  
+  #df = matrix(data=0, nrow=length(span)) %>% as.data.frame()
+  
+  df$threshold = span %>% as.character()
   df$maxEnrichment = 0
   df$meanEnrichment = 0
   df$recall = 0
-  
+  #df = dplyr::select(df, -V1)
+
   # # format threshold values so that it matches enrichment and count matrix names 
-  # if (method=='dist_to_tss' || method=='dist_to_gene'){
-  #   df$threshold = format(df$threshold, scientific=FALSE, trim=TRUE) %>% as.character()
-  #   df$threshold[df$threshold=="100000"] = "100000.0"
-  # } else if (method=='reads_by_dist_to_tss' || method=='reads_by_dist_to_tss_norm'){
-  #   df$threshold= format(df$threshold, scientific=FALSE) %>% as.character()
-  #   df$threshold = sub("0+$", "", df$threshold) 
-  # }
+  if (as.numeric(df$threshold[nrow(df)])<10){
+    df$threshold[df$threshold=="0"] = "0.0"
+    df$threshold[df$threshold=="1"] = "1.0"
+    df$threshold[df$threshold=="2"] = "2.0"
+    df$threshold[df$threshold=="5"] = "5.0"
+    
+  }
+  df$threshold[df$threshold=="1e+06"] = "1000000"
+  df$threshold[df$threshold=="2e+05"] = "200000"
+  print(df$threshold)
   
   for (i in 1:nrow(df)){
     # extract threshold from file name of enrichment table 
     threshold.this = df$threshold[i]
     threshold.string = paste0(".", threshold.this, ".tsv")
-    enrichmentFile.this = filter(enrichmentTableFiles, grepl(threshold.string, enrichmentTableFiles$file))
-    enrichmentTable.this = read.table(file=enrichmentFile.this$file[1], header=TRUE, sep="\t") %>%
+    enrichmentFile.this = paste0(outDir, "/", method, "/enrichmentTable", threshold.string)
+    enrichmentTable.this = read.table(file=enrichmentFile.this, header=TRUE, sep="\t") %>%
       filter(!is.na(enrichment))
     
     # add max and average enrichment or each threshold
@@ -46,7 +55,7 @@ main <- function() {
   for (i in 1:nrow(thresholdTableFiles)){
     thresholdTable.this = read.table(file=thresholdTableFiles$file[i], header=TRUE, sep="\t") %>% 
       filter(!is.na(prediction.rate.inEnhancer))
-    df$recall = df$recall + thresholdTable.this$prediction.rate.inEnhancer  
+    df$recall = df$recall + thresholdTable.this$prediction.rate.inEnhancer 
   }
   df$recall = df$recall/(nrow(thresholdTableFiles))
   
@@ -54,6 +63,8 @@ main <- function() {
   write.table(df, file=outERTable, col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
   
   df$threshold = as.numeric(df$threshold)
+  #df$prediction.rate.inEnhancer = df$recall
+  
   # graph (color/opacity for threshold?)
   text.mult = 3.5
   

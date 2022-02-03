@@ -10,7 +10,13 @@ methods = c("ABC_20210712_hg38ENCODE_RefSeq", "dist_to_tss", "dist_to_gene", "re
 # read in tables
 dist_to_tss = read.table(file=paste0(base_dir, '2022_0118_test2-dist_to_tss/dist_to_tss/ERCurveTable.tsv'), header=TRUE)
 dist_to_gene = read.table(file=paste0(base_dir, '2022_0118_test2-dist_to_gene/dist_to_gene/ERCurveTable.tsv'), header=TRUE)
+reads_by_dist.1 = read.table(file=paste0(base_dir, '2022_0118_test2-reads_by_dist/reads_by_dist_to_tss/ERCurveTable.2.tsv'), header=TRUE)
+reads_by_dist.2 = read.table(file=paste0(base_dir, '2022_0118_test2-reads_by_dist/reads_by_dist_to_tss/ERCurveTable.10.tsv'), header=TRUE)
 reads_by_dist = read.table(file=paste0(base_dir, '2022_0118_test2-reads_by_dist/reads_by_dist_to_tss/ERCurveTable.tsv'), header=TRUE)
+
+#reads_by_dist = rbind(reads_by_dist.1, reads_by_dist.2, reads_by_dist.3)
+#reads_by_dist = reads_by_dist[order(as.numeric(reads_by_dist$threshold)), ]
+
 reads_by_dist_norm = read.table(file=paste0(base_dir, '2022_0109_test2-norm/reads_by_dist_to_tss_norm/ERCurveTable.tsv'), header=TRUE)
 ABC = read.table(file=paste0(base_dir, '2022_0109_test2-ABC/ABC_20210712_hg38ENCODE_RefSeq/ERCurveTable.tsv'), header=TRUE)
 nearest_gene = read.table(file=paste0(base_dir, '2022_0109_test2-nearest_gene/nearest_gene/ERCurveTable.tsv'), header=TRUE)
@@ -26,7 +32,18 @@ nearest_gene$method = "nearest_gene"
 nearest_tss$method = "nearest_tss"
 within_100kb$method = "within_100kb_of_tss"
 
+dist_to_tss = dplyr::select(dist_to_tss, prediction.rate.inEnhancer, meanEnrichment, maxEnrichment, method)
+dist_to_gene = dplyr::select(dist_to_gene, prediction.rate.inEnhancer, meanEnrichment, maxEnrichment, method)
+reads_by_dist = dplyr::select(reads_by_dist, prediction.rate.inEnhancer, meanEnrichment, maxEnrichment, method)
+reads_by_dist_norm = dplyr::select(reads_by_dist_norm, prediction.rate.inEnhancer, meanEnrichment, maxEnrichment, method)
+ABC = dplyr::select(ABC, prediction.rate.inEnhancer, meanEnrichment, maxEnrichment, method)
+nearest_gene = dplyr::select(nearest_gene, prediction.rate.inEnhancer, meanEnrichment, maxEnrichment, method)
+nearest_tss = dplyr::select(nearest_tss, prediction.rate.inEnhancer, meanEnrichment, maxEnrichment, method)
+within_100kb = dplyr::select(within_100kb, prediction.rate.inEnhancer, meanEnrichment, maxEnrichment, method)
+
+
 df = rbind(dist_to_tss, dist_to_gene, reads_by_dist, reads_by_dist_norm, ABC, nearest_gene, nearest_tss, within_100kb)
+df[is.na(df)] = 0
 
 ## make color palette
 cp = data.frame(method=methods, 
@@ -37,10 +54,10 @@ g=ggplot(data=df, aes(x=prediction.rate.inEnhancer, y=meanEnrichment, color=meth
   geom_path(size=1.25) +
   geom_point(size=1.25) +
   scale_color_manual(values=cp$hex) + 
-  ylim(c(0, 30)) +
+  ylim(c(0, 35)) +
   theme_minimal()
 
-pdf(file=paste0(base_dir, '2022_0109_test2/er_curves_combined_v2.pdf'), width=7, height=5)
+pdf(file=paste0(base_dir, '2022_0109_test2/er_curves_combined_v3.pdf'), width=7, height=5)
    print(g)
 dev.off()
 g

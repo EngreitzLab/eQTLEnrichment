@@ -88,7 +88,7 @@ suppressPackageStartupMessages({
   x = length(span)
   v = data.frame(matrix(0, nrow = x, ncol = 5)) %>% setNames(c("threshold", "prediction.rate.GivenEnhancer",
                                                                "prediction.rate.total", "prediction.rate.inEnhancer",
-                                                               "nVariants"))
+                                                               "nOverlaps"))
   v$threshold=as.numeric(span) # set threshold values to numerics
   print(span)
   variants$Score = as.numeric(variants$Score) # set scores to numerics
@@ -101,7 +101,7 @@ suppressPackageStartupMessages({
       v$prediction.rate.GivenEnhancer[i] = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(filter(predTable,predictionClass!='noOverlap'))
       v$prediction.rate.total[i] = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(predTable)
       v$prediction.rate.inEnhancer[i] =nrow(filter(predTable,predictionClass!='noOverlap'))/nrow(predTable)
-      v$nVariants[i]= nrow(predTable)
+      v$nOverlaps[i]= nrow(predTable)
     }
   # for the rest of the predictors, where low score is bad, do the same
   } else { 
@@ -110,7 +110,7 @@ suppressPackageStartupMessages({
       v$prediction.rate.GivenEnhancer[i] = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(filter(predTable,predictionClass!='noOverlap'))
       v$prediction.rate.total[i] = nrow(filter(predTable, predictionClass=='inEnhancer-correctGene'))/nrow(predTable)
       v$prediction.rate.inEnhancer[i] =nrow(filter(predTable,predictionClass!='noOverlap'))/nrow(predTable)
-      v$nVariants[i]= nrow(predTable)
+      v$nOverlaps[i]= nrow(predTable)
     }
   }
   # filter out rows with eGenes connected to un-expressed genes, write threshold table to output

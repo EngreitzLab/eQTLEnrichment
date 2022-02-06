@@ -17,9 +17,20 @@ main <- function() {
   varFile = opt$variants; predictionsInt = opt$pred;
   
   variants = read.table(file=varFile,header=TRUE, stringsAsFactor=FALSE); 
-  predictionsInt = read.table(file=predictionsInt,header=FALSE, stringsAsFactor=FALSE)
-  colnames(predictionsInt) = c('unique_id','targetGene')
-    
+  
+  #predictionsInt = read.table(file=predictionsInt,header=FALSE, stringsAsFactor=FALSE)
+  predIntSize = file.info(predictionsInt)$size
+  size.threshold=50
+  
+  if (predIntSize<size.threshold){
+    predictionsInt = matrix(nrow=1,ncol=3) %>% data.frame()
+    variants$predictionClass[1] = 'NA'
+    variants$nEnhancers[1] = 0
+      
+  } else {
+    predictionsInt = read.table(file=predictionsInt,header=FALSE, stringsAsFactor=FALSE)
+    colnames(predictionsInt) = c('unique_id','targetGene')
+  
   for (i in 1:nrow(variants)) {
     temp = filter(predictionsInt, unique_id==variants$unique_id[i])
     
@@ -35,6 +46,8 @@ main <- function() {
       variants$nEnhancers[i] = nrow(temp)
     }
   }
+  }
+  
   
   # filter out rows with eGenes connected to un-expressed genes
   write.table(variants, file="", sep="\t", quote=F, row.names=F, col.names=T)

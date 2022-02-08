@@ -15,7 +15,7 @@ for i in range(len(methods)):
     files.append("")
   else:
     key = pd.read_csv(biosampleKeys[i], sep='\t')
-    sampleList = key["biosample"].tolist()
+    sampleList = key["biosample"].tolist()at
     fileList =  key["predictionFile"].tolist()
     fileDict = dict(zip(sampleList, fileList))
     samples.append(sampleList)

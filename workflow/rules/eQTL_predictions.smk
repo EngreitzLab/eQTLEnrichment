@@ -20,10 +20,17 @@ for x in config["methods"]:
 	# list of filtered prediction files
 	#predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{biosample}.filteredPredictions.tsv"), biosample=methods_config.loc[x, "biosample_map"]))
 	# list of prediction tables
-	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
-	# list of sensitivity plot names
-	sensitivityPlotsFiles.extend(expand(os.path.join(config["outDir"], "sensitivityPlots", "{GTExTissue}.{method}Enhancers.variantOverlapSensitivity.pdf"), GTExTissue=methods_config.loc[x, "GTExTissue_map"], method=x))
-	thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{Biosample}.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
+	for d in config["distances"]:
+		d = str(d)
+		dist_str = "under" + d + "bp"
+		# list of variant files
+		variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}." + dist_str + ".filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
+		# list of variant files with proximal genes
+		variantsByTissueProximalFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}." + dist_str + ".filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
+		# list of prediction tables
+		predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable." + dist_str + ".tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
+		#predTablesForCalcsFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.forCalcs.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
+		#thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{Biosample}.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
 	
 # calculate thresholds for baseline predictors, averaged across tissues
 rule calculate_threshold:
@@ -44,10 +51,10 @@ rule calculate_threshold:
 rule threshold_predictions:
 	input: 
 		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
-		thresholds = os.path.join(config["outDir"], "thresholdTables", "calculatedThresholds.tsv")
+		#thresholds = os.path.join(config["outDir"], "thresholdTables", "calculatedThresholds.tsv")
 	params:
 		ourDir = config["outDir"],
-		userThresh = lambda wildcards: methods_config.loc[wildcards.method, "threshold"]
+		threshold = lambda wildcards: methods_config.loc[wildcards.method, "threshold"]
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	output:
@@ -59,12 +66,12 @@ rule threshold_predictions:
 # run once per method x tissue
 rule split_variants_by_tissue:
 	input: 
-		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.under{distance}bp.tsv")
 	params:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]
 	output:
-		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.tsv")
+		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.under{distance}bp.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
@@ -165,14 +172,14 @@ rule make_prediction_table_for_calcs:
 rule make_prediction_table_actual:
 	input:
 		#variantsByTissueProximal = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.proximal.tsv"),
-		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.tsv"),
+		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.under{distance}bp.tsv"),
 		predictionsByBiosample =  os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed.gz"),
 		
 	params:
 		outDir = config["outDir"],
 		codeDir = config["codeDir"],
 	output:
-		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.tsv"),
+		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.under{distance}bp.tsv"),
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
@@ -201,9 +208,9 @@ rule plot_prediction_rates:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]
 	output:
-		predictionPlot = os.path.join(config["outDir"], "predictionRates.pdf"),
-		PPVPlot = os.path.join(config["outDir"],"PPV.pdf"),
-		predictionMetrics = os.path.join(config["outDir"],"predictionMetrics.tsv")
+		#predictionPlot = expand(os.path.join(config["outDir"], "predictionRates.under{distance}bp.pdf"), distance=config["distances"]),
+		#PPVPlot = expand(os.path.join(config["outDir"],"PPV.under{distance}bp.pdf"), distance=config["distances"]),
+		predictionMetrics = expand(os.path.join(config["outDir"],"predictionMetrics.under{distance}bp.tsv"), distance=config["distances"])
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:

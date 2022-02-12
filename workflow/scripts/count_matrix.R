@@ -11,8 +11,10 @@ suppressPackageStartupMessages({library(dplyr)
   method = (snakemake@wildcards$method)
   biosampleFile = (snakemake@input$samples)
   GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist() %>% sort()
+  distance = (snakemake@wildcards$distance)
   outDir = (snakemake@params$outDir)
   outFile = (snakemake@output$countMatrix)
+
   
 
 	## read in files
@@ -23,7 +25,8 @@ suppressPackageStartupMessages({library(dplyr)
   
   for (i in 1:length(biosamples)){
     sample.this = biosamples[i]
-    int.file = file.path(outDir, method, sample.this, "GTExVariants-enhancerPredictionsInt.tsv.gz")
+    int.file = file.path(outDir, method, sample.this, 
+                         paste0("GTExVariants-enhancerPredictionsInt.", "under", distance, "bp.tsv.gz"))
     size.file = file.info(int.file)$size
     size.threshold = 100 # in bytes, for empty file
     

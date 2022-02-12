@@ -19,7 +19,7 @@ main <- function() {
     
     # read in colors
     cpList = readRDS(cpFile)
-    color.sub = cpList[1:(length(cpList)-4)] %>% as.data.frame() %>% t() 
+    color.sub = cpList[1:length(cpList)] %>% as.data.frame() %>% t() 
 
     # aggregate data
     enr.all = read.table(file=enrichmentTables[1], header=TRUE, stringsAsFactors = FALSE)

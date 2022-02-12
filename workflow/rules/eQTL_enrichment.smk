@@ -142,18 +142,32 @@ rule filter_variants_to_gene_universe:
 			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExExpressedGenes} --col 6 --genes {input.geneUniverse} --id hgnc > {output.filteredGTExVariantsFinal}
 			
 		"""
+
+rule filter_variants_to_distance_threshold:
+	input:
+		filteredGTExVariants = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
+	params:
+		distances = config["distances"],
+		TSS = config["TSS"]
+	conda:
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	output:
+		filteredGTExVariantsOut = expand(os.path.join(config["outDir"], "{{method}}", "GTExVariants.filteredForMethod.under{distance}bp.tsv"), distance=config["distances"])
+	script:
+		os.path.join(config["codeDir"], "filter_variants_by_distance.R")
+
 	
 # intersect predictions and GTEx variants
 # run once per method (per biosample)
 rule intersect_variants_predictions:
 	input:
 		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.bed.gz"),
-		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.under{distance}bp.tsv")
 	params: 
 		outDir = config["outDir"],
 		chrSizes = config["chrSizes"]
 	output:
-		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz")
+		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.under{distance}bp.tsv.gz")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
@@ -173,9 +187,10 @@ rule compute_count_matrix:
 		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
 	params:
 		outDir = config["outDir"],
-		GTExTissues=config["GTExTissues"]
+		GTExTissues=config["GTExTissues"],
+		#distance = {distance}
 	output: 
-		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.tsv")
+		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.under{distance}bp.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:
@@ -185,13 +200,13 @@ rule compute_count_matrix:
 # get number of variants per GTExTissue linked to expresed genes
 rule get_variants_per_GTEx_tissue:
 	input:
-		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.under{distance}bp.tsv")
 	params:
 		outDir = config["outDir"],
 		codeDir = config["codeDir"],
 		GTExTissues = config["GTExTissues"]
 	output: 
-		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv")
+		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.under{distance}bp.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
@@ -259,8 +274,8 @@ rule compute_enhancer_set_size:
 # run once per method
 rule compute_enrichment_matrix:
 	input: 
-		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.tsv"),
-		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"),
+		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.under{distance}bp.tsv"),
+		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.under{distance}bp.tsv"),
 		#  read in within method, see note in count matrix
 		#commonVarPerBiosample = expand(os.path.join(config["outDir"], "{method}", "{biosample}", "commonVarPerBiosample.tsv"), biosample=methods_config["biosamples"]),
 		samples = os.path.join(config["outDir"],"{method}", "biosampleList.tsv"),
@@ -270,7 +285,7 @@ rule compute_enrichment_matrix:
 		GTExTissues = config["GTExTissues"],
 		sampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"],
 	output: 
-		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv")
+		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.under{distance}bp.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script: 
@@ -306,16 +321,16 @@ rule plot_enrichment_heatmaps:
 # run once overall
 rule plot_comparisons:
 	input: 
-		enrichmentTables = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.tsv"), method=config["methods"]),
+		enrichmentTables = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.under{{distance}}bp.tsv"), method=config["methods"]),
 		colorPalette = os.path.join(config["outDir"], "colorPalette.rds")
 	params:
 		methods = config["methods"],
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]
 	output: 
-		cdf = os.path.join(config["outDir"], "cdf.pdf"),
-		density = os.path.join(config["outDir"], "density.pdf"),
-		boxplot = os.path.join(config["outDir"], "boxplot.pdf")
+		cdf = os.path.join(config["outDir"], "cdf.under{distance}bp.pdf"),
+		density = os.path.join(config["outDir"], "density.under{distance}bp.pdf"),
+		boxplot = os.path.join(config["outDir"], "boxplot.under{distance}bp.pdf")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:

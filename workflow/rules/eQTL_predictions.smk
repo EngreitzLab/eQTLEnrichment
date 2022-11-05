@@ -1,8 +1,8 @@
 # load prediction method config file
-methods_config_file = config["methodsTable"]
-methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
-methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
-methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
+#methods_config_file = config["methodsTable"]
+#methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
+#methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
+#methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 
 # generate output files
 variantsByTissueFiles = []
@@ -10,11 +10,11 @@ predictionsByBiosampleFiles = []
 predTablesFiles = []
 thresholdTableFiles = []
 
-for x in config["methods"]:
-	variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  "{GTExTissue}.{biosample}.filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
-	predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "enhancerPredictions.sorted.bed.gz"), biosample=methods_config.loc[x, "biosample_map"]))
-	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", "{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
-	thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{biosample}.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
+#for x in config["methods"]:
+#	variantsByTissueFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction",  #"{GTExTissue}.{biosample}.filteredVariants.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], #biosample=methods_config.loc[x, "biosample_map"]))
+#	predictionsByBiosampleFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", #"enhancerPredictions.sorted.bed.gz"), biosample=methods_config.loc[x, "biosample_map"]))
+#	predTablesFiles.extend(expand(os.path.join(config["outDir"], x, "eGenePrediction", #"{GTExTissue}.{Biosample}.predictionTable.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], #Biosample=methods_config.loc[x, "biosample_map"]))
+#	thresholdTableFiles.extend(expand(os.path.join(config["outDir"], "thresholdTables", x, "{GTExTissue}.{biosample}.tsv"), zip, #GTExTissue=methods_config.loc[x, "GTExTissue_map"], biosample=methods_config.loc[x, "biosample_map"]))
 
 	
 # split variants to tissue (just the ones needed for predictions)
@@ -25,7 +25,7 @@ rule split_variants_by_tissue:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"]
 	output:
-		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.tsv")
+		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "GTExTissue{GTExTissue}.Biosample{biosample}.filteredVariants.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
@@ -38,7 +38,7 @@ rule split_variants_by_tissue:
 # generate prediction table and threshold tables
 rule make_prediction_table_for_calcs:
 	input:
-		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.filteredVariants.tsv"),
+		variantsByTissue = os.path.join(config["outDir"], "{method}", "eGenePrediction", "GTExTissue{GTExTissue}.Biosample{biosample}.filteredVariants.tsv"),
 		predictionsByBiosample =  os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
 		
 	params:
@@ -46,8 +46,8 @@ rule make_prediction_table_for_calcs:
 		codeDir = config["codeDir"],
 		span = lambda wildcards: methods_config.loc[wildcards.method, "thresholdSpan"]
 	output:
-		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "{GTExTissue}.{biosample}.predictionTable.tsv"),
-		thresholdTable = os.path.join(config["outDir"], "thresholdTables", "{method}", "{GTExTissue}.{biosample}.tsv")
+		predTable = os.path.join(config["outDir"], "{method}", "eGenePrediction", "GTExTissue{GTExTissue}.Biosample{biosample}.predictionTable.forCalcs.tsv"),
+		thresholdTable = os.path.join(config["outDir"], "thresholdTables", "{method}", "GTExTissue{GTExTissue}.Biosample{biosample}.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:

@@ -32,6 +32,7 @@ suppressPackageStartupMessages({library(dplyr)
     if (size.file<size.threshold){
       for (tissue in GTExTissues)
         counts[counts$Biosample==sample.this,tissue] = 0   
+      
     } else { # otherwise, read in file
     df = read.table(gzfile(int.file), header=FALSE)
     colnames(df) = c('var.chr','var.start','var.end','hgid','GTExTissue','eGene','PIP', 'TPM', 

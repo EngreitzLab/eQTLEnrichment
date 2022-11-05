@@ -28,7 +28,7 @@ rule gzip_thresholds:
 rule plot_enrichment_recall:
 	input: 
 		# threshold table files for a given method and all biosample-tissue pairings
-		thresholdTables = lambda wildcards: expand(os.path.join(config["outDir"], "thresholdTables", wildcards.method, "{GTExTissue}.{biosample}.tsv"), zip, GTExTissue=methods_config.loc[wildcards.method, "GTExTissue_map"], biosample=methods_config.loc[wildcards.method, "biosamples"]),
+		thresholdTables = lambda wildcards: expand(os.path.join(config["outDir"], "thresholdTables", wildcards.method, "GTExTissue{GTExTissue}.Biosample{biosample}.tsv"), zip, GTExTissue=methods_config.loc[wildcards.method, "GTExTissue_map"], biosample=methods_config.loc[wildcards.method, "biosample_map"]),
 		# enrichment tables for given method and all thresholds
 		#enrichmentTables = lambda wildcards: expand(os.path.join(config["outDir"], wildcards.method, "enrichmentTable.{{threshold}}.tsv", threshold=methods_config.loc[wildcards.method, "thresholdSpan"]))
 	params:

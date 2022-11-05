@@ -20,7 +20,6 @@ main <- function() {
 	## read in files
   # count matrix
   biosamples = read.table(file=biosampleFile, header=FALSE, stringsAsFactors=FALSE) %>% setNames(c("Biosample"))
-
   # each row = biosample, each col = tissue
 	countMatrix = read.table(file=countFile, header=TRUE, stringsAsFactors=FALSE)
 
@@ -38,8 +37,13 @@ main <- function() {
       counts.this$nCommonVariantsOverlappingEnhancers[1]=0
       counts.this$Biosample[1]=sample.this
     } else {
-      counts.this = read_table(file=file.this, col_names=FALSE) %>% setNames(c('nCommonVariantsOverlappingEnhancers','Biosample'))
-    }
+      counts.this = read.table(file=file.this, header=FALSE, sep=" ")
+      counts.this[counts.this == " "] = NA 
+      counts.this = t(counts.this) %>% na.omit() %>% t() %>% data.frame() %>%
+        setNames(c('nCommonVariantsOverlappingEnhancers','Biosample'))
+      counts.this$nCommonVariantsOverlappingEnhancers = as.numeric(counts.this$nCommonVariantsOverlappingEnhancers)
+      #counts.this = read.table(file=file.this, header=FALSE, sep="\t") %>% setNames(c('nCommonVariantsOverlappingEnhancers','Biosample'))
+      }
     
      if (i==1){
       commonVarPerBiosample=counts.this
@@ -52,7 +56,6 @@ main <- function() {
 	# variants by tissue
 	variantsByGTExTissue = read.table(varPerGTExTissueFile, header=FALSE, stringsAsFactors=FALSE); 
 	colnames(variantsByGTExTissue) = c('GTExTissue','nVariantsGTExTissue')
-
 	# make matrix: columns GTExTissue, Biosample, nVariantsOverlappingEnhancers, nVariantsGTExTissue, nCommonVariantsOverlappingEnhancers,  nCommonVariants, enrichment
 	enrMatrix = pivot_longer(countMatrix, cols=-Biosample, names_to='GTExTissue', values_to='nVariantsOverlappingEnhancers')
 	enrMatrix[enrMatrix=="Cells_EBV.transformed_lymphocytes"] = "Cells_EBV-transformed_lymphocytes"

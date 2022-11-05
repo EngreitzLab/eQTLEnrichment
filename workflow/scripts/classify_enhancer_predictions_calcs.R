@@ -64,9 +64,9 @@ suppressPackageStartupMessages({
     if (nrow(temp)>0 && (variants$eGene[i] %in% temp$targetGene)) {
       variants$predictionClass[i] = 'inEnhancer-correctGene'
       if (method=="dist_to_gene" || method=="dist_to_tss") {
-        variants$Score[i]=min(temp$Score)
+        variants$Score[i]=min(temp$Score, na.rm=TRUE)
       } else {
-        variants$Score[i]=max(temp$Score)
+        variants$Score[i]=max(temp$Score, na.rm=TRUE)
       }
     } 
     
@@ -75,9 +75,9 @@ suppressPackageStartupMessages({
     if (nrow(temp)>0 && !(variants$eGene[i] %in% temp$targetGene)) {
       variants$predictionClass[i] = 'inEnhancer-incorrectGene'
       if (method=="dist_to_gene" || method=="dist_to_tss") {
-        variants$Score[i]=min(temp$Score)
+        variants$Score[i]=min(temp$Score, na.rm=TRUE)
       } else {
-        variants$Score[i]=max(temp$Score)
+        variants$Score[i]=max(temp$Score, na.rm=TRUE)
       }
     }
   }
@@ -115,6 +115,6 @@ suppressPackageStartupMessages({
   }
   # filter out rows with eGenes connected to un-expressed genes, write threshold table to output
   #v = filter(v, !is.na(prediction.rate.inEnhancer))
-  fName = file.path(outDir, "thresholdTables", method, paste0(tissue, ".", biosample, ".tsv"))
+  fName = file.path(outDir, "thresholdTables", method, paste0("GTExTissue",tissue, ".Biosample", biosample, ".tsv"))
   write.table(v, file=fName, sep="\t", quote=F, row.names=F, col.names=T)
 

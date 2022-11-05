@@ -15,7 +15,7 @@ rule make_gene_universes:
 			set +o pipefail;
 			
 			# filter GTEx genes to method genes
-			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExGeneUniverse} --col 4 --genes {input.methodGeneUniverse} --id hgnc > {output.geneUniverse}
+			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExGeneUniverse} --id_col 4 --genes {input.methodGeneUniverse} --id hgnc > {output.geneUniverse}
 			"""
 
 # return list of biosamples for method from biosample key
@@ -37,7 +37,8 @@ rule sort_predictions:
 	params:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"],
-		chrSizes = config["chrSizes"]
+		chrSizes = config["chrSizes"],
+		scoreCol = lambda wildcards: methods_config.loc[wildcards.method, "score_col"]
 	output:
 		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
 	conda: 
@@ -47,10 +48,15 @@ rule sort_predictions:
 		set +o pipefail;
 			
 		# sort predictions file
-		zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType,TargetGene,Score | sed 1d | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
-			
+        if [[ {input.predFile} == *.gz ]]
+        then
+		    zcat {input.predFile} | csvtk cut -t -f chr,start,end,CellType,TargetGene,{params.scoreCol} | sed 1d | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
+		else
+            cat {input.predFile} | csvtk cut -t -f chr,start,end,CellType,TargetGene,{params.scoreCol} | sed 1d | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
+        fi
+    
 		# filter predictions to gene universe
-		Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv --col 5 --genes {input.geneUniverse} --id hgnc | gzip > {output.predictionsSorted}
+		Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv --id_col 5 --genes {input.geneUniverse} --id hgnc --biosample {wildcards.biosample} --biosample_col 4| gzip > {output.predictionsSorted}
 			
 		rm {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
 			
@@ -115,7 +121,7 @@ rule filter_variants_to_gene_universe:
 	shell:
 		"""
 			## filter this method's gene universe
-			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExExpressedGenes} --col 6 --genes {input.geneUniverse} --id hgnc > {output.filteredGTExVariantsFinal}
+			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExExpressedGenes} --id_col 6 --genes {input.geneUniverse} --id hgnc > {output.filteredGTExVariantsFinal}
 			
 		"""
 	

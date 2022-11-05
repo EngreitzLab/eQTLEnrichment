@@ -9,17 +9,19 @@ import numpy as np
 # read in parameters from config
 nSteps = methods_config['nSteps']
 maxScore = methods_config['maxScore']
+minScore = methods_config['minScore']
 
 thresholdSpans = [] # initialize list
 
 for i in range(len(nSteps)): # iterate through number of methods
   maxScore.this = maxScore[i]
+  minScore.this = minScore[i]
   nSteps.this = nSteps[i]
-  if maxScore.this/(nSteps.this-1)>=nSteps.this: # if values of span will be integers
-    span = np.linspace(0, maxScore.this, nSteps.this, dtype=int)
+  if (maxScore.this-minScore.this)/(nSteps.this-1)>=nSteps.this: # if values of span will be integers
+    span = np.linspace(minScore.this, maxScore.this, nSteps.this, dtype=int)
     span = span.tolist()
   else: # if values of span will be decimals
-    span = np.linspace(0, maxScore.this, nSteps.this)
+    span = np.linspace(minScore.this, maxScore.this, nSteps.this)
     span = [round(elem, ndigits=4) for elem in span] # converts to list
     
   thresholdSpans.append(span) # add that method to the list

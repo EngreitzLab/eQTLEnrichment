@@ -1,7 +1,8 @@
 main <- function() {
   suppressPackageStartupMessages({library(ggplot2)
     library(dplyr)
-    library(tidyr)})
+    library(tidyr)
+    library(stringr)})
   
   # load data
   method = (snakemake@wildcards$method)
@@ -24,6 +25,8 @@ main <- function() {
   df$maxEnrichment = 0
   df$meanEnrichment = 0
   df$recall = 0
+  df$enrichment.LCL = 0
+  df$recall.LCL =
   df = dplyr::select(df, -V1)
 
   # # format threshold values so that it matches enrichment and count matrix names 
@@ -37,6 +40,7 @@ main <- function() {
   }
   df$threshold[df$threshold=="1e+06"] = "1000000"
   df$threshold[df$threshold=="2e+05"] = "200000"
+  df$threshold[df$threshold=="5e-04"] = "0.0005"
   print(df$threshold)
   
   
@@ -53,28 +57,44 @@ main <- function() {
     # add max and average enrichment or each threshold
     df$maxEnrichment[i] = enrichmentTable.this$enrichment %>% max()
     df$meanEnrichment[i] = enrichmentTable.this$enrichment %>% mean()
+    ## will have to edit for EpiMap/ChromHMM because biosample name is different?
+    if (str_detect(method,"EpiMap")){
+      df.LCL = dplyr::filter(enrichmentTable.this, str_detect(Biosample, "BSS00439"), GTExTissue=="Cells_EBV-transformed_lymphocytes")  
+    } else{
+      df.LCL = dplyr::filter(enrichmentTable.this, str_detect(Biosample, "GM12878"), GTExTissue=="Cells_EBV-transformed_lymphocytes")      
+    }
+
+    if (nrow(df.LCL)==0){
+      df$enrichment.LCL[i] = 0
+    } else {
+      df$enrichment.LCL[i] = df.LCL$enrichment[1]
+    }
   }
   
   # loop through threshold tables for each tissue-biosample pairing
 variantCount = 0
+print(df$recall)
 for (i in 1:nrow(thresholdTableFiles)){
     thresholdTable.this = read.table(file=thresholdTableFiles$file[i], header=TRUE, sep="\t")
     thresholdTable.this[is.na(thresholdTable.this)]=0
-
     this.recall = thresholdTable.this$prediction.rate.inEnhancer
     this.recall[is.na(this.recall)]=0
-    df$recall = df$recall + this.recall*thresholdTable.this$nVariants
     
-    # add total number variants to variant count to normalze
+    # add LCL recall
+    if (str_detect(thresholdTableFiles$file[i], "GTExTissueCells_EBV-transformed_lymphocytes")) {
+      df$recall.LCL = this.recall
+    }
+    
+    df$recall = df$recall + this.recall*thresholdTable.this$nOverlaps
+    # add total number variants to variant count to normalize
     if(method=='dist_to_tss' || method=='dist_to_gene'){
-      nVar.this = thresholdTable.this$nVariants[nrow(thresholdTable.this)]
+      nVar.this = thresholdTable.this$nOverlaps[nrow(thresholdTable.this)]
     } else {
-      nVar.this = thresholdTable.this$nVariants[1]
+      nVar.this = thresholdTable.this$nOverlaps[1]
     }
     variantCount = variantCount + nVar.this
-  }
-  #df$recall = df$recall/(nrow(thresholdTableFiles))
-  print(variantCount)
+}
+
   df$recall=df$recall/variantCount
   
   df$prediction.rate.inEnhancer = df$recall

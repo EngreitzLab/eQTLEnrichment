@@ -9,14 +9,17 @@ main <- function() {
   option_list <- list(
     make_option(c("--input"), type="character", default=NA, help="input file"),
     make_option(c("--genes"), type="character", default=NA, help="file of genes (HGNC symbol) to filter input to; cols = chr,start,end,gene"),
-    make_option(c("--col"), type="numeric", default=4, help="col # of input file containing ensembl IDs"),
-    make_option(c("--id"), type="character", default="ensembl", help="type of gene ids in file being filtered ('hgnc' or 'ensembl'), defaults to 'ensembl'"))
+    make_option(c("--id_col"), type="numeric", default=4, help="col # of input file containing ensembl IDs"),
+    make_option(c("--id"), type="character", default="ensembl", help="type of gene ids in file being filtered ('hgnc' or 'ensembl'), defaults to 'ensembl'"),
+    make_option(c("--biosample"), type="character", default = NA, help="biosample for this prediction file"),
+    make_option(c("--biosample_col"), type="numeric", default = 4, help="col # with biosample"))
   
   opt = parse_args(OptionParser(option_list=option_list))
-  inFile=opt$input; col = opt$col; ABC.gene.file=opt$genes; idType=opt$id
+  inFile=opt$input; col = opt$id_col; ABC.gene.file=opt$genes; idType=opt$id
+  biosample=opt$biosample; biosample.col = opt$biosample_col
 
-  df = read.table(inFile, header=FALSE, fill=TRUE)
-  
+  df = read.table(inFile, header=FALSE, fill=TRUE, sep="\t")
+
   # read ABC data
   ABC.genes = read.table(ABC.gene.file, header=FALSE, fill=TRUE)
   if (ncol(ABC.genes)>1){
@@ -24,7 +27,7 @@ main <- function() {
   } else {
     colnames(ABC.genes)[1] = 'hgnc.IDs'
   }
-  
+
   if(idType=='ensembl'){
   df[[col]] = substr(df[[col]], 1,15) # get rid of decimals after ensembl IDs
   
@@ -37,13 +40,22 @@ main <- function() {
   colnames(df)[col] = 'gene.IDs'
   df = dplyr::filter(df, is.element(df$gene.IDs, ABC.genes$ensembl_gene_id))
   
-  # write table
-  write.table(df, file="", sep="\t", quote=F, row.names=F, col.names=F)} else {
+
+  
+} else {
     
     colnames(df)[col] = 'gene.IDs'
     df = dplyr::filter(df, is.element(df$gene.IDs, ABC.genes$hgnc.IDs))
-    write.table(df, file="", sep="\t", quote=F, row.names=F, col.names=F)}
-    
+  }
+  
+  # set biosample name if necessary
+  if (!is.na(biosample)){
+    colnames(df)[biosample.col] = 'biosample'
+    df$biosample = biosample
+  }
+  
+  # write table
+  write.table(df, file="", sep="\t", quote=F, row.names=F, col.names=F)
   }
   
   

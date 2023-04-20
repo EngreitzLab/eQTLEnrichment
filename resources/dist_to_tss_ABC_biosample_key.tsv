@@ -1,0 +1,17 @@
+biosample	predictionFile	GTExTissue
+A673_ID_2649	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/A673_ID_2649/dist_to_tss.tsv.gz	
+AG04450_ID_361	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/AG04450_ID_361/dist_to_tss.tsv.gz	
+aorta_ID_2340	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/aorta_ID_2340/dist_to_tss.tsv.gz	
+bipolar_neuron_ID_2650	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/bipolar_neuron_ID_2650/dist_to_tss.tsv.gz	
+brain_microvascular_endothelial_cell_ID_2308	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/brain_microvascular_endothelial_cell_ID_2308/dist_to_tss.tsv.gz	
+cardiac_muscle_cell_ID_363	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/cardiac_muscle_cell_ID_363/dist_to_tss.tsv.gz	
+CD14-positive_monocyte_ID_370	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/CD14-positive_monocyte_ID_370/dist_to_tss.tsv.gz	
+colonic_mucosa_ID_2118	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/colonic_mucosa_ID_2118/dist_to_tss.tsv.gz	
+coronary_artery_ID_2664	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/coronary_artery_ID_2664/dist_to_tss.tsv.gz	
+epithelial_cell_of_prostate_ID_2659	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/epithelial_cell_of_prostate_ID_2659/dist_to_tss.tsv.gz	Prostate
+fibroblast_of_dermis_ID_2639	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/fibroblast_of_dermis_ID_2639/dist_to_tss.tsv.gz	
+GM12878_ID_2724	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/GM12878_ID_2724/dist_to_tss.tsv.gz	Cells_EBV-transformed_lymphocytes
+H1_ID_364	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/H1_ID_364/dist_to_tss.tsv.gz	
+upper_lobe_of_left_lung_ID_2310	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/upper_lobe_of_left_lung_ID_2310/dist_to_tss.tsv.gz	Lung
+muscle_of_trunk_ID_2601	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/muscle_of_trunk_ID_2601/dist_to_tss.tsv.gz	Muscle_Skeletal
+lower_lobe_of_left_lung_ID_55	/oak/stanford/groups/engreitz/Projects/Benchmarking/Predictors/BaselinePredictors/ABC/lower_lobe_of_left_lung_ID_55/dist_to_tss.tsv.gz	Lung

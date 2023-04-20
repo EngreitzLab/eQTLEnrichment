@@ -30,7 +30,7 @@ rule get_biosamples:
 		os.path.join(config["codeDir"], "get_biosamples.R")
 		
 # sort enhancer predictions by chromosome & start location & filter to gene universe, get list of samples
-rule sort_predictions:
+rule process_predictions:
 	input:
 		predFile = lambda wildcards: methods_config.loc[wildcards.method, "predFiles"][wildcards.biosample],
 		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
@@ -38,7 +38,8 @@ rule sort_predictions:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"],
 		chrSizes = config["chrSizes"],
-		scoreCol = lambda wildcards: methods_config.loc[wildcards.method, "score_col"]
+		scoreCol = lambda wildcards: methods_config.loc[wildcards.method, "score_col"],
+		inversePred = lambda wildcards: methods_config.loc[wildcards.method, "inverse_predictor"]
 	output:
 		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
 	conda: 
@@ -54,10 +55,16 @@ rule sort_predictions:
 		else
             cat {input.predFile} | csvtk cut -t -f chr,start,end,CellType,TargetGene,{params.scoreCol} | sed 1d | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
         fi
-    
-		# filter predictions to gene universe
-		Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv --id_col 5 --genes {input.geneUniverse} --id hgnc --biosample {wildcards.biosample} --biosample_col 4| gzip > {output.predictionsSorted}
-			
+
+		# invert score if inverted predictor and filter to gene universe
+		if [[ params.inversePred ]]
+		then
+			cat {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv | awk '{$6=$6*(-1); print $0}' > {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.inverted.tsv
+			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.inverted.tsv --id_col 5 --genes {input.geneUniverse} --id hgnc --biosample {wildcards.biosample} --biosample_col 4| gzip > {output.predictionsSorted}
+		else
+			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv --id_col 5 --genes {input.geneUniverse} --id hgnc --biosample {wildcards.biosample} --biosample_col 4| gzip > {output.predictionsSorted}
+		fi
+
 		rm {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
 			
 		"""
@@ -98,7 +105,8 @@ rule filter_variants_by_expression:
 		exprData = config["GTExExpression"],
 		filteredGTExVar = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.tsv.gz"),
 	params:
-		outDir = config["outDir"]
+		outDir = config["outDir"],
+		thresholdTPM = config["thresholdTPM"]
 	output:
 		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv")
 	conda: 

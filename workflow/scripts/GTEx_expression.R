@@ -6,7 +6,8 @@ suppressPackageStartupMessages({
 
 main <- function() {
   expr.file = (snakemake@input$exprData) # highly expressed genes
-  var.file = (snakemake@input$filteredGTExVar) 
+  TPM.thresh = (snakemake@params$thresholdTPM)
+  var.file = (snakemake@input$filteredGTExVar)
   out.file = (snakemake@output$GTExExpressedGenes)
   
   col.key = data.frame(GTExTissue=c('Brain_Cortex', 'Prostate', 'Muscle_Skeletal', 'Artery_Tibial', 
@@ -25,8 +26,8 @@ main <- function() {
     pivot_longer(cols=-c(eGene, hgnc), names_to='GTExTissue', values_to='TPM')
 
   var = read.table(gzfile(var.file), header=FALSE) %>% setNames(c('chr','start','end','hgid','GTExTissue','eGene', 'PIP'))
-  # merge variants and expr data, filter to TPM>1
-  var.expr = left_join(var, expr, by=c('GTExTissue'='GTExTissue', 'eGene'='eGene')) %>% filter(TPM>1)
+  # merge variants and expr data, filter to TPM>threshold
+  var.expr = left_join(var, expr, by=c('GTExTissue'='GTExTissue', 'eGene'='eGene')) %>% filter(TPM>TPM.thresh)
   var.expr$eGene = var.expr$hgnc
   var.expr = dplyr::select(var.expr, -hgnc)
 

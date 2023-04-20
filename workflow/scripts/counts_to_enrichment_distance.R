@@ -7,6 +7,7 @@ suppressPackageStartupMessages({
 ## get files from snakemake
 method = (snakemake@wildcards$method)
 distance = (snakemake@wildcards$distance)
+score.thresh = (snakemake@params$threshold)
 outDir = (snakemake@params$outDir)
 countFile = (snakemake@input$countMatrix)
 commonVarPredIntFile = (snakemake@input$commonVarPredictionsInt) # specific to distance threshold
@@ -25,6 +26,7 @@ commonVarPerBiosample = data.frame(biosamples)%>% setNames(c("Biosample"))
 commonVarPerBiosample$nCommonVariantsOverlappingEnhancers = 0
 commonVarPredInt = read.table(file=commonVarPredIntFile, header=TRUE, stringsAsFactors=FALSE) %>%
   setNames(c("varChr", "varStart", "varEnd", "rsID", "enhChr", "enhStart", "enhEnd", "Biosample", "TargetGene", "score"))
+commonVarPredInt = dplyr::filter(commonVarPredInt, score>=score.thresh)
 # loop through biosamples
 for (i in 1:nrow(biosamples)){
   sample.this = biosamples[i]

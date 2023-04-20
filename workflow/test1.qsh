@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+#SBATCH --job-name=quick-sub
+#SBATCH --ntasks=1
+#SBATCH --partition=engreitz,normal
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=50G
+#SBATCH --time=2:00:00
+#SBATCH --output test1.qout
+source ~/.bashrc; conda activate eQTLEnv; sh run.sh

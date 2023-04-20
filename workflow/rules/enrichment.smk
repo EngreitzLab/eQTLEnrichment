@@ -20,7 +20,8 @@ rule compute_count_matrix_by_distance:
 		# read in wthin script: variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz"),
 	params:
 		GTExTissues=config["GTExTissues"],
-		outDir = params["outDir"]
+		outDir = params["outDir"],
+		threshold = lambda wildcards: methods_config.loc[wildcards.method, "threshold"],
 	output:
 		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.under{distance}bp.tsv")
 	conda:
@@ -53,7 +54,8 @@ rule compute_enrichment_matrix_by_distance:
 		outDir = config["outDir"],
 		GTExTissues = config["GTExTissues"],
 		biosamples = config["biosamples"],
-		nCommonVariants = config["nCommonVariants"]
+		nCommonVariants = config["nCommonVariants"],
+		threshold = lambda wildcards: methods_config.loc[wildcards.method, "threshold"]
 	output: 
 		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.under{distance}bp.tsv")
 	conda: 

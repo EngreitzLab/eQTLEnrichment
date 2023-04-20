@@ -21,14 +21,31 @@ include: "./scripts/add_biosamples_and_files_to_config.py"
 include:  "./scripts/generate_threshold_span.py"
 include: "./scripts/process_biosample_tissue_maps.py"
 
+# generate files that need looping
+variantPredictionsIntFiles = []
+commonVarPredictionsIntFiles = []
+enrichmentMatrices_threshold_Files = []
+predTables_distance_Files = []
+predTables_threshold_Files = []
+
+for x in config["methods"]:
+	variantPredictionsIntFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz"), biosample=methods_config.loc[x, 'biosamples']))
+	commonVarPredictionsIntFiles.extend(expand(os.path.join(config["outDir"], x, "{biosample}", "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz"), biosample=methods_config.loc[x, 'biosamples']))
+	enrichmentMatrices_threshold_Files.extend(expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.thresh{threshold}.tsv"), threshold=methods_config.loc[x, "thresholdSpan"]))
+	predTables_distance_Files.extend(expand(os.path.join(config["outDir"], "{method}", predictionTables, "GTExTissue{GTExTissue}.Biosample{Biosample}.byDistance.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
+	predTables_threshold_Files.extend(expand(os.path.join(config["outDir"], "{method}", predictionTables, "GTExTissue{GTExTissue}.Biosample{Biosample}.byThreshold.tsv"), zip, GTExTissue=methods_config.loc[x, "GTExTissue_map"], Biosample=methods_config.loc[x, "biosample_map"]))
+
 rule first:
 	input:
-		variantsPredictionsInt = expand(os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz"), method=config['methods'], biosample=methods_config["biosamples"]),
-		commonVarPredictionsInt = expand(os.path.join(config["outDir"], "{method}", "{biosample}", "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz"), method=config['methods'], biosample=methods_config['biosamples'])
+		variantsPredictionsInt = variantPredictionsIntFiles,
+		commonVarPredictionsInt = commonVarPredictionsIntFiles
 
 rule second:
 	input:
-		#count matrices
+		enrichmentMatrices_distance = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.under{distance}bp.tsv"), method=config['methods'], distance=config["distances"]),
+		enrichmentMatrices_threshold = enrichmentMatrices_thresholdFiles,
+		predTables_distance = predTables_distance_Files,
+		predTables_threshold = predTables_threshold_Files
 
 
 

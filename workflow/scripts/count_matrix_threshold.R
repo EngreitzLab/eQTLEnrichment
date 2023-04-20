@@ -7,7 +7,7 @@ suppressPackageStartupMessages({library(dplyr)
 
 ## get files from snakemake
 method = (snakemake@wildcards$method)
-distance.thresh = (snakemake@wildcards$distance) %>% as.numeric()
+score.thresh = (snakemake@wildcards$threshold) %>% as.numeric()
 biosamples = (snakemake@input$biosamples) %>% strsplit(" ") %>% unlist() %>% sort()
 GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist() %>% sort()
 outDir = (snakemake@params$outDir)
@@ -36,7 +36,7 @@ for (i in 1:length(biosamples)){
       setNames(c("varChr", "varStart", "varEnd", "hgID", "GTExTissue", "gene", "PIP", "TPM", "distance",
                  "enhChr", "enhStart", "enhEnd", "Biosample", "TargetGene", "score"))
     # filter to distance threshold and select columns
-    variantsInt = dplyr::filter(variantsInt, distance<=distance.thresh) %>% 
+    variantsInt = dplyr::filter(variantsInt, score>=score.thresh) %>% 
       dplyr::select(hgID, GTExTissue, biosample)
     for (tissue in GTExTissues){
       variantsTissue = dplyr::filter(variantsInt, GTExTissue==tissue, Biosample==sample.this) %>% distinct()

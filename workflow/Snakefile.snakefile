@@ -9,15 +9,33 @@ from os.path import join
 # load prediction method config file
 methods_config_file = config["methodsTable"]
 methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
-methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
-methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
+#methods_config["GTExTissue_map"] = methods_config["GTExTissue_map"].apply(eval)
+#methods_config["biosample_map"] = methods_config["biosample_map"].apply(eval)
 
 # import workflows
+include: "./rules/preprocessing.smk"
 include: "./rules/eQTL_predictions.smk"
-include: "./rules/eQTL_enrichment.smk"
+include: "./rules/enrichment.smk"
 include: "./rules/eQTL_thresholding.smk"
 include: "./scripts/add_biosamples_and_files_to_config.py"
 include:  "./scripts/generate_threshold_span.py"
+include: "./scripts/process_biosample_tissue_maps.py"
+
+rule first:
+	input:
+		variantsPredictionsInt = expand(os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz"), method=config['methods'], biosample=methods_config["biosamples"]),
+		commonVarPredictionsInt = expand(os.path.join(config["outDir"], "{method}", "{biosample}", "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz"), method=config['methods'], biosample=methods_config['biosamples'])
+
+rule second:
+	input:
+		#count matrices
+
+
+
+
+
+
+########################### OLD ###############################
 
 # generate output files
 variantsByTissueFiles = []

@@ -7,7 +7,7 @@ suppressPackageStartupMessages({
 main <- function() {
   expr.file = (snakemake@input$exprData) # highly expressed genes
   var.file = (snakemake@input$filteredGTExVar) 
-  outDir = (snakemake@params$outDir)
+  out.file = (snakemake@output$GTExExpressedGenes)
   
   col.key = data.frame(GTExTissue=c('Brain_Cortex', 'Prostate', 'Muscle_Skeletal', 'Artery_Tibial', 
   'Skin_Not_Sun_Exposed_Suprapubic', 'Esophagus_Muscularis', 'Brain_Cerebellum', 'Pituitary', 
@@ -30,7 +30,7 @@ main <- function() {
   var.expr$eGene = var.expr$hgnc
   var.expr = dplyr::select(var.expr, -hgnc)
 
-  out.file = file.path(outDir, "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv")
+  #out.file = file.path(outDir, "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv")
   
   write.table(var.expr, file=out.file, sep='\t', row.names=FALSE, col.names=FALSE, quote=FALSE )
 }

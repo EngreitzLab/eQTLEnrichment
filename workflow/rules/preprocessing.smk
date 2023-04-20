@@ -75,7 +75,7 @@ rule filter_all_variants:
 	output: 
 		filteredGTExVar = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.tsv.gz"),
 		partitionDistalNoncoding = os.path.join(config["outDir"], "generalReference", "Partition.distalNoncoding.bed"),
-		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncoding.bg.SNPs.bed.gz")
+		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncodingBackgroundSNPs.bed.gz")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")	
 	shell:
@@ -106,10 +106,28 @@ rule filter_variants_by_expression:
 	script: 
 		os.path.join(config["codeDir"], "GTEx_expression.R")
 
+# add eVariant - eGene TSS variant distance to variant file
+# columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP), 8 (TPM), 9 (add distance)
+rule add_distance_to_variants:
+	input:
+		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv")
+	params:
+		codeDir = config["codeDir"],
+		outDir = config["outDir"],
+		TSS = config['TSS']
+	output:
+		GTExExpressedGenesWithDistance = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.withDistance.tsv")
+	conda:
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	script:
+		os.path.join(config["codeDir"], "add_distance_to_variants.R")
+
+
 # filter variants to by gene universe for each method
+# columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP), 8 (TPM), 9 (distance)
 rule filter_variants_to_gene_universe:
 	input:
-		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv"),
+		GTExExpressedGenesWithDistance = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.withDistance.tsv"),
 		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
 	params:
 		codeDir = config["codeDir"],
@@ -124,103 +142,43 @@ rule filter_variants_to_gene_universe:
 			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExExpressedGenes} --id_col 6 --genes {input.geneUniverse} --id hgnc > {output.filteredGTExVariantsFinal}
 			
 		"""
-	
+
 # intersect predictions for each threshold with GTEx variants
+# output columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP), 8 (TPM), 9 (distance), 
+# 10-12 (enhancer loc), 13 (enhancer cell type), 14 (enhancer target gene hgnc), 15 (enhancer score)
 rule intersect_variants_predictions:
 	input:
-		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.{threshold}.bed.gz"),
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
 		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
 	params: 
 		outDir = config["outDir"],
 		chrSizes = config["chrSizes"]
 	output:
-		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.{threshold}.tsv.gz")
+		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
 		"""
 		set +o pipefail;
 		
-		# columns of output: 1-3 (variant loc), 4 (variant hgID), 5 (variant tissue), 6 (eGene), 7 (variant PIP), 8 (eGene TPM), 9-11 (enhancer loc), 12 (enhancer cell type), 13 (enhancer target gene hgnc), 14 (enhancer score)
 		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {input.filteredGTExVariantsFinal} -b stdin -g {params.chrSizes} | gzip > {output.variantsPredictionsInt}
 		"""
 
-# compute count matrix (number of eQTLSs in predicted enhancers at every GTEx tissue/biosample intersection)
-# in second rule all	
-rule compute_count_matrix:
+# output columns: 1-3 (loc), 4 (rsID), 5-7 (enhancer loc), 8 (enhancer cell type), 9 (enhancer target gene hgnc), 10 (enhancer score)
+rule intersect_bg_variants_predictions:
 	input:
-		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
+		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncodingBackgroundSNPs.bed.gz")
 	params:
 		outDir = config["outDir"],
-		GTExTissues=config["GTExTissues"],
-	output: 
-		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.{threshold}.tsv")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	script:
-		os.path.join(config["codeDir"], "count_matrix.R")
-	
-
-# get number of variants per GTExTissue linked to expresed genes
-rule get_variants_per_GTEx_tissue:
-	input:
-		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
-	params:
-		outDir = config["outDir"],
-		codeDir = config["codeDir"],
-		GTExTissues = config["GTExTissues"]
-	output: 
-		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	shell:
-		"""
-		set +o pipefail;
-		# get counts per GTEx tissue, columns of GTEx var: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (gene ens id), 7 (PIP)
-
-		for tissue in {params.GTExTissues}
-		do
-			printf $tissue"\\t" >> {output.variantsPerGTExTissue}
-			cat {input.filteredGTExVariantsFinal} | awk -v awkvar=$tissue '$5==awkvar' | wc -l >> {output.variantsPerGTExTissue}
-		done
-		"""
-			
-# computer number of common variants overlapping enhancers in each biosample for each threshold
-rule compute_common_var_overlap:
-	input:
-		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncoding.bg.SNPs.bed.gz"),
-		predictionsSorted = os.path.join(config["outDir"], "{method}", "{biosample}", "enhancerPredictions.thresholded.{threshold}.bed.gz"),
-		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
-	params:
-		outDir = config["outDir"],
-		codeDir = config["codeDir"],
 		chrSizes = config["chrSizes"]
 	output:
-		commonVarPerBiosample = os.path.join(config["outDir"], "{method}", "{biosample}", "commonVarPerBiosample.{threshold}.tsv")
+		commonVarPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	shell:
-		"""			
-		set +o pipefail;
-					
-		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a stdin -b {input.commonVarDistalNoncoding}| cut -f 4 | sort | uniq -c > {output.commonVarPerBiosample}
 		"""
-
-# generate matrix with enrichment values for each GTEx tissue/biosample intersection for each threshold
-rule compute_enrichment_matrix:
-	input: 
-		countMatrix = os.path.join(config["outDir"], "{method}", "count_matrix.{threshold}.tsv"),
-		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"),
-		#  read in within method, see note in count matrix
-		samples = os.path.join(config["outDir"],"{method}", "biosampleList.tsv"),
-	params:
-		codeDir = config["codeDir"],
-		outDir = config["outDir"],
-		GTExTissues = config["GTExTissues"],
-		sampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"],
-	output: 
-		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTable.{threshold}.tsv")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	script: 
-		os.path.join(config["codeDir"], "counts_to_enrichment.R")
+		set +o pipefail;
+		
+		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {input.filteredGTExVariantsFinal} -b stdin -g {params.chrSizes} | gzip > {output.variantsPredictionsInt}
+		"""

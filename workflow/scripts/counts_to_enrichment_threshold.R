@@ -9,7 +9,6 @@ method = (snakemake@wildcards$method)
 score.thresh = (snakemake@wildcards$threshold)
 outDir = (snakemake@params$outDir)
 countFile = (snakemake@input$countMatrix)
-commonVarPredIntFile = (snakemake@input$commonVarPredictionsInt) # specific to distance threshold
 biosamples = (snakemake@params$biosamples) %>% (" ") %>% unlist() %>% sort()
 varPerGTExTissueFile = (snakemake@input$variantsPerGTExTissue)
 GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist %>% sort()
@@ -23,14 +22,16 @@ countMatrix = read.table(file=countFile, header=TRUE, stringsAsFactors=FALSE)
 # common variants by tissue/biosample
 commonVarPerBiosample = data.frame(biosamples)%>% setNames(c("Biosample"))
 commonVarPerBiosample$nCommonVariantsOverlappingEnhancers = 0
-commonVarPredInt = read.table(file=commonVarPredIntFile, header=TRUE, stringsAsFactors=FALSE) %>%
-  setNames(c("varChr", "varStart", "varEnd", "rsID", "enhChr", "enhStart", "enhEnd", "Biosample", "TargetGene", "score"))
-commonVarPredInt = dplyr::filter(commonVarPredInt, score>=score.thresh)
+# read in per biosample and fill in df
 # loop through biosamples
 for (i in 1:nrow(biosamples)){
   sample.this = biosamples[i]
-  counts.this = dplyr::filter(commonVarPredInt, Biosample==sample.this) %>%
-    dplyr::select(rsID) %>% distinct() %>% nrow()
+  commonVarPredIntFile = file.path(outDir, method, sample.this, "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz")
+  commonVarPredInt = read.table(file=commonVarPredIntFile, header=TRUE, stringsAsFactors=FALSE) %>%
+    setNames(c("varChr", "varStart", "varEnd", "rsID", "enhChr", "enhStart", "enhEnd", "Biosample", "TargetGene", "score"))
+  commonVarPredInt = dplyr::filter(commonVarPredInt, score>=score.thresh)
+  
+  counts.this = dplyr::select(commonVarPredInt, rsID) %>% distinct() %>% nrow()
   commonVarPerBiosample$nCommonVariantsOverlappingEnhancers[i] = counts.this
 }
 

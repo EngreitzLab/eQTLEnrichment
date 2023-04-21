@@ -9,7 +9,7 @@ main <- function() {
   distances = (snakemake@params$distances) %>% unlist() %>% as.numeric()
   GTExTissue = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist()
   out.file.all = (snakemake@output$variantsPerGTExTissue)
-  out.files.by.dist = (snakemake@output$variantsPerGTExTissueByDist) %>% strsplit(" ") %>% unlist()
+  out.files.by.dist = (snakemake@params$variantsPerGTExTissueByDist) %>% strsplit(" ") %>% unlist()
   
   variants = read.table(file=var.file, header=FALSE, sep='\t') %>%
     setNames(c("chr", "start", "stop", "hgID", "tissue", "gene", "PIP", "TPM", "distance")) 

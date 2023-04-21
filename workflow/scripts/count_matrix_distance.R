@@ -7,9 +7,9 @@ suppressPackageStartupMessages({library(dplyr)
 
 ## get files from snakemake
 method = (snakemake@wildcards$method)
-score.thresh = (snakemake@params$threshold) %>% as.numeric()
+score.thresh = (snakemake@input$threshold) %>% as.numeric()
 distance.thresh = (snakemake@wildcards$distance) %>% as.numeric()
-biosamples = (snakemake@input$biosamples) %>% strsplit(" ") %>% unlist() %>% sort()
+biosamples = (snakemake@params$biosamples) %>% strsplit(" ") %>% unlist() %>% sort()
 GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist() %>% sort()
 outDir = (snakemake@params$outDir)
 outFile = (snakemake@output$countMatrix)

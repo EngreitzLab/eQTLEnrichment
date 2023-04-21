@@ -1,8 +1,8 @@
 # FILE LOCATIONS
-outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-thresholding/eQTLEnrichment/workflow/2023_0420_test1"
-codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-thresholding/eQTLEnrichment/workflow/scripts"
-envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-thresholding/eQTLEnrichment/workflow/envs"
-methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-thresholding/eQTLEnrichment/config/config-methods.tsv"
+outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/2023_0420_test1"
+codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/scripts"
+envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/envs"
+methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/config/config-methods.tsv"
 GTExVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/GTExVariants/GTEx_30tissues_hg38.tsv.gz"
 bgVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/backgroundSNPs/all.bg.SNPs.hg38.baseline.v1.1.bed.sorted"
 nBGVariants: 9991229

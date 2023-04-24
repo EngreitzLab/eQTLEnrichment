@@ -1,5 +1,5 @@
 # FILE LOCATIONS
-outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/2023_0420_test1"
+outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/2023_0422_test1"
 codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/scripts"
 envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/envs"
 methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/config/config-methods.tsv"

@@ -21,6 +21,5 @@ for i in range(len(methods)):
   biosample_maps.append(biosample_map_this)
   GTExTissue_maps.append(GTExTissue_map_this)
 
-
-methods_config['biosample_map'] = samples # add samples to config
-methods_config['GTExTissue_map'] = files 
+methods_config['biosample_map'] = biosample_maps # add samples to config
+methods_config['GTExTissue_map'] = GTExTissue_maps 

@@ -7,7 +7,7 @@ suppressPackageStartupMessages({library(dplyr)
 
 ## get files from snakemake
 method = (snakemake@wildcards$method)
-score.thresh = (snakemake@input$threshold) %>% as.numeric()
+score.thresh = (snakemake@params$threshold) %>% as.numeric()
 distance.thresh = (snakemake@wildcards$distance) %>% as.numeric()
 biosamples = (snakemake@params$biosamples) %>% strsplit(" ") %>% unlist() %>% sort()
 GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist() %>% sort()
@@ -15,6 +15,7 @@ outDir = (snakemake@params$outDir)
 outFile = (snakemake@output$countMatrix)
 
 counts = data.frame(matrix(ncol=length(GTExTissues), nrow=length(biosamples)))
+colnames(counts) = GTExTissues
 counts$Biosample = biosamples
 
 ## read in and filter variant intersection
@@ -24,7 +25,7 @@ for (i in 1:length(biosamples)){
   sample.this = biosamples[i]
   varIntFile = file.path(outDir, method, sample.this, "GTExVariants-enhancerPredictionsInt.tsv.gz")
   
-  size.file = file.info(int.file)$size
+  size.file = file.info(varIntFile)$size
   size.threshold = 100 # in bytes, for empty file
   
   # if intersection file is empty, set counts for this biosample across all tissues to 0
@@ -33,12 +34,17 @@ for (i in 1:length(biosamples)){
       counts[counts$Biosample==sample.this,tissue] = 0   
     
   } else { # otherwise, read in file
-    variantsInt = read.table(variantsIntFile, header=FALSE, sep="\t") %>% 
+    variantsInt = read.table(varIntFile, header=FALSE, sep="\t") %>% 
       setNames(c("varChr", "varStart", "varEnd", "hgID", "GTExTissue", "gene", "PIP", "TPM", "distance",
                  "enhChr", "enhStart", "enhEnd", "Biosample", "TargetGene", "score"))
     # filter to distance threshold and select columns
-    variantsInt = dplyr::filter(variantsInt, score>=score.thresh, distance<=distance.thresh) %>% 
-      dplyr::select(hgID, GTExTissue, biosample)
+    if (distance.thresh==30000000){
+      variantsInt = dplyr::select(variantsInt, hgID, GTExTissue, Biosample)
+    } else{
+      variantsInt = dplyr::filter(variantsInt, score>=score.thresh, distance==distance.thresh) %>% 
+        dplyr::select(hgID, GTExTissue, Biosample)
+    }
+
     for (tissue in GTExTissues){
       variantsTissue = dplyr::filter(variantsInt, GTExTissue==tissue, Biosample==sample.this) %>% distinct()
       counts[counts$Biosample==sample.this,tissue] = nrow(variantsTissue)

@@ -15,20 +15,9 @@ rule make_gene_universes:
 			set +o pipefail;
 			
 			# filter GTEx genes to method genes
-			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExGeneUniverse} --id_col 4 --genes {input.methodGeneUniverse} --id hgnc > {output.geneUniverse}
+			Rscript {params.codeDir}/process_file_in_various_ways.R --input {input.GTExGeneUniverse} --id_col 4 --genes {input.methodGeneUniverse} --id hgnc --invert False --score_col 6 > {output.geneUniverse}
 			"""
 
-# return list of biosamples for method from biosample key
-rule get_biosamples:
-	input: 
-		biosampleKey = lambda wildcards: methods_config.loc[wildcards.method, "sampleKey"]
-	output:
-		samples = os.path.join(config["outDir"], "{method}", "biosampleList.tsv")
-	conda: 
-		os.path.join(config["envDir"], "eQTLEnv.yml")
-	script: 
-		os.path.join(config["codeDir"], "get_biosamples.R")
-		
 # sort enhancer predictions by chromosome & start location & filter to gene universe, get list of samples
 rule process_predictions:
 	input:
@@ -56,14 +45,8 @@ rule process_predictions:
             cat {input.predFile} | csvtk cut -t -f chr,start,end,CellType,TargetGene,{params.scoreCol} | sed 1d | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
         fi
 
-		# invert score if inverted predictor and filter to gene universe
-		if [[ params.inversePred ]]
-		then
-			cat {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv | awk '{$6=$6*(-1); print $0}' > {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.inverted.tsv
-			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.inverted.tsv --id_col 5 --genes {input.geneUniverse} --id hgnc --biosample {wildcards.biosample} --biosample_col 4| gzip > {output.predictionsSorted}
-		else
-			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv --id_col 5 --genes {input.geneUniverse} --id hgnc --biosample {wildcards.biosample} --biosample_col 4| gzip > {output.predictionsSorted}
-		fi
+		# invert score if inverted predictor and filter to gene universe and set biosampe column
+		Rscript {params.codeDir}/process_file_in_various_ways.R --input {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv --id_col 5 --genes {input.geneUniverse} --id hgnc --biosample {wildcards.biosample} --biosample_col 4 --invert {params.inversePred} --score_col 6 | gzip > {output.predictionsSorted}
 
 		rm {params.outDir}/{wildcards.method}/{wildcards.biosample}/temp.sortedPred.tsv
 			
@@ -115,14 +98,15 @@ rule filter_variants_by_expression:
 		os.path.join(config["codeDir"], "GTEx_expression.R")
 
 # add eVariant - eGene TSS variant distance to variant file
-# columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP), 8 (TPM), 9 (add distance)
+# columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP), 8 (TPM), 9 (distance group)
 rule add_distance_to_variants:
 	input:
 		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv")
 	params:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"],
-		TSS = config['TSS']
+		TSS = config['TSS'],
+		distances = config["distances"]
 	output:
 		GTExExpressedGenesWithDistance = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.withDistance.tsv")
 	conda:
@@ -147,7 +131,7 @@ rule filter_variants_to_gene_universe:
 	shell:
 		"""
 			## filter this method's gene universe
-			Rscript {params.codeDir}/filter_to_ABC_genes.R --input {input.GTExExpressedGenes} --id_col 6 --genes {input.geneUniverse} --id hgnc > {output.filteredGTExVariantsFinal}
+			Rscript {params.codeDir}/process_file_in_various_ways.R --input {input.GTExExpressedGenesWithDistance} --id_col 6 --genes {input.geneUniverse} --id hgnc --invert False --score_col 0 > {output.filteredGTExVariantsFinal}
 			
 		"""
 
@@ -188,5 +172,5 @@ rule intersect_bg_variants_predictions:
 		"""
 		set +o pipefail;
 		
-		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {input.filteredGTExVariantsFinal} -b stdin -g {params.chrSizes} | gzip > {output.variantsPredictionsInt}
+		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {input.commonVarDistalNoncoding} -b stdin -g {params.chrSizes} | gzip > {output.commonVarPredictionsInt}
 		"""

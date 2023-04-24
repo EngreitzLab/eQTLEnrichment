@@ -9,7 +9,7 @@ method = (snakemake@wildcards$method)
 score.thresh = (snakemake@wildcards$threshold)
 outDir = (snakemake@params$outDir)
 countFile = (snakemake@input$countMatrix)
-biosamples = (snakemake@params$biosamples) %>% (" ") %>% unlist() %>% sort()
+biosamples = (snakemake@params$biosamples) %>% strsplit(" ") %>% unlist() %>% sort()
 varPerGTExTissueFile = (snakemake@input$variantsPerGTExTissue)
 GTExTissues = (snakemake@params$GTExTissues) %>% strsplit(" ") %>% unlist %>% sort()
 outFile = (snakemake@output$enrichmentTable)
@@ -24,7 +24,7 @@ commonVarPerBiosample = data.frame(biosamples)%>% setNames(c("Biosample"))
 commonVarPerBiosample$nCommonVariantsOverlappingEnhancers = 0
 # read in per biosample and fill in df
 # loop through biosamples
-for (i in 1:nrow(biosamples)){
+for (i in 1:length(biosamples)){
   sample.this = biosamples[i]
   commonVarPredIntFile = file.path(outDir, method, sample.this, "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz")
   commonVarPredInt = read.table(file=commonVarPredIntFile, header=TRUE, stringsAsFactors=FALSE) %>%
@@ -37,7 +37,7 @@ for (i in 1:nrow(biosamples)){
 
 # variants per GTEx tissue
 variantsByGTExTissue = read.table(varPerGTExTissueFile, header=TRUE, stringsAsFactors=FALSE) %>% 
-  setNames("GTExTissue", "nVariantsGTExTissue")
+  setNames(c("GTExTissue", "nVariantsGTExTissue"))
 
 # make enrichment matrix
 enrMatrix = pivot_longer(countMatrix, cols=-Biosample, names_to='GTExTissue', values_to='nVariantsOverlappingEnhancers')

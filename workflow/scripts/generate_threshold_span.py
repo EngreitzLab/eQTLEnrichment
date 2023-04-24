@@ -28,9 +28,9 @@ for i in range(len(nSteps)): # iterate through number of methods
     span = np.linspace(minScore_this, maxScore_this, nSteps_this)
     span = [round(elem, ndigits=4) for elem in span] # converts to list
 
-  if inverse_this=="TRUE":
+  if inverse_this==True:
     span = [i * -1 for i in span]
-    
+
   thresholdSpans.append(span) # add that method to the list
 
 methods_config['thresholdSpan'] = thresholdSpans # add to config

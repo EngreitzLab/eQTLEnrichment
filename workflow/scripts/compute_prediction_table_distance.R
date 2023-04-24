@@ -7,10 +7,10 @@ suppressPackageStartupMessages({
   library(gdata)
   library(ggplot2)})
 
-varIntFile = (snakemake@inputs$variantsPredictionsInt)
-GTExVariantsFile = (snakemake@inputs$filteredGTExVariantsFinal)
+varIntFile = (snakemake@input$variantsPredictionsInt)
+GTExVariantsFile = (snakemake@input$filteredGTExVariantsFinal)
 score.thresh = (snakemake@params$threshold)
-distance = (snakemake@params$distances) %>% str_split(" ") %>% unlist() %>% as.numeric
+distance = (snakemake@params$distances) %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
 outFile = (snakemake@output$predTable)
 GTExTissue.this = snakemake@wildcards$GTExTissue
 Biosample.this = snakemake@wildcards$Biosample
@@ -35,13 +35,18 @@ predTable$ correctGene.ifOverlap = 0 # fraction of variants linked to correct ge
 # fill pred table
 for (i in 1:nrow(predTable)){
   distance.this = predTable$distance[i]
-  varInt.this = dplyr::filter(varInt, distance<=distance.this)
-  GTExVariants.this = dplyr::filter(GTExVariants, distance<=distance.this)
-  
+  if (distance.this == 30000000){
+    varInt.this = varInt.this
+    GTExVariants.this = GTExVariants
+  } else {
+    varInt.this = dplyr::filter(varInt, distance==distance.this)
+    GTExVariants.this = dplyr::filter(GTExVariants, distance==distance.this)
+  }
+
   nVariantsTotal = dplyr::select(GTExVariants.this, varChr, varStart, varEnd, eGene) %>% distinct() %>% nrow()
   nVariantsOverlappingEnhancers = dplyr::select(varInt.this, varChr, varStart, varEnd, eGene) %>% distinct() %>% nrow()
   nVariantsOverlappingEnhancersCorrectGene = dplyr::filter(varInt.this, eGene==TargetGene) %>% 
-    dpylr::select(varChr, varStart, varEnd, eGene) %>% distinct() nrow()
+    dplyr::select(varChr, varStart, varEnd, eGene) %>% distinct() %>% nrow()
   
   predTable$total.variants[i] = nVariantsTotal
   predTable$recall.total[i] = nVariantsOverlappingEnhancers/nVariantsTotal

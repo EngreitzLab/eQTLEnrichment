@@ -1,5 +1,5 @@
 ---
-title: "eQTL enrichment analysis"
+title: "eQTL benchmarking report"
 author: "Maya Sheth"
 date: "07/23/2021"
 output: html_document
@@ -31,18 +31,41 @@ library(viridis)
 library(htmltools)
 library(reactable)
 library(egg)
+```
 
-# input arguments
-tables = (snakemake@input$enrichmentTables) %>% strsplit(" ") %>% unlist
-varPerTissue = (snakemake@input$variantsPerGTExTissue) %>% strsplit(" ") %>% unlist()
-methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
-predictionMetricsFile = (snakemake@input$predictionMetrics)
-#sensitivitiesFile = (snakemake@input$sensitivitiesTable)
+
+```{r setup, include=FALSE, echo=FALSE}
+# input files
+enrAll.file = snakemake@input$enrAllTable
+predAll.file = snakemake@input$predictionMetrics
+erAll.files = snakemake@input$er_combined %>% strsplit(" ") %>% unlist() # once per matched GTEx tissue
+enrMatrices.CRISPR.files = snakemake@input$enrMatrices_CRISPRthresh  %>% strsplit(" ") %>% unlist() # one per method
+
+# params
 cpFile = snakemake@input$colorPalette
+methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
+distances = snakemake@params$distances
+methods_config = snakemake@params$methods_config
+```
 
+
+```{r setup, include=FALSE, echo=FALSE}
 ### GENERATE ALL PLOTS
 ## read in color palette, convert to named list
 cpList = readRDS(cpFile)
+
+# VARIANTS PER GTEX TISSUE AT EACH DISTANCE LEVEL (use pred.all, clustered barplot?)
+
+# TRIPLE BOX PLOTS
+## ENR BY METHOD, STRATIFIED BY DISTANCE
+
+## RECALL BY METHOD, STRATIFIED BY DISTANCE
+
+## GENE LINKING BY METHOD, STRATIFIED BY DISTANCE
+
+# ENRICHMENT-RECALL PLOTS (PER MATCHED GTEX TISSUE)
+
+# HEATMAPS (PER METHOD)
 
 ## variants per GTEx tissue
 # aggregate data
@@ -256,7 +279,10 @@ ppv = ggplot(df.ppv, aes(x = method, y = value, fill = predictionMethod)) +
 
 ```
 
-# Summary: Enrichment and prediction of eQTLs
+# eQTL benchmarking report
+- This report presents benchmarking results for the following methods:(pred name long for each method).
+- For distance stratified plots, eVariant-eGene distances were stratified at the following bp values: (distances minus 30Mb)
+
 ```{r summary, echo=FALSE, fig.width=14, fig.cap=cap}
 
 ggarrange(boxplot.summary, sr.average, nrow=1, ncol=2)

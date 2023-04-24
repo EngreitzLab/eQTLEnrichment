@@ -7,9 +7,11 @@ suppressPackageStartupMessages({
   library(gdata)
   library(ggplot2)})
 
-varIntFile = (snakemake@inputs$variantsPredictionsInt)
-GTExVariantsFile = (snakemake@inputs$filteredGTExVariantsFinal)
-threshold = (snakemake@params$thresholdSpan) %>% str_split(" ") %>% unlist() %>% as.numeric
+varIntFile = (snakemake@input$variantsPredictionsInt)
+GTExVariantsFile = (snakemake@input$filteredGTExVariantsFinal)
+threshold = (snakemake@params$thresholds) %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
+print(threshold)
+
 outFile = (snakemake@output$predTable)
 GTExTissue.this = snakemake@wildcards$GTExTissue
 Biosample.this = snakemake@wildcards$Biosample
@@ -39,7 +41,7 @@ for (i in 1:nrow(predTable)){
 
   nVariantsOverlappingEnhancers = dplyr::select(varInt.this, varChr, varStart, varEnd, eGene) %>% distinct() %>% nrow()
   nVariantsOverlappingEnhancersCorrectGene = dplyr::filter(varInt.this, eGene==TargetGene) %>% 
-    dpylr::select(varChr, varStart, varEnd, eGene) %>% distinct() nrow()
+    dplyr::select(varChr, varStart, varEnd, eGene) %>% distinct() %>% nrow()
   
   predTable$total.variants[i] = nVariantsTotal
   predTable$recall.total[i] = nVariantsOverlappingEnhancers/nVariantsTotal

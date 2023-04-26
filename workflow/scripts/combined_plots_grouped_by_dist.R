@@ -14,18 +14,19 @@ suppressPackageStartupMessages({
 methods = snakemake@params$methods %>% strsplit(" ") %>% unlist()
 distances = snakemake@params$distances %>% as.character %>% strsplit(" ") %>% unlist()
 enrTableFiles = snakemake@input$enrichmentTables %>% strsplit(" ") %>% unlist()
+methods_config = fread(file=snakemake@params$methods_config, sep="\t")
 
-# access via config directly? add methods_config to input
-methods_config = fread(file=snakemake@input$methods_config, header=TRUE, sep="\t")
-methods_config$GTExTissue_map = substr(methods_config$GTExTissue_map, 3, (nchar(methods_config$GTExTissue_map)-2))
-methods_config$GTExTissue_map = gsub('"', "", methods_config$GTExTissue_map)
-methods_config$GTExTissue_map = gsub(',', "", methods_config$GTExTissue_map)
-methods_config$GTExTissue_map = strsplit(methods_config$GTExTissue_map, " ")
-
-methods_config$biosample_map = substr(methods_config$biosample_map, 3, (nchar(methods_config$biosample_map)-2))
-methods_config$biosample_map = gsub('"', "", methods_config$biosample_map)
-methods_config$biosample_map = gsub(',', "", methods_config$biosample_map)
-methods_config$biosample_map = strsplit(methods_config$biosample_map, " ")
+# # access via config directly? add methods_config to input
+# methods_config = fread(file=snakemake@input$methods_config, header=TRUE, sep="\t")
+# methods_config$GTExTissue_map = substr(methods_config$GTExTissue_map, 3, (nchar(methods_config$GTExTissue_map)-2))
+# methods_config$GTExTissue_map = gsub('"', "", methods_config$GTExTissue_map)
+# methods_config$GTExTissue_map = gsub(',', "", methods_config$GTExTissue_map)
+# methods_config$GTExTissue_map = strsplit(methods_config$GTExTissue_map, " ")
+# 
+# methods_config$biosample_map = substr(methods_config$biosample_map, 3, (nchar(methods_config$biosample_map)-2))
+# methods_config$biosample_map = gsub('"', "", methods_config$biosample_map)
+# methods_config$biosample_map = gsub(',', "", methods_config$biosample_map)
+# methods_config$biosample_map = strsplit(methods_config$biosample_map, " ")
 
 cpFilePlotting = snakemake@input$colorPalette
 cpList = readRDS(cpFilePlotting)
@@ -43,11 +44,14 @@ temp$method = methods[1]
 temp$distance = distances[1]
 temp$tissue.biosample = paste0(temp$GTExTissue, ".", temp$Biosample)
 methods_temp = dplyr::filter(methods_config, method==methods[1])
-GTEx_key = methods_temp$GTExTissue_map[[1]] %>% data.table()
-biosample_key = methods_temp$biosample_map[[1]] %>% data.table()
-key = paste0(GTEx_key[[1]], ".", biosample_key[[1]])
+sampleKey_temp = fread(methods_temp$sampleKey[1], sep="\t")
+sampleKey_temp =  dplyr::select(sampleKey_temp, biosample, GTExTissue) %>% dplyr::filter(GTExTissue!="")
+sampleKey_temp$key = paste0(sampleKey_temp$GTExTissue, ".", sampleKey_temp$biosample)
+# GTEx_key = methods_temp$GTExTissue_map[[1]] %>% data.table()
+# biosample_key = methods_temp$biosample_map[[1]] %>% data.table()
+# key = paste0(GTEx_key[[1]], ".", biosample_key[[1]])
 temp$pred_name_long = methods_temp$pred_name_long[1]
-temp = filter(temp, tissue.biosample %in% key)
+temp = filter(temp, tissue.biosample %in% sampleKey_temp$key)
 enr.all = temp
 
 # loop through rest, filtering to tissue/biosample matches
@@ -59,11 +63,11 @@ if (length(methods) > 1) {
     temp$distance = distances[j]
     temp$tissue.biosample = paste0(temp$GTExTissue, ".", temp$Biosample)
     methods_temp = dplyr::filter(methods_config, method==methods[i])
-    GTEx_key = methods_temp$GTExTissue_map[[1]] %>% data.table()
-    biosample_key = methods_temp$biosample_map[[1]] %>% data.table()
-    key = paste0(GTEx_key[[1]], ".", biosample_key[[1]])
+    sampleKey_temp = fread(methods_temp$sampleKey[1], sep="\t")
+    sampleKey_temp =  dplyr::select(sampleKey_temp, biosample, GTExTissue) %>% dplyr::filter(GTExTissue!="")
+    sampleKey_temp$key = paste0(sampleKey_temp$GTExTissue, ".", sampleKey_temp$biosample)
     temp$pred_name_long = methods_temp$pred_name_long[1]
-    temp = filter(temp, tissue.biosample %in% key)
+    temp = filter(temp, tissue.biosample %in% sampleKey_temp$key)
     enr.all = rbind(enr.all, temp)
     }
   }
@@ -72,7 +76,7 @@ enr.all = distinct(enr.all)
 
 # get stats, edit names, define labels 
 enr.all = enr.all[order(enr.all$enrichment), ]
-max.enr = max(enr.all$enrichment)
+max.enr = max(enr.all$enrichment[is.finite(enr.all$enrichment)])
 enrLabel = 'Enrichment\n(GTEx variants/all common variants)'
 
 enr.all$method = factor(enr.all$method, levels=methods, ordered=TRUE)
@@ -82,28 +86,37 @@ enr.all$method = factor(enr.all$method, levels=methods, ordered=TRUE)
 # first one
 method.this = methods[1]
 methods_temp = dplyr::filter(methods_config, method==method.this)
-GTEx_key = methods_temp$GTExTissue_map[[1]] %>% data.table()
-biosample_key = methods_temp$biosample_map[[1]] %>% data.table()
-key_file = paste0("GTExTissue", GTEx_key[[1]], ".", "Biosample", biosample_key[[1]], ".byDistance.tsv")
-key_path = file.path(outDir, method.this, key_file)
-temp = read.table(file = key_paths, header = TRUE, fill = TRUE) %>% drop_na()
-temp$GTExTissue = GTEx_key[[1]]
-temp$Biosample = biosample_key[[1]]
-temp$method = methods.this
+
+sampleKey_temp = fread(methods_temp$sampleKey[1], sep="\t")
+sampleKey_temp =  dplyr::select(sampleKey_temp, biosample, GTExTissue) %>% dplyr::filter(GTExTissue!="")
+sampleKey_temp$key = paste0(sampleKey_temp$GTExTissue, ".", sampleKey_temp$biosample)
+# GTEx_key = methods_temp$GTExTissue_map[[1]] %>% data.table()
+# biosample_key = methods_temp$biosample_map[[1]] %>% data.table()
+key_file = paste0("GTExTissue", sampleKey_temp$GTExTissue[1], ".", "Biosample", sampleKey_temp$biosample[1], ".byDistance.tsv")
+key_path = file.path(outDir, method.this, "predictionTables", key_file)
+temp = read.table(file = key_path, header = TRUE, fill = TRUE) %>% drop_na()
+temp$GTExTissue = sampleKey_temp$GTExTissue[1]
+temp$Biosample = sampleKey_temp$biosample[1]
+temp$method = method.this
 pred.all = temp
+message("test 1")
 
 for (i in 1:length(methods)){
   method.this = methods[i]
   methods_temp = dplyr::filter(methods_config, method==method.this)
-  GTEx_key = methods_temp$GTExTissue_map[[i]] %>% data.table()
-  biosample_key = methods_temp$biosample_map[[1]] %>% data.table()
-    for (j in 1:length(GTEx_key)){
-      key_file = paste0("GTExTissue", GTEx_key[[j]], ".", "Biosample", biosample_key[[j]], ".byDistance.tsv")
-      key_path = file.path(outDir, method.this, key_files)
+  sampleKey_temp = fread(methods_temp$sampleKey[1], sep="\t")
+  sampleKey_temp =  dplyr::select(sampleKey_temp, biosample, GTExTissue) %>% dplyr::filter(GTExTissue!="")
+  sampleKey_temp$key = paste0(sampleKey_temp$GTExTissue, ".", sampleKey_temp$biosample)
+    for (j in 1:length(sampleKey_temp)){
+      key_file = paste0("GTExTissue", sampleKey_temp$GTExTissue[[j]], ".", "Biosample", sampleKey_temp$biosample[[j]], ".byDistance.tsv")
+      key_path = file.path(outDir, method.this, "predictionTables", key_file)
       temp = read.table(file = key_path, header = TRUE, fill = TRUE) %>% drop_na()
-      temp$GTExTissue = GTEx_key[[j]]
-      temp$Biosample = biosample_key[[j]]
-      temp$method = methods.this
+      message("test 2")
+      print(temp)
+      temp$GTExTissue = sampleKey_temp$GTExTissue[j]
+      temp$Biosample = sampleKey_temp$biosample[j]
+      temp$method = method.this
+      message("test 3")
       pred.all = rbind(pred.all, temp)
     }
 }

@@ -6,7 +6,8 @@ suppressPackageStartupMessages({
 
 ## get files from snakemake
 method = (snakemake@wildcards$method)
-score.thresh = (snakemake@wildcards$threshold)
+score.thresh = (snakemake@wildcards$threshold) %>% as.numeric()
+print(score.thresh)
 outDir = (snakemake@params$outDir)
 countFile = (snakemake@input$countMatrix)
 biosamples = (snakemake@params$biosamples) %>% strsplit(" ") %>% unlist() %>% sort()
@@ -26,12 +27,18 @@ commonVarPerBiosample$nCommonVariantsOverlappingEnhancers = 0
 # loop through biosamples
 for (i in 1:length(biosamples)){
   sample.this = biosamples[i]
+  print(sample.this)
   commonVarPredIntFile = file.path(outDir, method, sample.this, "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz")
   commonVarPredInt = read.table(file=commonVarPredIntFile, header=TRUE, stringsAsFactors=FALSE) %>%
     setNames(c("varChr", "varStart", "varEnd", "rsID", "enhChr", "enhStart", "enhEnd", "Biosample", "TargetGene", "score"))
+  print(nrow(commonVarPredInt))
   commonVarPredInt = dplyr::filter(commonVarPredInt, score>=score.thresh)
+  print(nrow(commonVarPredInt))
   
-  counts.this = dplyr::select(commonVarPredInt, rsID) %>% distinct() %>% nrow()
+  counts.this.df = dplyr::select(commonVarPredInt, rsID) %>% unique()
+  counts.this = nrow(counts.this.df)
+  print(tail(counts.this.df))
+  print(counts.this)
   commonVarPerBiosample$nCommonVariantsOverlappingEnhancers[i] = counts.this
 }
 

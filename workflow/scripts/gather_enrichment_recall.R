@@ -5,16 +5,14 @@ suppressPackageStartupMessages({library(ggplot2)
 
 # load data
 method = (snakemake@wildcards$method)
-method.slash = paste0("/", method, "/")
+method.slash = paste0("/", method, "/") # for string matching later
 predTableFile = (snakemake@input$predTable)
 enrFiles = (snakemake@input$enrichmentMatrices)%>% strsplit(" ") %>% unlist() %>% data.frame() %>% setNames("file")
-print(enrFiles)
-enrFiles = dplyr::filter(enrFiles, grepl(method.slash, file, fixed=TRUE))
-print(enrFiles)
+enrFiles = dplyr::filter(enrFiles, grepl(method.slash, file, fixed=TRUE)) # filter to method
 outDir = (snakemake@params$outDir)
 thresholdSpan = (snakemake@params$thresholdSpan) %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
 GTExTissue.this = (snakemake@wildcards$GTExTissue)
-biosample.this = (snakemake@wildcards$Biosample)
+biosample.this = (snakemake@wildcards$biosample)
 outERTable = (snakemake@output$ERCurveTable)
 
 # read in prediction table for method x (GTExTissue x biosample)
@@ -23,7 +21,7 @@ predTable$enrichment = 0
 
 # iteratively read in enrichment table per threshold, extract enrichment at that biosample/tissue intersection, add to table
 for (i in 1:length(thresholdSpan)){
-  #this.threshold = thresholdSpan[i]
+  this.threshold = thresholdSpan[i]
   #this.fileName = paste0("enrichmentTable.thresh", this.threshold, ".tsv")
   #this.enrFile = file.path(outDir, method, "enrichmentTables", this.fileName)
   this.enrFile = enrFiles$file[i]
@@ -33,5 +31,5 @@ for (i in 1:length(thresholdSpan)){
 }
 
 # save table
-write.table(predTable, outERTable, quote=FALSE, sep="\t", col.names=TRUE)
+write.table(predTable, outERTable, quote=FALSE, sep="\t", col.names=TRUE, row.names=FALSE)
 

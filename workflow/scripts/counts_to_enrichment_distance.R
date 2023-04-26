@@ -7,7 +7,7 @@ suppressPackageStartupMessages({
 ## get files from snakemake
 method = (snakemake@wildcards$method)
 distance = (snakemake@wildcards$distance)
-score.thresh = (snakemake@params$threshold)
+score.thresh = (snakemake@params$threshold) %>% as.numeric()
 outDir = (snakemake@params$outDir)
 countFile = (snakemake@input$countMatrix)
 biosamples = (snakemake@params$biosamples) %>% strsplit(" ") %>% unlist() %>% sort()
@@ -26,10 +26,13 @@ commonVarPerBiosample$nCommonVariantsOverlappingEnhancers = 0
 
 for (i in 1:length(biosamples)){
   sample.this = biosamples[i]
+  print(sample.this)
   commonVarPredIntFile = file.path(outDir, method, sample.this, "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz")
   commonVarPredInt = read.table(file=commonVarPredIntFile, header=TRUE, stringsAsFactors=FALSE, sep="\t") %>%
     setNames(c("varChr", "varStart", "varEnd", "rsID", "enhChr", "enhStart", "enhEnd", "Biosample", "TargetGene", "score"))
-  counts.this = dplyr::select(commonVarPredInt, rsID) %>% distinct() %>% nrow()
+  counts.this = dplyr::select(commonVarPredInt, rsID) %>% unique() %>% nrow()
+  print(counts.this)
+  
   commonVarPerBiosample$nCommonVariantsOverlappingEnhancers[i] = counts.this
 }
 

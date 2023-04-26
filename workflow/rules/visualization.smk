@@ -1,4 +1,3 @@
-
 # color palette 
 # generate color palette (run once overall)
 colors = []
@@ -27,7 +26,7 @@ for x in config["methods"]:
 	enrMatrices_gather.extend(expand(os.path.join(config["outDir"], x, "enrichmentTables", "enrichmentTable.thresh{threshold}.tsv"), threshold=methods_config.loc[x, "thresholdSpan"]))
 rule gather_enrichment_recall:
 	input: 
-		predTable = os.path.join(config["outDir"], "{method}", "predictionTables", "GTExTissue{GTExTissue}.Biosample{biosample}.byDistance.tsv"),
+		predTable = os.path.join(config["outDir"], "{method}", "predictionTables", "GTExTissue{GTExTissue}.Biosample{biosample}.byThreshold.tsv"),
 		enrichmentMatrices = enrMatrices_gather
 	params:
 		outDir = config["outDir"],
@@ -64,11 +63,12 @@ rule plot_final_comparison_grouped_by_distance:
 		enrichmentTables = expand(os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.under{distance}bp.tsv"), method=config["methods"], distance=config["distances"]),
 		# read in prediction tables individually within method using biosample/tissue pairings
 		colorPalette = os.path.join(config["outDir"], "colorPalettePlotting.rds"),
-		methods_config = config["methodsTable"]
 	params:
 		methods = config["methods"],
 		distances = config["distances"],
-		outDir = config["outDir"]
+		outDir = config["outDir"],
+		methods_config = config["methodsTable"]
+		
 	output:
 		outFile = os.path.join(config["outDir"], "plots", "final_comparison_figure_grouped_by_dist.pdf"),
 		enrAllTable = os.path.join(config["outDir"], "plots", "all_matched_enrichments.tsv"),
@@ -97,7 +97,7 @@ rule generate_html_report:
 		methods = config["methods"],
 		distances = config["distances"],
 		outDir = config["outDir"],
-		methods_config = config["methodsTable"]
+		methods_config = methods_config
 	output:
 		htmlReport = os.path.join(config["outDir"], "benchmarking_report.html")
 	conda:

@@ -22,9 +22,6 @@ include: "./rules/recall.smk"
 include: "./rules/enrichment.smk"
 include: "./rules/visualization.smk"
 
-
-print(methods_config)
-
 # generate files that need looping
 variantPredictionsIntFiles = []
 commonVarPredictionsIntFiles = []
@@ -48,7 +45,7 @@ for x in config["methods"]:
 GTExTissues_all = []
 for x in config["methods"]:
 	GTExTissues_all.extend(methods_config.loc[x, "GTExTissue_map"])
-GTExTissues_matched = [*set(GTExTissues_all)]
+	GTExTissues_matched = [*set(GTExTissues_all)]
 
 rule first:
 	input:
@@ -70,7 +67,7 @@ rule third:
 rule fourth:
 	input:
 		enrichmentRecallCurves = expand(os.path.join(config["outDir"],  "plots", "enrichmentRecall.GTExTissue{GTExTissue}.pdf"), GTExTissue=GTExTissues_matched),
-		comparisonPlots =  os.path.join(config["outDir"], "final_comparison_figure_grouped_by_dist.pdf"),
+		comparisonPlots =  os.path.join(config["outDir"], "plots", "final_comparison_figure_grouped_by_dist.pdf"),
 
 rule fifth:
 	input:

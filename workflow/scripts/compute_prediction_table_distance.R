@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
 
 varIntFile = (snakemake@input$variantsPredictionsInt)
 GTExVariantsFile = (snakemake@input$filteredGTExVariantsFinal)
-score.thresh = (snakemake@params$threshold)
+score.thresh = (snakemake@params$threshold) %>% as.numeric()
 distance = (snakemake@params$distances) %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
 outFile = (snakemake@output$predTable)
 GTExTissue.this = snakemake@wildcards$GTExTissue

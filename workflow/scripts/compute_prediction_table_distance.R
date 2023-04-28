@@ -52,7 +52,6 @@ for (i in 1:nrow(predTable)){
   predTable$recall.total[i] = nVariantsOverlappingEnhancers/nVariantsTotal
   predTable$recall.linking[i] = nVariantsOverlappingEnhancersCorrectGene/nVariantsTotal
   predTable$correctGene.ifOverlap[i] = nVariantsOverlappingEnhancersCorrectGene/nVariantsOverlappingEnhancers
-  print(predTable[i,])
 
 }
   

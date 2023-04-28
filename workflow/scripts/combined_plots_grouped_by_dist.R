@@ -31,7 +31,7 @@ methods_config = fread(file=snakemake@params$methods_config, sep="\t")
 cpFilePlotting = snakemake@input$colorPalette
 cpList = readRDS(cpFilePlotting)
 
-outFile = snakemake@output$er_combined
+outFile = snakemake@output$outFile
 outEnrAll = snakemake@output$enrAllTable
 outPredMetrics = snakemake@output$predictionMetrics
 outDir = snakemake@params$outDir
@@ -99,7 +99,6 @@ temp$GTExTissue = sampleKey_temp$GTExTissue[1]
 temp$Biosample = sampleKey_temp$biosample[1]
 temp$method = method.this
 pred.all = temp
-message("test 1")
 
 for (i in 1:length(methods)){
   method.this = methods[i]
@@ -111,12 +110,9 @@ for (i in 1:length(methods)){
       key_file = paste0("GTExTissue", sampleKey_temp$GTExTissue[[j]], ".", "Biosample", sampleKey_temp$biosample[[j]], ".byDistance.tsv")
       key_path = file.path(outDir, method.this, "predictionTables", key_file)
       temp = read.table(file = key_path, header = TRUE, fill = TRUE) %>% drop_na()
-      message("test 2")
-      print(temp)
       temp$GTExTissue = sampleKey_temp$GTExTissue[j]
       temp$Biosample = sampleKey_temp$biosample[j]
       temp$method = method.this
-      message("test 3")
       pred.all = rbind(pred.all, temp)
     }
 }
@@ -125,28 +121,25 @@ pred.all = distinct(pred.all)
 # add column with plotting name by left_joining with methods_config selecting just the method and plotting name columns
 methods_config.select = dplyr::select(methods_config, method, pred_name_long)
 pred.all = left_join(pred.all, methods_config.select, by=c("method"))
-enr.all = left_join(enr.all, methods_config.select, by=c("method"))
+#enr.all = left_join(enr.all, methods_config.select, by=c("method"))
 
 # make y-axis labels (distance range, min-max variants)
 pred.all$distance.label = 0
 enr.all$distance.label = 0
 
-distances_plus0 = c(0, distances_plus)
+distances_plus0 = c(0, distances)
 for (i in 2:length(distances_plus0)){
   distance.this = distances_plus0[i]
   if (distance.this == 30000000){
     label = "All variants\n"
   } else {
-    label = paste0(distance_plus0[i-1], " - ", distance.this, "bp\n")
+    label = paste0(distances_plus0[i-1], "-", distance.this, "bp\n")
   }
   pred.filt = dplyr::filter(pred.all, distance==distance.this)
-  label.full = paste0(label, "N = ", min(pred.filt$total.variants), " - ", max(pred.filt$total.variants), " variants")
+  label.full = paste0(label, "N = ", min(pred.filt$total.variants), "-", max(pred.filt$total.variants), " variants")
   pred.all$distance.label[pred.all$distance==distance.this] = label.full
   enr.all$distance.label[enr.all$distance==distance.this] = label.full
 }
-
-write.table(pred.all, outPredMetrics, col.names=TRUE, quote=FALSE, sep="\t")
-write.table(enr.all, outEnrAll, col.names=TRUE, quote=FALSE, sep="\t")
 
 
 ### GENERATE PLOTS
@@ -168,7 +161,7 @@ sr.overlaps = ggplot(pred.all, aes(x = distance.label, y = recall.total, fill=pr
   theme(axis.text.y = element_blank(), legend.position='none') + coord_flip()
 
 ## linked to correct eGene
-sr.predicted = ggplot(pred.all, aes(x = distance.label, y = correctGene.ifOverlaps, fill=pred_name_long)) +
+sr.predicted = ggplot(pred.all, aes(x = distance.label, y = correctGene.ifOverlap, fill=pred_name_long)) +
   geom_boxplot() +
   scale_fill_manual(values=cpList) +
   theme_minimal() + ggtitle('Variants linked to correct gene,\ngiven overlapping predicted enhancer') + xlab('') +
@@ -176,10 +169,12 @@ sr.predicted = ggplot(pred.all, aes(x = distance.label, y = correctGene.ifOverla
   theme(axis.text.y = element_blank()) + coord_flip()
 
 ## save final plots
-all.tissues =  ggarrange(enr.boxplot, sr.overlaps, sr.predicted, nrow=1, ncol=3)
 pdf(file=outFile, width=12, height=5)
-  print(all.tissues)
+  all.tissues =  ggarrange(enr.boxplot, sr.overlaps, sr.predicted, nrow=1, ncol=3)
 dev.off()
- 
- 
 
+pred.all = dplyr::select(pred.all, -distance.label)
+enr.all = dplyr::select(enr.all, -distance.label)
+
+write.table(pred.all, outPredMetrics, col.names=TRUE, quote=FALSE, sep="\t")
+write.table(enr.all, outEnrAll, col.names=TRUE, quote=FALSE, sep="\t")

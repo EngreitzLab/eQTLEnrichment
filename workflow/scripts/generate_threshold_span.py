@@ -11,14 +11,17 @@ nSteps = methods_config['nSteps']
 maxScore = methods_config['maxScore']
 minScore = methods_config['minScore']
 inverse_predictor = methods_config['inverse_predictor']
+threshold = methods_config["threshold"]
 
 thresholdSpans = [] # initialize list
+thresholds = []
 
 for i in range(len(nSteps)): # iterate through number of methods
   maxScore_this = maxScore[i]
   minScore_this = minScore[i]
   nSteps_this = nSteps[i]
   inverse_this = inverse_predictor[i]
+  threshold_this = threshold[i]
 
   if (maxScore_this-minScore_this)/(nSteps_this-1)>=nSteps_this: # if values of span will be integers
     span = np.linspace(minScore_this, maxScore_this, nSteps_this, dtype=int)
@@ -30,8 +33,11 @@ for i in range(len(nSteps)): # iterate through number of methods
 
   if inverse_this==True:
     span = [i * -1 for i in span]
+    threshold_this = -threshold_this
 
   thresholdSpans.append(span) # add that method to the list
+  thresholds.append(threshold_this)
 
 methods_config['thresholdSpan'] = thresholdSpans # add to config
+methods_config["threshold"] = thresholds
 #print(methods_config['thresholdSpan'])

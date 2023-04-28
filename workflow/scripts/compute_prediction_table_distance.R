@@ -15,12 +15,12 @@ outFile = (snakemake@output$predTable)
 GTExTissue.this = snakemake@wildcards$GTExTissue
 Biosample.this = snakemake@wildcards$Biosample
 
+
 varInt = read.table(file=varIntFile, sep="\t", header=FALSE) %>%
   setNames(c("varChr", "varStart", "varEnd", "hgID", "GTExTissue", "eGene", "PIP", "TPM", "distance",
              "enhChr", "enhStart", "enhEnd", "Biosample", "TargetGene", "score"))
 # filter to GTEx tissue, cell type (redundant), and score threshold
 varInt = dplyr::filter(varInt, GTExTissue==GTExTissue.this, Biosample==Biosample.this, score>=score.thresh)
-
 GTExVariants = read.table(file=GTExVariantsFile, sep="\t", header=FALSE) %>%
   setNames(c("varChr", "varStart", "varEnd", "hgID", "GTExTissue", "eGene", "PIP", "TPM", "distance"))
 GTExVariants = dplyr::filter(GTExVariants, GTExTissue==GTExTissue.this)
@@ -36,7 +36,7 @@ predTable$ correctGene.ifOverlap = 0 # fraction of variants linked to correct ge
 for (i in 1:nrow(predTable)){
   distance.this = predTable$distance[i]
   if (distance.this == 30000000){
-    varInt.this = varInt.this
+    varInt.this = varInt
     GTExVariants.this = GTExVariants
   } else {
     varInt.this = dplyr::filter(varInt, distance==distance.this)
@@ -52,6 +52,7 @@ for (i in 1:nrow(predTable)){
   predTable$recall.total[i] = nVariantsOverlappingEnhancers/nVariantsTotal
   predTable$recall.linking[i] = nVariantsOverlappingEnhancersCorrectGene/nVariantsTotal
   predTable$correctGene.ifOverlap[i] = nVariantsOverlappingEnhancersCorrectGene/nVariantsOverlappingEnhancers
+  print(predTable[i,])
 
 }
   

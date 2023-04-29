@@ -98,5 +98,5 @@ g=ggplot(data=df, aes(x=recall.linking, y=enrichment, color=pred_name_long)) +
 
 ggsave(out_file, g, width=8, height=6)
 
-write.table(df, outTable_file, quote=FALSE, col.names=TRUE, sep="\t")
+write.table(df, outTable_file, quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
 

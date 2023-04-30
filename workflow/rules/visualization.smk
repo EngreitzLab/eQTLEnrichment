@@ -92,12 +92,13 @@ rule generate_html_report:
 		enrAllTable = os.path.join(config["outDir"], "plots", "all_matched_enrichments.tsv"),
 		predictionMetrics = os.path.join(config["outDir"], "plots", "all_matched_prediction_metrics.tsv"),
 		er_combined = expand(os.path.join(config["outDir"],  "plots", "enrichmentRecall.GTExTissue{GTExTissue}.tsv"), GTExTissue=GTExTissues_matched),
-		enrMatrices_CRISPRthresh = expand(os.path.join(config["outDir"], "{method}", "enrichmentTable.under30000000bp.tsv"), method=config["methods"])
+		enrMatrices_CRISPRthresh = expand(os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.under30000000bp.tsv"), method=config["methods"])
 	params:
 		methods = config["methods"],
 		distances = config["distances"],
 		outDir = config["outDir"],
-		methods_config = methods_config
+		methods_config = config["methodsTable"],
+		matchedGTExTissues = GTExTissues_matched
 	output:
 		htmlReport = os.path.join(config["outDir"], "benchmarking_report.html")
 	conda:

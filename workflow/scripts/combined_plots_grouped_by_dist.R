@@ -90,8 +90,6 @@ methods_temp = dplyr::filter(methods_config, method==method.this)
 sampleKey_temp = fread(methods_temp$sampleKey[1], sep="\t")
 sampleKey_temp =  dplyr::select(sampleKey_temp, biosample, GTExTissue) %>% dplyr::filter(GTExTissue!="")
 sampleKey_temp$key = paste0(sampleKey_temp$GTExTissue, ".", sampleKey_temp$biosample)
-# GTEx_key = methods_temp$GTExTissue_map[[1]] %>% data.table()
-# biosample_key = methods_temp$biosample_map[[1]] %>% data.table()
 key_file = paste0("GTExTissue", sampleKey_temp$GTExTissue[1], ".", "Biosample", sampleKey_temp$biosample[1], ".byDistance.tsv")
 key_path = file.path(outDir, method.this, "predictionTables", key_file)
 temp = read.table(file = key_path, header = TRUE, fill = TRUE) %>% drop_na()
@@ -106,6 +104,7 @@ for (i in 1:length(methods)){
   sampleKey_temp = fread(methods_temp$sampleKey[1], sep="\t")
   sampleKey_temp =  dplyr::select(sampleKey_temp, biosample, GTExTissue) %>% dplyr::filter(GTExTissue!="")
   sampleKey_temp$key = paste0(sampleKey_temp$GTExTissue, ".", sampleKey_temp$biosample)
+  print(sampleKey_temp)
     for (j in 1:length(sampleKey_temp)){
       key_file = paste0("GTExTissue", sampleKey_temp$GTExTissue[[j]], ".", "Biosample", sampleKey_temp$biosample[[j]], ".byDistance.tsv")
       key_path = file.path(outDir, method.this, "predictionTables", key_file)
@@ -141,6 +140,10 @@ for (i in 2:length(distances_plus0)){
   enr.all$distance.label[enr.all$distance==distance.this] = label.full
 }
 
+# for biosamples_predictors plot 
+# ordered.methods = c('In element (DHS) & closest gene', 'ABC_A=DNase, C=Avg. Intact Hi-C', 'ENCODE-E2G', 'EpiMap', 'EPIraction', 'ABC_A=DNase x H3K27ac, C=Avg. Intact Hi-C')
+# enr.all$pred_name_long = factor(enr.all$pred_name_long, levels=ordered.methods)
+# pred.all$pred_name_long = factor(pred.all$pred_name_long, levels=ordered.methods)
 
 ### GENERATE PLOTS
 ## enrichment
@@ -176,5 +179,5 @@ dev.off()
 pred.all = dplyr::select(pred.all, -distance.label)
 enr.all = dplyr::select(enr.all, -distance.label)
 
-write.table(pred.all, outPredMetrics, col.names=TRUE, quote=FALSE, sep="\t")
-write.table(enr.all, outEnrAll, col.names=TRUE, quote=FALSE, sep="\t")
+write.table(pred.all, outPredMetrics, col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
+write.table(enr.all, outEnrAll, col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")

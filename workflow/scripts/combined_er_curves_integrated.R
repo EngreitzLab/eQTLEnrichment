@@ -56,7 +56,7 @@ df_files$file_path = file.path(outDir, df_files$method, "enrichmentRecallTables"
 ## aggregate and process ERCurve tables
 # process first table
 temp = read.table(file = df_files$file_path[1],header = TRUE, fill = TRUE) 
-temp = drop_na(temp)
+#temp = drop_na(temp)
 method_this = df_files$method[1]
 methods_temp = dplyr::filter(methods_config, method==method_this)
 temp$method = method_this
@@ -81,17 +81,17 @@ df = ER_curve_all
 df[is.na(df)] = 0
 df = df[order(df$threshold),]
 
+# data for binary predictors to be plotted as points
 df_binary = dplyr::filter(df, nPoints==2, threshold==1)
 
 df = dplyr::filter(df, nPoints!=2)
 
-# data for binary predictors to be plotted as points
 
 g=ggplot(data=df, aes(x=recall.linking, y=enrichment, color=pred_name_long)) +
   geom_line(linewidth=1) +
   geom_point(data=df_binary, aes(x=recall.linking, y=enrichment, color=pred_name_long), size=4) +
   scale_color_manual(values=unlist(cpList)) +
-  ylab("Enrichment (eQTLs vs. common variants)") + xlab("Recall (variants overlapping prediction linked to eGene") +
+  ylab("Enrichment (eQTLs vs. common variants)") + xlab("Recall (variants overlapping prediction linked to eGene)") +
   labs(col="Predictor") +
   ylim(c(0, 50)) +
   theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8))

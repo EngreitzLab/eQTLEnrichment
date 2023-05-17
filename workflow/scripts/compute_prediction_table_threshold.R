@@ -5,12 +5,13 @@ suppressPackageStartupMessages({
   library(optparse)
   library(stringr)
   library(gdata)
-  library(ggplot2)})
+  library(ggplot2)
+  library(data.table)})
 
 varIntFile = (snakemake@input$variantsPredictionsInt)
 GTExVariantsFile = (snakemake@input$filteredGTExVariantsFinal)
-threshold = (snakemake@params$thresholds) %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
-
+thresholdSpan = read.table(snakemake@input$thresholdSpan, sep="\t", header=FALSE)
+print(thresholdSpan)
 outFile = (snakemake@output$predTable)
 GTExTissue.this = snakemake@wildcards$GTExTissue
 Biosample.this = snakemake@wildcards$Biosample
@@ -27,7 +28,7 @@ GTExVariants = dplyr::filter(GTExVariants, GTExTissue==GTExTissue.this)
 nVariantsTotal = dplyr::select(GTExVariants, varChr, varStart, varEnd, eGene) %>% distinct() %>% nrow()
 
 # initialize pred table
-predTable = data.frame(threshold)
+predTable = data.frame(thresholdSpan) %>% setNames("threshold")
 predTable$total.variants = nVariantsTotal
 predTable$recall.total = 0 # fraction of variants overlapping enhancers
 predTable$recall.linking = 0 # fraction of variants overlapping enhancers linked to correct gene

@@ -7,10 +7,12 @@ suppressPackageStartupMessages({library(ggplot2)
 method = (snakemake@wildcards$method)
 method.slash = paste0("/", method, "/") # for string matching later
 predTableFile = (snakemake@input$predTable)
-enrFiles = (snakemake@input$enrichmentMatrices)%>% strsplit(" ") %>% unlist() %>% data.frame() %>% setNames("file")
-enrFiles = dplyr::filter(enrFiles, grepl(method.slash, file, fixed=TRUE)) # filter to method
+enrTableFile = (snakemake@input$enrichmentTable)
+#enrFiles = dplyr::filter(enrFiles, grepl(method.slash, file, fixed=TRUE)) # filter to method
 outDir = (snakemake@params$outDir)
-thresholdSpan = (snakemake@params$thresholdSpan) %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
+#thresholdSpan = (snakemake@params$thresholdSpan) %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
+thresholdSpan = read.table(snakemake@input$thresholdSpan, sep="\t", header=FALSE) %>% setNames("threshold")
+
 GTExTissue.this = (snakemake@wildcards$GTExTissue)
 biosample.this = (snakemake@wildcards$biosample)
 outERTable = (snakemake@output$ERCurveTable)
@@ -19,14 +21,18 @@ outERTable = (snakemake@output$ERCurveTable)
 predTable = read.table(predTableFile, header=TRUE, sep="\t")
 predTable$enrichment = 0
 
+# read in enrichment table and filter to method
+enrTable = read.table(enrTableFile, header=TRUE, sep="\t")
+
 # iteratively read in enrichment table per threshold, extract enrichment at that biosample/tissue intersection, add to table
-for (i in 1:length(thresholdSpan)){
-  this.threshold = thresholdSpan[i]
+for (i in 1:nrow(thresholdSpan)){
+  this.threshold = thresholdSpan$threshold[i]
+  this.enrTable = dplyr::filter(enrTable, threshold==this.threshold, GTExTissue==GTExTissue.this, Biosample==biosample.this)
   #this.fileName = paste0("enrichmentTable.thresh", this.threshold, ".tsv")
   #this.enrFile = file.path(outDir, method, "enrichmentTables", this.fileName)
-  this.enrFile = enrFiles$file[i]
-  this.enrTable = read.table(this.enrFile, header=TRUE, sep="\t")
-  this.enrTable = dplyr::filter(this.enrTable, GTExTissue==GTExTissue.this, Biosample==biosample.this)
+  #this.enrFile = enrFiles$file[i]
+  #this.enrTable = read.table(this.enrFile, header=TRUE, sep="\t")
+  #this.enrTable = dplyr::filter(this.enrTable, GTExTissue==GTExTissue.this, Biosample==biosample.this)
   predTable$enrichment[i] = this.enrTable$enrichment[1]
 }
 

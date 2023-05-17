@@ -31,23 +31,24 @@ rule compute_count_matrix_by_distance:
 
 rule compute_count_matrix_by_threshold:
 	input:
+		thresholdSpan = os.path.join(config["outDir"], "{method}", "thresholdSpan.tsv")
 		# read in wthin script: variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz"),
 	params:
 		biosamples=lambda wildcards: methods_config.loc[wildcards.method, "biosamples"],
 		GTExTissues=config["GTExTissues"],
 		outDir = config["outDir"]
 	output:
-		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrices", "count_matrix.thresh{threshold}.tsv")
+		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrices", "giant_count_matrix.thresholds.tsv")
 	conda:
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:
-		os.path.join(config["codeDir"], "count_matrix_threshold.R")
+		os.path.join(config["codeDir"], "giant_count_matrix_threshold.R")
 
 # generate matrix with enrichment values for each GTEx tissue/biosample intersection for each distance
 rule compute_enrichment_matrix_by_distance:
 	input: 
 		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrices", "count_matrix.under{distance}bp.tsv"),
-		variantsPerGTExTissueByDist = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.under{distance}bp.tsv")
+		variantsPerGTExTissueByDist = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.under{distance}bp.tsv"),
 		# read in commonVarPredictionsInts files per biosample within Rscript
 	params:
 		codeDir = config["codeDir"],
@@ -66,8 +67,9 @@ rule compute_enrichment_matrix_by_distance:
 # generate matrix with enrichment values for each GTEx tissue/biosample intersection for each threshold
 rule compute_enrichment_matrix_by_threshold:
 	input: 
-		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrices", "count_matrix.thresh{threshold}.tsv"),
-		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv")
+		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrices", "giant_count_matrix.thresholds.tsv"),
+		variantsPerGTExTissue = os.path.join(config["outDir"], "{method}", "nVariantsPerGTExTissue.tsv"),
+		thresholdSpan = os.path.join(config["outDir"], "{method}", "thresholdSpan.tsv")
 		# read in commonVarPredictionsInts files per biosample within Rscript
 	params:
 		codeDir = config["codeDir"],
@@ -76,8 +78,8 @@ rule compute_enrichment_matrix_by_threshold:
 		biosamples = lambda wildcards: methods_config.loc[wildcards.method, "biosamples"],
 		nCommonVariants = config["nBGVariants"]
 	output: 
-		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.thresh{threshold}.tsv")
+		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "giant_enrichmentTable.threshold.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script: 
-		os.path.join(config["codeDir"], "counts_to_enrichment_threshold.R")
+		os.path.join(config["codeDir"], "giant_counts_to_enrichment_threshold.R")

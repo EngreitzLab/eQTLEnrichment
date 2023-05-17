@@ -27,10 +27,13 @@ for x in config["methods"]:
 rule gather_enrichment_recall:
 	input: 
 		predTable = os.path.join(config["outDir"], "{method}", "predictionTables", "GTExTissue{GTExTissue}.Biosample{biosample}.byThreshold.tsv"),
-		enrichmentMatrices = enrMatrices_gather
+		#enrichmentMatrices = enrMatrices_gather
+		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "giant_enrichmentTable.threshold.tsv"),
+		thresholdSpan = os.path.join(config["outDir"], "{method}", "thresholdSpan.tsv")
+
 	params:
 		outDir = config["outDir"],
-		thresholdSpan = lambda wildcards: methods_config.loc[wildcards.method, "thresholdSpan"]
+		#thresholdSpan = lambda wildcards: methods_config.loc[wildcards.method, "thresholdSpan"]
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	output:

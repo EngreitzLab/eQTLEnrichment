@@ -22,6 +22,8 @@ include: "./rules/recall.smk"
 include: "./rules/enrichment.smk"
 include: "./rules/visualization.smk"
 
+#print(methods_config)
+
 # generate files that need looping
 variantPredictionsIntFiles = []
 commonVarPredictionsIntFiles = []
@@ -55,8 +57,10 @@ rule first:
 
 rule second:
 	input:
+		thresholdSpans = expand(os.path.join(config["outDir"], "{method}", "thresholdSpan.tsv"), method=config["methods"]),
 		enrichmentMatrices_distance = enrichmentMatrices_distance_Files,
-		enrichmentMatrices_threshold = enrichmentMatrices_threshold_Files,
+		#EenrichmentMatrices_threshold = enrichmentMatrices_threshold_Files,
+		enrichmentTable = expand(os.path.join(config["outDir"], "{method}", "enrichmentTables", "giant_enrichmentTable.threshold.tsv"),method=config["methods"]),
 		predTables_distance = predTables_distance_Files,
 		predTables_threshold = predTables_threshold_Files
 

@@ -17,7 +17,8 @@ rule compute_prediction_table_by_distance:
 rule compute_prediction_table_by_threshold:
 	input:
 		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "{Biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz"),
-		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv")
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv"),
+		thresholdSpan = os.path.join(config["outDir"], "{method}", "thresholdSpan.tsv")
 	params:
 		thresholds = lambda wildcards: methods_config.loc[wildcards.method, "thresholdSpan"]
 	output:

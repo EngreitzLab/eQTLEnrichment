@@ -174,3 +174,19 @@ rule intersect_bg_variants_predictions:
 		
 		zcat {input.predictionsSorted} | bedtools intersect -wa -wb -sorted -a {input.commonVarDistalNoncoding} -b stdin -g {params.chrSizes} | gzip > {output.commonVarPredictionsInt}
 		"""
+
+# generate threshold span based on quantiles of interescting predictions
+rule generate_quantile_threshold_span:
+	input:
+		# read in internally
+	params:
+		methods_config = config["methodsTable"],
+		nSteps = config["nThresholdSteps"],
+		outDir = config["outDir"],
+	output:
+		outFile = os.path.join(config["outDir"], "{method}", "thresholdSpan.tsv")
+	conda:
+		os.path.join(config["envDir"], "eQTLEnv.yml")	
+	script:
+		os.path.join(config["codeDir"], "generate_quantile_threshold_span.R")
+

@@ -1,0 +1,26 @@
+# FILE LOCATIONS
+outDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/2023_0523-GM12878_50"
+codeDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/scripts"
+envDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/workflow/envs"
+methodsTable: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/config/config-methods-GM12878_predictors.tsv"
+methodsTableModified: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/config/config-methods-modified.tsv"
+GTExVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/GTExVariants/GTEx_30tissues_hg38.tsv.gz"
+bgVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/backgroundSNPs/all.bg.SNPs.hg38.baseline.v1.1.bed.sorted"
+nBGVariants: 9991229
+chrSizes: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/hg38.chrom.sizes"
+partition: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/genomePartition/2021_1020_results_allPermutations/PartitionCombined.bed"
+TSS: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/GENCODEv29/gencode.v29.transcripts.level12.basic.protein_coding.TSS500bp.bed"
+distances: [10000, 100000, 2500000, 30000000]
+nThresholdSteps: 50
+
+# GTEx expression data
+GTExExpression: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment/resources/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_median_tpm.gct"
+GTExGeneUniverse: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/GTExCollapsedAnnotations/gencode.v26.genes.collapsed.bed"
+thresholdTPM: 1
+
+# list of methods to run
+methods: [ENCODE-E2G, ENCODE-E2G_Extended, ABC_full, ABC_DNase, CIA, EPIraction, EpiMap, GraphReg_Raw, DHS_closest_expr_gene]
+#methods: [ENCODE-E2G, ENCODE-E2G_Extended, ABC_full, ABC_DNase, CIA, DHS_closest_expr_gene]
+
+GTExTissues: [Brain_Cortex, Prostate, Muscle_Skeletal, Artery_Tibial, Skin_Not_Sun_Exposed_Suprapubic, Esophagus_Muscularis, Brain_Cerebellum, Pituitary, Adipose_Subcutaneous, Pancreas, Spleen, Adrenal_Gland, Testis, Lung, Skin_Sun_Exposed_Lower_leg, Heart_Atrial_Appendage, Adipose_Visceral_Omentum, Esophagus_Mucosa, Thyroid, Brain_Nucleus_accumbens_basal_ganglia, Colon_Sigmoid, Breast_Mammary_Tissue, Artery_Aorta, Cells_EBV-transformed_lymphocytes, Heart_Left_Ventricle, Artery_Coronary, Esophagus_Gastroesophageal_Junction, Nerve_Tibial, Liver, Whole_Blood, Colon_Transverse, Stomach]
+

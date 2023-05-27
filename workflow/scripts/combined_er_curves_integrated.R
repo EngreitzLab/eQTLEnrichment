@@ -86,6 +86,7 @@ df_binary = dplyr::filter(df, nPoints==2, threshold==1)
 
 df = dplyr::filter(df, nPoints!=2)
 
+ylim = 50
 
 g=ggplot(data=df, aes(x=recall.linking, y=enrichment, color=pred_name_long)) +
   geom_line(linewidth=1) +
@@ -93,7 +94,8 @@ g=ggplot(data=df, aes(x=recall.linking, y=enrichment, color=pred_name_long)) +
   scale_color_manual(values=unlist(cpList)) +
   ylab("Enrichment (eQTLs vs. common variants)") + xlab("Recall (variants overlapping prediction linked to eGene)") +
   labs(col="Predictor") +
-  ylim(c(0, 50)) +
+  coord_cartesian(ylim=c(0,ylim)) +
+  #ylim(c(0, ylim+0.1)) +
   theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8))
 
 ggsave(out_file, g, width=8, height=6)

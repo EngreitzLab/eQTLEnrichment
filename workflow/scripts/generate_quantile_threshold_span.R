@@ -35,9 +35,8 @@ biosample_this = sampleKey_this$biosample[1]
 GTExTissue_this = sampleKey_this$GTExTissue[1]
 varIntFile = file.path(outDir, method_this, biosample_this, "GTExVariants-enhancerPredictionsInt.tsv.gz")
 varInt = read.table(file=varIntFile, sep="\t", header=FALSE) %>% setNames(col_names)
-print(head(varInt))
-varInt_filtered = dplyr::filter(varInt, GTExTissue==GTExTissue_this) %>%
-  dplyr::select(varChr, varStart, varEnd, eGene, score)
+varInt_filtered = dplyr::filter(varInt, GTExTissue==GTExTissue_this, eGene==TargetGene) %>%
+  dplyr::select(varChr, varStart, varEnd, eGene, score) %>% distinct()
 varInt_all = varInt_filtered
 
 # the rest
@@ -47,18 +46,15 @@ if (nrow(sampleKey_this) > 1) {
     GTExTissue_this = sampleKey_this$GTExTissue[i]
     varIntFile = file.path(outDir, method_this, biosample_this, "GTExVariants-enhancerPredictionsInt.tsv.gz")
     varInt = read.table(file=varIntFile, sep="\t", header=FALSE) %>% setNames(col_names)
-    varInt_filtered = dplyr::filter(varInt, GTExTissue==GTExTissue_this) %>%
-      dplyr::select(varChr, varStart, varEnd, eGene, score)
+    varInt_filtered = dplyr::filter(varInt, GTExTissue==GTExTissue_this, eGene==TargetGene) %>%
+      dplyr::select(varChr, varStart, varEnd, eGene, score) %>% distinct()
     varInt_all= rbind(varInt_all, varInt_filtered)
   }
 }
 
 scores = as.numeric(varInt_all$score)
-print(head(scores))
 prob_vector = seq(0, 1, length.out=nSteps)
-thresholds = data.frame(round(unname(quantile(scores, na.rm=T, probs=prob_vector)), 8))
+thresholds = data.frame(unname(quantile(scores, na.rm=T, probs=prob_vector)))
 
-print(thresholds)
 colnames(thresholds) = "threshold"
-print(thresholds)
 write.table(thresholds, outFile, row.names=FALSE, col.names=FALSE, sep="\t")

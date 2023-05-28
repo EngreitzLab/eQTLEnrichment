@@ -14,7 +14,7 @@ methods_config = pd.read_table(methods_config_file, na_values="").fillna("None")
 pd.set_option('display.max_columns', None)
 
 include: "./scripts/add_biosamples_and_files_to_config.py"
-include: "./scripts/generate_threshold_span.py"
+#include: "./scripts/generate_threshold_span.py"
 include: "./scripts/process_biosample_tissue_maps.py"
 
 include: "./rules/preprocessing.smk"

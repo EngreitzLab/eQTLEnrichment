@@ -20,9 +20,9 @@ The following fields are required:
     - envDir: directory with conda environmentse (should point to workflow/envs)
     - methodsTable: path to methods config file (see below for specifications)
     - GTExVariants: path to file of fine-mapped GTEx variants, with following columns and no header. If using a file with another format, edit the column numbers and filtering strategy specified in the rule filter_all_variants in workflow/rules/preprocessing.smk
-          - chromosome      chromosome in hg19 coordinates (autosomes only)
-          - start   start position of variant in hg19 coordinates (0-indexed)
-          - end     end position of variant in hg19 coordinates (0-indexed)
+      - chromosome      chromosome in hg19 coordinates (autosomes only)
+      - start   start position of variant in hg19 coordinates (0-indexed)
+      - end     end position of variant in hg19 coordinates (0-indexed)
           - variant unique variant identifier in hg19 (chr:pos:ref:alt)
           - variant_hg38    unique variant identifier in hg38 (chr:pos:ref:alt)
           - allele1 reference allele in hg19 coordinates

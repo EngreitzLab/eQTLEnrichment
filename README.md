@@ -6,7 +6,7 @@ Running this pipeline will produce:
 2. Enrichment-recall curves for all specified GTEx tissue-biosample pairings, where enrichment and recall (defined here as the fraction of variants overlapping a predicted enhancer linked to at least one of its eGenes) are calculated at the specified number of threshold values yielding even steps across the range of recall for that method.
 3. Heatmaps showing enrichment at every tissue/biosample pairing for each method
 
-Outputs (1) and (2) are saved as individual pdfs in the /plots directory and can also be viewed in the final eQTL benchmarking report. Note that (1) is only produced if there is more than one GTEx tissue paired with a biosample across the methods. Output (3) can be viewed in the benchmarking report.
+**Notes:** Outputs (1) and (2) are saved as individual pdfs in  `/plots` of your output directory and can also be viewed in the final eQTL benchmarking report. (1) is only produced if there is more than one GTEx tissue paired with a biosample across the methods. If multiple biosamples are matched with the same tissue, only one (2) will be produced (from the first biosample listed in the `sampleKey` matching that tissue). Output (3) can be viewed in the benchmarking report.
 
 ## Running the pipeline
 To run the pipeline, call each of the rules `first` through `fifth` in consecutive order as shown in the example `workflow/run-GM12878_predictors.sh` file. Each rule is dependent on successful completion of the previous ones to successfully run. Note that at this time, rule `fifth`, which generates the final benchmarking report, will not run if there is only one tissue/biosample match.

@@ -19,26 +19,26 @@ The following fields are required:
     - codeDir: directory with scripts for running the pipeline (should point to workflow/scripts/)
     - envDir: directory with conda environmentse (should point to workflow/envs)
     - methodsTable: path to methods config file (see below for specifications)
-    - GTExVariants: path to file of fine-mapped GTEx variants, with following columns and no header:
-          chromosome      chromosome in hg19 coordinates (autosomes only)
-          start   start position of variant in hg19 coordinates (0-indexed)
-          end     end position of variant in hg19 coordinates (0-indexed)
-          variant unique variant identifier in hg19 (chr:pos:ref:alt)
-          variant_hg38    unique variant identifier in hg38 (chr:pos:ref:alt)
-          allele1 reference allele in hg19 coordinates
-          allele2 alternate allele in hg19 coordinates
-          cohort  GWAS cohort
-          method  fine-mapping method used
-          tissue  name of tissue where gene expression was measured
-          gene    name of gene of interest for cis-eQTLs
-          maf     allele frequency of the minor allele in cohort
-          beta_marginal   marginal association effect size from linear mixed model
-          se_marginal     standard error on marginal association effect size from linear mixed model
-          z       test statistic for marginal association
-          pip     posterior probability of association from fine-mapping
-          cs_id   ID of 95% credible set (-1 indicates that variant is not in a 95% CS)
-          beta_posterior  posterior expectation of true effect size
-          sd_posterior    posterior standard deviation of true effect size
+    - GTExVariants: path to file of fine-mapped GTEx variants, with following columns and no header. If using a file with another format, edit the column numbers and filtering strategy specified in the rule filter_all_variants in workflow/rules/preprocessing.smk
+          - chromosome      chromosome in hg19 coordinates (autosomes only)
+          - start   start position of variant in hg19 coordinates (0-indexed)
+          - end     end position of variant in hg19 coordinates (0-indexed)
+          - variant unique variant identifier in hg19 (chr:pos:ref:alt)
+          - variant_hg38    unique variant identifier in hg38 (chr:pos:ref:alt)
+          - allele1 reference allele in hg19 coordinates
+          - allele2 alternate allele in hg19 coordinates
+          - cohort  GWAS cohort
+          - method  fine-mapping method used
+          - tissue  name of tissue where gene expression was measured
+          - gene    name of gene of interest for cis-eQTLs
+          - maf     allele frequency of the minor allele in cohort
+          - beta_marginal   marginal association effect size from linear mixed model
+          - se_marginal     standard error on marginal association effect size from linear mixed model
+          - z       test statistic for marginal association
+          - pip     posterior probability of association from fine-mapping
+          - cs_id   ID of 95% credible set (-1 indicates that variant is not in a 95% CS)
+          - beta_posterior  posterior expectation of true effect size
+          - sd_posterior    posterior standard deviation of true effect size
     - bgVariants: path to file of common background variants, with no header and columns chr, start, end, rsid. We downloaded this data from: https://alkesgroup.broadinstitute.org/LDSCORE/baseline_v1.1_hg38_annots/
     - nBGVariants: number of variants in above file
     - chrSizes: path to chromosome sizes file for genome build you are using

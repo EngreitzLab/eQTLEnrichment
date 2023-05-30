@@ -16,18 +16,6 @@ distances = snakemake@params$distances %>% as.character %>% strsplit(" ") %>% un
 enrTableFiles = snakemake@input$enrichmentTables %>% strsplit(" ") %>% unlist()
 methods_config = fread(file=snakemake@params$methods_config, sep="\t")
 
-# # access via config directly? add methods_config to input
-# methods_config = fread(file=snakemake@input$methods_config, header=TRUE, sep="\t")
-# methods_config$GTExTissue_map = substr(methods_config$GTExTissue_map, 3, (nchar(methods_config$GTExTissue_map)-2))
-# methods_config$GTExTissue_map = gsub('"', "", methods_config$GTExTissue_map)
-# methods_config$GTExTissue_map = gsub(',', "", methods_config$GTExTissue_map)
-# methods_config$GTExTissue_map = strsplit(methods_config$GTExTissue_map, " ")
-# 
-# methods_config$biosample_map = substr(methods_config$biosample_map, 3, (nchar(methods_config$biosample_map)-2))
-# methods_config$biosample_map = gsub('"', "", methods_config$biosample_map)
-# methods_config$biosample_map = gsub(',', "", methods_config$biosample_map)
-# methods_config$biosample_map = strsplit(methods_config$biosample_map, " ")
-
 cpFilePlotting = snakemake@input$colorPalette
 cpList = readRDS(cpFilePlotting)
 
@@ -47,9 +35,7 @@ methods_temp = dplyr::filter(methods_config, method==methods[1])
 sampleKey_temp = fread(methods_temp$sampleKey[1], sep="\t")
 sampleKey_temp =  dplyr::select(sampleKey_temp, biosample, GTExTissue) %>% dplyr::filter(GTExTissue!="")
 sampleKey_temp$key = paste0(sampleKey_temp$GTExTissue, ".", sampleKey_temp$biosample)
-# GTEx_key = methods_temp$GTExTissue_map[[1]] %>% data.table()
-# biosample_key = methods_temp$biosample_map[[1]] %>% data.table()
-# key = paste0(GTEx_key[[1]], ".", biosample_key[[1]])
+
 temp$pred_name_long = methods_temp$pred_name_long[1]
 temp = filter(temp, tissue.biosample %in% sampleKey_temp$key)
 enr.all = temp

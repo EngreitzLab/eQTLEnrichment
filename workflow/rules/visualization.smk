@@ -22,8 +22,8 @@ rule generate_color_palette:
 # gather data for enrichment recall curve
 # for each GTEx tissue with at least one matched biosample
 enrMatrices_gather = []
-for x in config["methods"]:
-	enrMatrices_gather.extend(expand(os.path.join(config["outDir"], x, "enrichmentTables", "enrichmentTable.thresh{threshold}.tsv"), threshold=methods_config.loc[x, "thresholdSpan"]))
+#for x in config["methods"]:
+#	enrMatrices_gather.extend(expand(os.path.join(config["outDir"], x, "enrichmentTables", "enrichmentTable.thresh{threshold}.tsv"), threshold=methods_config.loc[x, "thresholdSpan"]))
 rule gather_enrichment_recall:
 	input: 
 		predTable = os.path.join(config["outDir"], "{method}", "predictionTables", "GTExTissue{GTExTissue}.Biosample{biosample}.byThreshold.tsv"),

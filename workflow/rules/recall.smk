@@ -20,7 +20,7 @@ rule compute_prediction_table_by_threshold:
 		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "GTExVariants.filteredForMethod.tsv"),
 		thresholdSpan = os.path.join(config["outDir"], "{method}", "thresholdSpan.tsv")
 	params:
-		thresholds = lambda wildcards: methods_config.loc[wildcards.method, "thresholdSpan"]
+		#thresholds = lambda wildcards: methods_config.loc[wildcards.method, "thresholdSpan"]
 	output:
 		predTable = os.path.join(config["outDir"], "{method}", "predictionTables", "GTExTissue{GTExTissue}.Biosample{Biosample}.byThreshold.tsv")
 	conda:

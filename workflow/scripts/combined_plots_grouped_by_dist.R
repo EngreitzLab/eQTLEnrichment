@@ -41,7 +41,6 @@ temp = filter(temp, tissue.biosample %in% sampleKey_temp$key)
 enr.all = temp
 
 # loop through rest, filtering to tissue/biosample matches
-if (length(methods) > 1) {
   for (i in 1:length(methods)) {
     for (j in 1:length(distances)){
     temp = read.table(file = enrTableFiles[1+(i-1)*length(distances)+j-1],header = TRUE, fill = TRUE) %>% drop_na()
@@ -57,7 +56,6 @@ if (length(methods) > 1) {
     enr.all = rbind(enr.all, temp)
     }
   }
-}
 enr.all = distinct(enr.all)
 
 # get stats, edit names, define labels 
@@ -91,8 +89,12 @@ for (i in 1:length(methods)){
   sampleKey_temp =  dplyr::select(sampleKey_temp, biosample, GTExTissue) %>% dplyr::filter(GTExTissue!="")
   sampleKey_temp$key = paste0(sampleKey_temp$GTExTissue, ".", sampleKey_temp$biosample)
   print(sampleKey_temp)
-    for (j in 1:length(sampleKey_temp)){
-      key_file = paste0("GTExTissue", sampleKey_temp$GTExTissue[[j]], ".", "Biosample", sampleKey_temp$biosample[[j]], ".byDistance.tsv")
+    for (j in 1:nrow(sampleKey_temp)){
+      print(sampleKey_temp)
+      print(j)
+      print(sampleKey_temp$GTExTissue[j])
+      print(sampleKey_temp$biosample[j])
+      key_file = paste0("GTExTissue", sampleKey_temp$GTExTissue[j], ".", "Biosample", sampleKey_temp$biosample[j], ".byDistance.tsv")
       key_path = file.path(outDir, method.this, "predictionTables", key_file)
       temp = read.table(file = key_path, header = TRUE, fill = TRUE) %>% drop_na()
       temp$GTExTissue = sampleKey_temp$GTExTissue[j]

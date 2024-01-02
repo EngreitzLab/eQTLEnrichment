@@ -21,19 +21,14 @@ rule generate_color_palette:
 
 # gather data for enrichment recall curve
 # for each GTEx tissue with at least one matched biosample
-enrMatrices_gather = []
-#for x in config["methods"]:
-#	enrMatrices_gather.extend(expand(os.path.join(config["outDir"], x, "enrichmentTables", "enrichmentTable.thresh{threshold}.tsv"), threshold=methods_config.loc[x, "thresholdSpan"]))
 rule gather_enrichment_recall:
 	input: 
 		predTable = os.path.join(config["outDir"], "{method}", "predictionTables", "GTExTissue{GTExTissue}.Biosample{biosample}.byThreshold.tsv"),
-		#enrichmentMatrices = enrMatrices_gather
 		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "giant_enrichmentTable.threshold.tsv"),
 		thresholdSpan = os.path.join(config["outDir"], "{method}", "thresholdSpan.tsv")
 
 	params:
 		outDir = config["outDir"],
-		#thresholdSpan = lambda wildcards: methods_config.loc[wildcards.method, "thresholdSpan"]
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	output:
@@ -59,6 +54,26 @@ rule plot_enrichment_recall_curve:
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:
 		os.path.join(config["codeDir"], "combined_er_curves_integrated.R")
+		
+# plot enrichment with confidence intervals across methods, once per GTEx tissue and user-defined recall
+rule plot_enrichment_with_ci:
+	input:
+		colorPalette = os.path.join(config["outDir"], "colorPalettePlotting.rds"),
+		# read in ER tables within script using methods_config
+	params:
+		codeDir = config["codeDir"],
+		outDir = config["outDir"],
+		methods = config["methods"],
+		methods_config = config["methodsTable"],
+	output:
+		enr_at_recall = os.path.join(config["outDir"],  "plots", "enrichments.Recall{recall}.GTExTissue{GTExTissue}.pdf"),
+		enr_at_recall_table = os.path.join(config["outDir"],  "plots", "enrichments.Recall{recall}.GTExTissue{GTExTissue}.tsv"),
+		sign_table = os.path.join(config["outDir"],  "plots", "pairwiseComparisons.Recall{recall}.GTExTissue{GTExTissue}.tsv")
+	conda:
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	script:
+		os.path.join(config["codeDir"], "enrichment_with_ci_at_recall.R")
+
 
 # generate final comparison plot (triple boxplot)
 rule plot_final_comparison_grouped_by_distance:
@@ -81,14 +96,26 @@ rule plot_final_comparison_grouped_by_distance:
 	script:
 		os.path.join(config["codeDir"], "combined_plots_grouped_by_dist.R")
 
+# plot averge enrichment/recall across tissue/biosample matches
+rule aggregate_enrichment_recall:
+	input:
+		# all enrichment-recall tables for each GTEx tissue
+		enrichmentRecallCurves = expand(os.path.join(config["outDir"],  "plots", "enrichmentRecall.GTExTissue{GTExTissue}.tsv"), GTExTissue=GTExTissues_matched),
+		colorPalette = os.path.join(config["outDir"], "colorPalettePlotting.rds"),
+	params:
+		methods = config["methods"],
+		outDir = config["outDir"],
+		methods_config = config["methodsTable"],
+		matchedGTExTissues = GTExTissues_matched
+	output:
+		er_aggregate_plot = os.path.join(config["outDir"], "plots", "aggregate_enrichment_recall.pdf"),
+		er_aggregate_table = os.path.join(config["outDir"], "plots", "aggregate_enrichment_recall.tsv"),
+	conda:
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	script:
+		os.path.join(config["codeDir"], "aggregate_enrichment_recall.R")
 
 # html report
-# find set of all GTEx tissues with biosample matches across methods 
-GTExTissues_all = []
-for x in config["methods"]:
-	GTExTissues_all.extend(methods_config.loc[x, "GTExTissue_map"])
-GTExTissues_matched = [*set(GTExTissues_all)]
-
 rule generate_html_report:
 	input:
 		colorPalette = os.path.join(config["outDir"], "colorPalettePlotting.rds"),

@@ -61,9 +61,10 @@ rule filter_all_variants:
 	params: 
 		codeDir = config["codeDir"],
 		outDir = config["outDir"],
-		chrSizes = config["chrSizes"]
+		chrSizes = config["chrSizes"],
+		thresholdPIP = config["thresholdPIP"]
 	output: 
-		filteredGTExVar = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.tsv.gz"),
+		filteredGTExVar = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIPfilt.distalNoncoding.tsv.gz"),
 		partitionDistalNoncoding = os.path.join(config["outDir"], "generalReference", "Partition.distalNoncoding.bed"),
 		commonVarDistalNoncoding = os.path.join(config["outDir"], "generalReference", "distalNoncodingBackgroundSNPs.bed.gz")
 	conda: 
@@ -75,8 +76,8 @@ rule filter_all_variants:
 			# filter partition to distal noncoding
 			awk '$4=="ABC" || $4=="AllPeaks" || $4=="Other" || $4=="OtherIntron"' {input.partition} | bedtools sort -i stdin -faidx {params.chrSizes} > {output.partitionDistalNoncoding}
 			
-			# filter GTEx variants by SUSIE, credible set, PIP0.5; print set of columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP); then filter to distal noncoding
-			zcat {input.GTExVariants} | awk '$16>=0.5 && $17 != -1  && $9 == "SUSIE"' | cut -f1-4,10,11,16 | bedtools sort -i stdin -faidx {params.chrSizes} | uniq | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} -g {params.chrSizes} | gzip > {output.filteredGTExVar}
+			# filter GTEx variants by SUSIE, credible set, PIP; print set of columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP); then filter to distal noncoding
+			zcat {input.GTExVariants} | awk '$16>={params.thresholdPIP} && $17 != -1  && $9 == "SUSIE"' | cut -f1-4,10,11,16 | bedtools sort -i stdin -faidx {params.chrSizes} | uniq | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} -g {params.chrSizes} | gzip > {output.filteredGTExVar}
 
 			# filter common variants to distal noncoding
 			cat {input.commonVar} | bedtools sort -i stdin -faidx {params.chrSizes} | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} -g {params.chrSizes}| gzip > {output.commonVarDistalNoncoding}
@@ -86,12 +87,12 @@ rule filter_all_variants:
 rule filter_variants_by_expression:
 	input: 
 		exprData = config["GTExExpression"],
-		filteredGTExVar = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.tsv.gz"),
+		filteredGTExVar = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIPfilt.distalNoncoding.tsv.gz"),
 	params:
 		outDir = config["outDir"],
 		thresholdTPM = config["thresholdTPM"]
 	output:
-		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv")
+		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIPfilt.distalNoncoding.expressed.tsv")
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script: 
@@ -101,14 +102,14 @@ rule filter_variants_by_expression:
 # columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP), 8 (TPM), 9 (distance group)
 rule add_distance_to_variants:
 	input:
-		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.tsv")
+		GTExExpressedGenes = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIPfilt.distalNoncoding.expressed.tsv")
 	params:
 		codeDir = config["codeDir"],
 		outDir = config["outDir"],
 		TSS = config['TSS'],
 		distances = config["distances"]
 	output:
-		GTExExpressedGenesWithDistance = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.withDistance.tsv")
+		GTExExpressedGenesWithDistance = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIPfilt.distalNoncoding.expressed.withDistance.tsv")
 	conda:
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:
@@ -119,7 +120,7 @@ rule add_distance_to_variants:
 # columns: 1-3 (loc), 4 (hgID), 5 (tissue), 6 (ens_id), 7 (PIP), 8 (TPM), 9 (distance)
 rule filter_variants_to_gene_universe:
 	input:
-		GTExExpressedGenesWithDistance = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIP0.5.distalNoncoding.expressed.withDistance.tsv"),
+		GTExExpressedGenesWithDistance = os.path.join(config["outDir"], "generalReference", "GTExVariants.filtered.PIPfilt.distalNoncoding.expressed.withDistance.tsv"),
 		geneUniverse = os.path.join(config["outDir"], "{method}", "geneUniverse.tsv")
 	params:
 		codeDir = config["codeDir"],

@@ -27,7 +27,7 @@ outDir = snakemake@params$outDir
 ### FORMAT DATA
 ## aggregate and process enrichment tables
 # first one
-temp = read.table(file = enrTableFiles[1],header = TRUE, fill = TRUE) %>% drop_na()
+temp = read.table(file = enrTableFiles[1],header = TRUE, fill = TRUE)
 temp$method = methods[1]
 temp$distance = distances[1]
 temp$tissue.biosample = paste0(temp$GTExTissue, ".", temp$Biosample)
@@ -43,7 +43,7 @@ enr.all = temp
 # loop through rest, filtering to tissue/biosample matches
   for (i in 1:length(methods)) {
     for (j in 1:length(distances)){
-    temp = read.table(file = enrTableFiles[1+(i-1)*length(distances)+j-1],header = TRUE, fill = TRUE) %>% drop_na()
+    temp = read.table(file = enrTableFiles[1+(i-1)*length(distances)+j-1],header = TRUE, fill = TRUE)
     temp$method = methods[i]
     temp$distance = distances[j]
     temp$tissue.biosample = paste0(temp$GTExTissue, ".", temp$Biosample)

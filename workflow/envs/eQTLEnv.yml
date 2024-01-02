@@ -21,4 +21,5 @@ dependencies:
  - pandas
  - snakemake
  - csvtk
+ - r-ggpubr
 

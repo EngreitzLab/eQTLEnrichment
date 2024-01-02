@@ -46,4 +46,24 @@ enrMatrix = left_join(enrMatrix, commonVarPerBiosample, by='Biosample')
 enrMatrix$nCommonVariants = totalCommonVar
 enrMatrix$enrichment = enrMatrix$nVariantsOverlappingEnhancers/enrMatrix$nVariantsGTExTissue/(enrMatrix$nCommonVariantsOverlappingEnhancers/enrMatrix$nCommonVariants)
 
+## stats about risk ratio (RR) aka enrichment
+# calculate CI of RR and SE(log RR); see: https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_confidence_intervals/bs704_confidence_intervals8.html
+z = 1.96 # for 95% CI
+calcs = enrMatrix
+calcs$n1 = calcs$nVariantsGTExTissue
+calcs$x1 = calcs$nVariantsOverlappingEnhancers
+calcs$n2 = calcs$nCommonVariants
+calcs$x2 = calcs$nCommonVariantsOverlappingEnhancers
+
+calcs$SE_log_enr = with(calcs, sqrt(((n1-x1)/x1)/n1) + ((n2-x2)/x2)/n2)
+calcs$log_enr = log(calcs$enrichment)
+calcs$log_CI_enr_low = with(calcs, log_enr - z*SE_log_enr)
+calcs$log_CI_enr_high = with(calcs, log_enr + z*SE_log_enr)
+calcs$CI_enr_low = exp(calcs$log_CI_enr_low)
+calcs$CI_enr_high = exp(calcs$log_CI_enr_high)
+
+enrMatrix$CI_enr_low = calcs$CI_enr_low
+enrMatrix$CI_enr_high = calcs$CI_enr_high
+enrMatrix$SE_log_enr = calcs$SE_log_enr
+
 write.table(enrMatrix, file=outFile, sep="\t", quote=F, row.names=F, col.names=T)

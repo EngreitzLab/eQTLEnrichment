@@ -17,21 +17,6 @@ out_file = snakemake@output$er_combined
 outTable_file = snakemake@output$er_combined_table
 
 ## gather ER curve tables for methods with that tissue
-# format methods_config columns
-# methods_config$GTExTissue_map = substr(methods_config$GTExTissue_map, 3, (nchar(methods_config$GTExTissue_map)-2))
-# print(methods_config$GTExTissue_map)
-# methods_config$GTExTissue_map = gsub('"', "", methods_config$GTExTissue_map)
-# print(methods_config$GTExTissue_map)
-# methods_config$GTExTissue_map = gsub(',', "", methods_config$GTExTissue_map)
-# print(methods_config$GTExTissue_map)
-# methods_config$GTExTissue_map = strsplit(methods_config$GTExTissue_map, " ")
-# print(methods_config$GTExTissue_map)
-# 
-# methods_config$biosample_map = substr(methods_config$biosample_map, 3, (nchar(methods_config$biosample_map)-2))
-# methods_config$biosample_map = gsub('"', "", methods_config$biosample_map)
-# methods_config$biosample_map = gsub(',', "", methods_config$biosample_map)
-# methods_config$biosample_map = strsplit(methods_config$biosample_map, " ")
-
 # if multiple matches, just take first (can adapt to be better later!)
 pos_methods = c()
 matched_biosamples=c()
@@ -67,7 +52,7 @@ ER_curve_all = temp
 if (length(pos_methods) > 1) {
   for (i in 2:length(pos_methods)) {
     temp = read.table(file = df_files$file_path[i],header = TRUE, fill = TRUE)
-    temp = drop_na(temp)
+    #temp = drop_na(temp)
     method_this = df_files$method[i]
     methods_temp = dplyr::filter(methods_config, method==method_this)
     temp$method = methods[i]

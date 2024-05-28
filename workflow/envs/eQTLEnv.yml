@@ -1,6 +1,21 @@
 name: eQTLEnv
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+  - anaconda
+  - r
 dependencies:
- - r-base
+ - snakemake
+ - mamba
+ - bedtools
+ - samtools
+ - csvtk
+ - pandas # python 
+ - numpy 
+ - click
+ - r-base # R
+ - r-r.utils
  - r-tidyverse
  - r-optparse
  - r-egg
@@ -8,18 +23,11 @@ dependencies:
  - r-tidyr
  - r-stringr
  - r-gdata
- - bioconductor-biomart
  - r-markdown
  - r-reactable
  - plotly
  - r-heatmaply
+ - r-ggpubr
+ - r-dichromat
  - cairo
  - pandoc
- - samtools
- - bedtools
- - numpy
- - pandas
- - snakemake
- - csvtk
- - r-ggpubr
-

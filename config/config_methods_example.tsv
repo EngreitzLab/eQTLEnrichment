@@ -1,0 +1,11 @@
+method	sampleKey	geneUniverse	boolean	inverse_predictor	pred_name_long	threshold	score_col	color
+ENCODE_rE2Gext	resources/biosample_keys/2024/ENCODE_rE2Gext.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ENCODE-rE2G_Extended	0.336	ENCODE-rE2G.Score	#9B241C
+ENCODE_rE2G	resources/biosample_keys/2024/ENCODE_rE2G_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ENCODE-rE2G	0.201	Score	#DC6464
+ABC_DNase	resources/biosample_keys/2024/ABC_DNase_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ABC_A=DNase, C=megamap Hi-C	0.201	ABC.Score	#5496CE
+ABC_full	resources/biosample_keys/2024/ABC_full.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ABC_A=DNase x H3K27ac, C=ENCODE Hi-C	0.027	ABC.Score	#00488D
+DHS_distToTSS	resources/biosample_keys/2024/DHS_distToTSS_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	TRUE	In element (DHS) & distance to TSS	53976	Score	#C5CAD7
+DHS_nearestExprGene	resources/biosample_keys/2024/DHS_nearestExprGene_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	TRUE	FALSE	In element (DHS) & closest expr. gene	1	Score	#888364
+EpiMap	resources/biosample_keys/2024/EpiMap_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	EpiMap	0.004521914	Score	#E0DCCA
+GraphReg	resources/biosample_keys/2024/GraphReg.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	GraphReg	0.001368199	GraphReg_L_8_dnase_h3k27ac.Score	#C5C1A5
+CIA	resources/biosample_keys/2024/CIA.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	CIA	0.01008	CIA_norm.Score	#888364
+EPIraction	resources/biosample_keys/2024/EPIraction_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	EPIraction	0.0311255	Score	#5E5948

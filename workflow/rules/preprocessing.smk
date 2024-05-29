@@ -40,16 +40,16 @@ rule process_predictions:
 		"""
 		set +o pipefail;
 			
-		# sort predictions file and remove # from first line
+		# sort predictions file: remove # from header,select columns,remove header, remove rows with blanks
         if [[ {input.predFile} == *.gz ]]
         then
-		    zcat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv
+		    zcat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | awk 'NF==5{{print}}{{}}' | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv
 		else
-            cat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv
+            cat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | awk 'NF==5{{print}}{{}}' | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv
         fi
 
 		# invert score if inverted predictor and filter to gene universe and set biosample column
-		Rscript {params.codeDir}/preprocessing/process_predictions.R --input {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv --gene_col 4 --genes {input.geneUniverse} --biosample {wildcards.biosample} --invert {params.inversePred} --score_col 5 | gzip > {output.predictionsSorted}
+		Rscript {params.codeDir}/preprocessing/process_predictions.R --input {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv  --genes {input.geneUniverse} --biosample {wildcards.biosample} --invert {params.inversePred}  | gzip > {output.predictionsSorted}
 
 		rm {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv
 			
@@ -197,7 +197,7 @@ rule biosample_tissue_maps:
 rule generate_quantile_threshold_span:
 	input:
 		map = os.path.join(config["outDir"], "{method}", "intermediate", "GTExTissueBiosampleMap.tsv"),
-		varInt = lambda wildcards: [os.path.join(config["outDir"], wildcards.method, "biosample", biosample, "GTExVariants-enhancerPredictionsInt.tsv.gz") for biosample in methods_config.loc[wildcards.method, "biosamples"]]
+		varInt = lambda wildcards: [os.path.join(config["outDir"], wildcards.method, "biosamples", biosample, "GTExVariants-enhancerPredictionsInt.tsv.gz") for biosample in methods_config.loc[wildcards.method, "biosamples"]]
 	params:
 		nSteps = config["nThresholdSteps"],
 		biosamples = lambda wildcards: methods_config.loc[wildcards.method, "biosamples"],

@@ -44,12 +44,13 @@ include: "./rules/visualization.smk"
 
 rule all:
 	input:
-		nVar = os.path.join(config["outDir"], "plots", "variants_per_tissue.pdf"),
-		distance_comparison = os.path.join(config["outDir"], "plots", "thresholded_performance_comparison.pdf"),
+		nVar = os.path.join(config["outDir"], "plots", "variantsPerTissue.pdf"),
+		distance_comparison = os.path.join(config["outDir"], "plots", "thresholdedPerformanceComparison.pdf"),
+		allEnrichments = os.path.join(config["outDir"], "plots", "allThresholdedEnrichments.pdf"),
 		enrichmentRecallCurves = [os.path.join(config["outDir"],  "plots", "enrichmentRecall",  f"enrichmentRecall.GTExTissue{tissue}.pdf") for tissue in GTExTissues_plus_all],
 		enrichmentAtRecall = [os.path.join(config["outDir"],  "plots", "enrichmentAtRecall",  f"enrichments.Recall{recall}.GTExTissue{tissue}.pdf") for tissue in GTExTissues_plus_all for recall in config["recalls"]],
 		heatmaps = [os.path.join(config["outDir"], "plots", "enrichmentHeatmaps", f"{method}.enrichmentHeatmap.pdf") for method in config["methods"]],
-		benchmarkingReport = os.path.join(config["outDir"], "benchmarking_report.html")
+		benchmarkingReport = os.path.join(config["outDir"], "benchmarkingReport.html")
 
 
 

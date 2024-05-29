@@ -1,0 +1,14 @@
+biosample	predictionFile	GTExTissue
+frontal_cortex_adult_F	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS00369.bed.gz	Brain_Cortex
+prostate_adult_M	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS01459.bed.gz	Prostate
+skeletal_muscle_cell	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS01572.bed.gz	Muscle_Skeletal
+foreskin_keratinocyte_newborn_M	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS00354.bed.gz	Skin_Not_Sun_Exposed_Suprapubic
+pancreas_adult_F	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS00121.bed.gz	Pancreas
+lung_adult_F	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS01190.bed.gz	Lung
+lower_leg_skin_adult_F	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS01181.bed.gz	Skin_Sun_Exposed_Lower_leg
+sigmoid_colon_adult_F	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS01542.bed.gz	Colon_Sigmoid
+GM12878	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS00439.bed.gz	Cells_EBV-transformed_lymphocytes
+heart_LV_adult_F	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS00507.bed.gz	Heart_Left_Ventricle
+liver_adult_F	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS01159.bed.gz	Liver
+transverse_colon_adult_F	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS01848.bed.gz	Colon_Transverse
+K562	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/EpiMap/processed/linking_collated_BSS00762.bed.gz	Whole_Blood,Spleen

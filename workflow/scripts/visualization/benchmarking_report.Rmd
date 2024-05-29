@@ -60,9 +60,10 @@ sub = dplyr::select(nVariants, distance_label, hex) %>% distinct()
 cp_nVar = sub$hex
 names(cp_nVar) = sub$distance_label
 
-to_order = dplyr::filter(nVariants, distance_bin=="n_all") %>% arrange(var_count)
-nVariants$tissue = factor(nVariants$tissue, levels=to_order$tissue, ordered=TRUE)
-nVariants$distance_label = factor(nVariants$distance_label, levels=dist$distance_label, ordered=TRUE)
+tissue_order = dplyr::filter(nVariants, distance_bin=="n_bin2") %>% arrange(var_count)
+dist_order = dplyr::filter(nVariants, tissue==nVariants$tissue[1])
+nVariants$tissue = factor(nVariants$tissue, levels=tissue_order$tissue, ordered=TRUE)
+nVariants$distance_label = factor(nVariants$distance_label, levels=dist_order$distance_label, ordered=TRUE)
 
 varPerGTExTissue=ggplot(data=nVariants, aes(x=tissue, y=var_count, fill=distance_label)) +
 	geom_bar(position="stack", stat="identity") +
@@ -106,10 +107,12 @@ linking.by.distance = ggplot(pred.all, aes(x = distance.label, y = correctGene.i
   ylab('Fraction of GTEx variants\noverlapping predicted enhancers') +
   theme(axis.text.y = element_blank()) + coord_flip()
 
+# VARIABLES FOR TEXT
+pred_name_longs = cp$pred_name_long
 ```
 
 - This report presents benchmarking results for the following E-G linking methods: `r pred_name_longs`
-- For distance stratified plots, eVariant-eGene distances were stratified at the following Kp values: `r distances`
+- For distance stratified plots, eVariant-eGene distances were stratified at the following Kb values: `r distances`
 
 ```{r summary, echo=FALSE, fig.width=14, fig.cap=cap}
 
@@ -201,15 +204,15 @@ Enrichment-recall curves for each GTEx tissue with a matching biosample. Enrichm
 ```{r enrRecall, echo=FALSE, results='asis', fig.height=6, fig.width=9}
 
 for (i in 1:length(GTExTissues_matched)) {
-  cat(" \n###", matchedGTEx[i], "  \n")
-  df = read.table(erAll.files[i], header=TRUE, sep="\t")
-  
+  cat(" \n###", GTExTissues_matched[i], "  \n")
+  df = read.table(ER.files[i], header=TRUE, sep="\t", comment.char="")
+
   df = dplyr::filter(df, recall.linking>0)
   df[is.na(df)] = 0
   df = df[order(df$threshold),]
 
-  df_binary = dplyr::filter(df, nPoints==2, threshold==1)
-  df_line = dplyr::filter(df, nPoints!=2)
+  df_binary = dplyr::filter(df, nPoints==1)
+  df_line = dplyr::filter(df, nPoints>1)
 
   # colors
   colors = dplyr::select(df, key, hex) %>% distinct()
@@ -224,7 +227,7 @@ for (i in 1:length(GTExTissues_matched)) {
     labs(col="Predictor") +
     ylim(c(0, 50)) +
     theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8),
-	legend.position="bottom", legend.direction="horizontal", legend.text = element_text(size=7), legend.title=element_text(size=8))
+	legend.position="right", legend.direction="vertical", legend.text = element_text(size=7), legend.title=element_text(size=8))
   plot(g)
 
   cat("  \n")

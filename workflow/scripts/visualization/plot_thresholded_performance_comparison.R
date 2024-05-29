@@ -92,7 +92,7 @@ names(pred_colors) = cp$pred_name_long
 ### GENERATE PLOTS
 ## enrichment
 enr.boxplot = ggplot(enr.all, aes(x = distance.label, y = enrichment, fill = pred_name_long)) +
-  geom_boxplot(linewidth = 0.5) +
+  geom_boxplot(linewidth = 0.5, outlier.size=0.75) +
   coord_flip() +
   theme_minimal() + ylab("Enrichment\n(GTEx variants/all common variants)") + xlab('') +
   scale_fill_manual(values=pred_colors) +
@@ -101,7 +101,7 @@ enr.boxplot = ggplot(enr.all, aes(x = distance.label, y = enrichment, fill = pre
 
 ## overlaps predicted enhancer : recall.total
 sr.overlaps = ggplot(pred.all, aes(x = distance.label, y = recall.total, fill=pred_name_long)) +
-  geom_boxplot(linewidth = 0.5) +
+  geom_boxplot(linewidth = 0.5, outlier.size=0.75) +
   scale_fill_manual(values=pred_colors) +
   theme_minimal() + ggtitle('Variants overlapping\npredicted enhancers') + 
   ylab('Fraction of GTEx variants') + xlab('') +
@@ -109,7 +109,7 @@ sr.overlaps = ggplot(pred.all, aes(x = distance.label, y = recall.total, fill=pr
 
 ## linked to correct eGene
 sr.predicted = ggplot(pred.all, aes(x = distance.label, y = correctGene.ifOverlap, fill=pred_name_long)) +
-  geom_boxplot(linewidth = 0.5) +
+  geom_boxplot(linewidth = 0.5, outlier.size=0.75) +
   scale_fill_manual(values=pred_colors, name="Predictor") +
   theme_minimal() + ggtitle('Variants linked to correct gene,\ngiven overlapping predicted enhancer') + xlab('') +
   ylab('Fraction of GTEx variants\noverlapping predicted enhancers') +

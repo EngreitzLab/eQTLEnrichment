@@ -96,15 +96,32 @@ rule plot_thresholded_performance_comparison:
 		distances_min = config["distances_min"],
 		distances_max = config["distances_max"]
 	output:
-		outFile = os.path.join(config["outDir"], "plots", "thresholded_performance_comparison.pdf"),
-		enrAllTable = os.path.join(config["outDir"], "plots", "all_matched_enrichments.tsv"),
-		predictionMetrics = os.path.join(config["outDir"], "plots", "all_matched_prediction_metrics.tsv")
+		outFile = os.path.join(config["outDir"], "plots", "thresholdedPerformanceComparison.pdf"),
+		enrAllTable = os.path.join(config["outDir"], "plots", "allMatchedEnrichments.tsv"),
+		predictionMetrics = os.path.join(config["outDir"], "plots", "allMatchedPredictionMetrics.tsv")
 	resources:
 		mem_mb = determine_mem_mb
 	conda:
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:
 		os.path.join(config["codeDir"], "visualization", "plot_thresholded_performance_comparison.R")
+
+# plot all enrichments
+rule plot_all_thresholded_enrichments:
+	input:
+		enrichmentTable_files = enrichmentTables_distance,
+		colorPalette = os.path.join(config["outDir"], "plots", "colorPalette.tsv"),
+	params:
+		distances_min = config["distances_min"],
+		distances_max = config["distances_max"]
+	output:
+		outFile = os.path.join(config["outDir"], "plots", "allThresholdedEnrichments.pdf"),
+	resources:
+		mem_mb = determine_mem_mb
+	conda:
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	script:
+		os.path.join(config["codeDir"], "visualization", "plot_all_thresholded_enrichments.R")
 
 # plot n variants per tissue
 rule plot_variants_per_tissue:
@@ -115,8 +132,8 @@ rule plot_variants_per_tissue:
 		distances_max = config["distances_max"],
 		methods = config["methods"]
 	output:
-		out_plot = os.path.join(config["outDir"], "plots", "variants_per_tissue.pdf"),
-		out_table = os.path.join(config["outDir"], "plots", "avg_variants_per_tissue.tsv")
+		out_plot = os.path.join(config["outDir"], "plots", "variantsPerTissue.pdf"),
+		out_table = os.path.join(config["outDir"], "plots", "avgVariantsPerTissue.tsv")
 	resources:
 		mem_mb = determine_mem_mb
 	conda:
@@ -144,11 +161,11 @@ rule plot_heatmaps:
 rule generate_html_report:
 	input:
 		colorPalette = os.path.join(config["outDir"], "plots", "colorPalette.tsv"),
-		enrAllTable = os.path.join(config["outDir"], "plots", "all_matched_enrichments.tsv"),
-		predictionMetrics = os.path.join(config["outDir"], "plots", "all_matched_prediction_metrics.tsv"),
+		enrAllTable = os.path.join(config["outDir"], "plots", "allMatchedEnrichments.tsv"),
+		predictionMetrics = os.path.join(config["outDir"], "plots", "allMatchedPredictionMetrics.tsv"),
 		er_combined = expand(os.path.join(config["outDir"],  "plots", "enrichmentRecall", "enrichmentRecall.GTExTissue{GTExTissue}.tsv"), GTExTissue=GTExTissues_plus_all),
 		enrMatrices_CRISPRthresh = expand(os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.0to30000Kb.tsv"), method=config["methods"]),
-		nVariants = os.path.join(config["outDir"], "plots", "avg_variants_per_tissue.tsv")
+		nVariants = os.path.join(config["outDir"], "plots", "avgVariantsPerTissue.tsv")
 	params:
 		methods = config["methods"],
 		distances_min = config["distances_min"],
@@ -158,16 +175,13 @@ rule generate_html_report:
 	resources:
 		mem_mb = determine_mem_mb
 	output:
-		htmlReport = os.path.join(config["outDir"], "benchmarking_report.html")
+		htmlReport = os.path.join(config["outDir"], "benchmarkingReport.html")
 	conda:
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:
 		os.path.join(config["codeDir"], "visualization", "benchmarking_report.Rmd")
 
-#############################################################
 
-
-## (at threshold) enrichment for matches across all methods
 
 
 

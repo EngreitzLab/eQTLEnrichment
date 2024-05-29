@@ -53,8 +53,8 @@ df = dplyr::select(df, -hex) %>% left_join(cp, by=c("key", "method")) # for savi
 df$key = factor(df$key)
 df_plot = dplyr::filter(df, recall.linking>0) # remove (0,0) points
 
-df_binary = dplyr::filter(df_plot, nPoints==2, threshold==1)
-df_plot = dplyr::filter(df_plot, nPoints!=2)
+df_binary = dplyr::filter(df_plot, nPoints==1)
+df_plot = dplyr::filter(df_plot, nPoints>1)
 
 # plotting params
 ylim = 50
@@ -70,6 +70,6 @@ g=ggplot(data=df_plot, aes(x=recall.linking, y=enrichment, color=key)) +
   coord_cartesian(ylim=c(0,ylim)) +
   theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), legend.text = element_text(size=7), legend.title=element_text(size=8), legend.position="bottom", legend.direction="vertical")
 
-ggsave(out_plot, g, width=5, height=5)
+ggsave(out_plot, g, width=5, height=7)
 write.table(df, out_table, quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
 

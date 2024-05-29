@@ -31,7 +31,7 @@ The pipeline requires two config files. The required inputs are outlined below.
 	- **eQTLVariants:** gzipped, tab-separated file of eQTL variants with the following columns: `chr`, `start`, `end`, `varID_hg38` (variant ID), `gene_hgnc` (eGene), `tissue`, `pip`. Here, we use fine-mapped variants from GTEx that have been filtered for variants in a credible set and expressed with a TPM>1 in their respective tissue
 		- The complete file of fine-mapped GTEx variants is available on Synapse [here](https://www.synapse.org/#!Synapse:syn52264297), and the expression data from GTEx is available [here](https://www.synapse.org/#!Synapse:syn52264240). The code to process these files into the format for this pipeline is under `workflow/scripts/generate_inputs`.
 	- Genomic annotations **chrSizes**, **partition**, **TSS**, **GTExGeneUniverse** (all provided here in the `resources` directory)
-	- **bgVariants:** a .bed file of common SNPs  with columns (no header) `chr`, `start`, `end`, `rsid`. The list of background variants we use can be downloaded on Synapse [here](https://www.synapse.org/#!Synapse:syn52264319) and was collated from https://alkesgroup.broadinstitute.org/LDSCORE/baseline_v1.1_hg38_annots/
+	- **bgVariants:** a .bed file of common SNPs  with columns (no header) `chr`, `start`, `end`, `rsid`. The list of background variants we use can be downloaded on Synapse [here](https://www.synapse.org/#!Synapse:syn52264319) and was collated from [here](https://alkesgroup.broadinstitute.org/LDSCORE/baseline_v1.1_hg38_annots/).
 	- The following parameters:
 		- **distances:** a list of values, in Kb, for eGene-eVariant distance-stratified benchmarking
 		- **recalls:** a list of recall values at which to compare enrichments

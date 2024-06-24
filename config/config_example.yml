@@ -1,9 +1,13 @@
 ##  CONFIG
-outDir: "results/2024_0523_fig2_test"
-methodsTable: "config/mine/config_methods_fig2_test.tsv"
-#methods: [DHS_distToTSS, ABC_full]
-methods: [ENCODE_rE2G, ENCODE_rE2Gext, ABC_full, ABC_DNase, CIA, EPIraction, EpiMap, GraphReg, DHS_distToTSS, DHS_nearestExprGene] # list of methods from methodsTable to run
-eQTLVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/GTExVariants/GTEx_30tissues_hg38.SUSIE.cs.expressedTPM1.tsv.gz"  # columns: chr,start,end,variant_id,gene_hgnc,tissue,pip
+# outDir: "results/2024_0523_fig2_test"
+# methodsTable: "config/mine/config_methods_fig2_test.tsv"
+# methods: [ENCODE_rE2G, ENCODE_rE2Gext, ABC_full, ABC_DNase, CIA, EPIraction, EpiMap, GraphReg, DHS_distToTSS, DHS_nearestExprGene] # list of methods from methodsTable to run
+
+outDir: "results/2024_0528_scE2G_BMMC"
+methodsTable: "config/mine/config_methods_scE2G_BMMC.tsv"
+methods: [scE2G_multiome, scE2G_multiome_intx, scE2G_ATAC, scE2G_ATAC_intx, scABC, Kendall, ABC_distToTSS]
+
+eQTLVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/GTExVariants/GTEx_30tissues_hg38.SUSIE.cs.expressedTPM1.tsv.gz"  # columns: chr,start,end,varID_hg38,gene_hgnc,tissue,pip
 
 ## RESOURCE / REFERENCE FILES
 baseDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/"

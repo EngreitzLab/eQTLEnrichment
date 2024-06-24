@@ -10,28 +10,22 @@ config["outDir"] = os.path.join(config["baseDir"], config["outDir"])
 config["codeDir"] = os.path.join(config["baseDir"], "workflow", "scripts")
 config["envDir"] = os.path.join(config["baseDir"], "workflow", "envs")
 
-# load prediction method config file
+# read in prediction method config file
 methods_config_file = config["methodsTable"]
 methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
 methods_config['threshold'] = [-thresh if inverse else thresh for thresh,inverse in zip(methods_config['threshold'], methods_config['inverse_predictor'])]
 
 # import workflows
-pd.set_option('display.max_columns', None)
-
 include: "./rules/utils.smk"
 add_biosamples_and_files_to_config()
 process_biosample_tissue_maps()
 
-#print(methods_config)
-
-# some variables needed in rules
+# define some variables needed in rules
 GTExTissues_all = [] # find set of all GTEx tissues with biosample matches across methods 
 for x in config["methods"]:
 	GTExTissues_all.extend(methods_config.loc[x, "GTExTissue_map"])
 GTExTissues_matched = [*set(GTExTissues_all)]
 GTExTissues_plus_all = GTExTissues_matched + ["AllMatches"]
-
-
 # distance bins: for example, min = 0, 10, 100, 0 and max = 10, 100, 250, 30000 kb (30 Mb)
 config["distances_min"] = [0] + config["distances"][0:-1] + [0]
 config["distances_max"] = config["distances"] + [30000]
@@ -46,14 +40,13 @@ rule all:
 	input:
 		nVar = os.path.join(config["outDir"], "plots", "variantsPerTissue.pdf"),
 		distance_comparison = os.path.join(config["outDir"], "plots", "thresholdedPerformanceComparison.pdf"),
-		allEnrichments = os.path.join(config["outDir"], "plots", "allThresholdedEnrichments.pdf"),
+		scatter = os.path.join(config["outDir"], "plots", "allMatchedThresholdedPerformance.scatter.pdf"),
+		allMetrics = os.path.join(config["outDir"], "plots", "allThresholdedEnrichmentRecall.byDistance.pdf"),
 		enrichmentRecallCurves = [os.path.join(config["outDir"],  "plots", "enrichmentRecall",  f"enrichmentRecall.GTExTissue{tissue}.pdf") for tissue in GTExTissues_plus_all],
 		enrichmentAtRecall = [os.path.join(config["outDir"],  "plots", "enrichmentAtRecall",  f"enrichments.Recall{recall}.GTExTissue{tissue}.pdf") for tissue in GTExTissues_plus_all for recall in config["recalls"]],
-		heatmaps = [os.path.join(config["outDir"], "plots", "enrichmentHeatmaps", f"{method}.enrichmentHeatmap.pdf") for method in config["methods"]],
+		enrHeatmaps = [os.path.join(config["outDir"], "plots", "enrichmentHeatmaps", f"{method}.enrichmentHeatmap.pdf") for method in config["methods"]],
+		recallHeatmaps = [os.path.join(config["outDir"], "plots", "recallHeatmaps", f"{method}.recallHeatmap.pdf") for method in config["methods"]],
 		benchmarkingReport = os.path.join(config["outDir"], "benchmarkingReport.html")
-
-
-
 
 
 #######################
@@ -62,6 +55,4 @@ rule all:
 variantPredictionsInt = flatten([[os.path.join(config["outDir"], method, biosample, "GTExVariants-enhancerPredictionsInt.tsv.gz") for biosample in methods_config.loc[method, 'biosamples']] for method in config['methods']])
 bgVarPredictionsInt = flatten([[os.path.join(config["outDir"], method, biosample, "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz") for biosample in methods_config.loc[method, 'biosamples']] for method in config['methods']])
 enrichmentTables_distance=  [os.path.join(config["outDir"], method, "enrichmentTables", f"enrichmentTable.{distance_min}to{distance_max}Kb.tsv") for distance_min, distance_max in zip(config["distances_min"], config["distances_max"]) for method in config['methods']]
-predTables_distance = flatten([[os.path.join(config["outDir"], method, "predictionTables", f"GTExTissue{tissue}.Biosample{biosample}.byDistance.tsv") for tissue, biosample in zip(methods_config.loc[method, "GTExTissue_map"], methods_config.loc[method, "biosample_map"])]for method in config['methods']])
-predTables_threshold = flatten([[os.path.join(config["outDir"], method, "predictionTables", f"GTExTissue{tissue}.Biosample{biosample}.byThreshold.tsv") for tissue, biosample in zip(methods_config.loc[method, "GTExTissue_map"], methods_config.loc[method, "biosample_map"])] for method in config['methods']])
 enrichmentRecall = flatten([[os.path.join(config["outDir"], method, "enrichmentRecallTables", f"GTExTissue{tissue}.Biosample{biosample}.tsv") for tissue, biosample in zip(methods_config.loc[method, "GTExTissue_map"], methods_config.loc[method, "biosample_map"])] for method in config['methods']])

@@ -1,3 +1,0 @@
-biosample	predictionFile	GTExTissue
-K562	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/ABC/dnase_h3k27ac_intactHiC/K562/Predictions/EnhancerPredictionsAllPutative.tsv.gz	Whole_Blood,Spleen
-GM12878	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/ABC/dnase_h3k27ac_intactHiC/GM12878/Predictions/EnhancerPredictionsAllPutative.tsv.gz	Cells_EBV-transformed_lymphocytes

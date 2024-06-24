@@ -102,9 +102,14 @@ calcs$log_CI_enr_high = with(calcs, log_enr + z*SE_log_enr)
 calcs$CI_enr_low = exp(calcs$log_CI_enr_low)
 calcs$CI_enr_high = exp(calcs$log_CI_enr_high)
 
+# significance (from Jesse's CredibleSetTools.R)
+calcs$p = with(calcs, mapply(FUN=phyper, x1, n1, n2, x1+x2, log.p=FALSE, lower.tail=FALSE))
+calcs$p.adjust = p.adjust(calcs$p, method="bonferroni")
+
 enrMatrix_all$CI_enr_low = calcs$CI_enr_low
 enrMatrix_all$CI_enr_high = calcs$CI_enr_high
 enrMatrix_all$SE_log_enr = calcs$SE_log_enr
+enrMatrix_all$p_adjust_enr = calcs$p.adjust
   
 ## write output
 fwrite(enrMatrix_all, file=outFile, sep="\t", quote=F, row.names=F, col.names=T)

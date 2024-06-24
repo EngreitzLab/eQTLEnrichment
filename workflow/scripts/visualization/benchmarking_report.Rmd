@@ -154,7 +154,7 @@ colors = c("#f6eff7","#bdc9e1", "#67a9cf","#1c9099", "#016c59")
 for (i in 1:length(methods)) {
    cat("  \n###",  methods[i], "  \n")
    table.current = read.table(enrMatrices.CRISPR.files[i], header=TRUE, fill=TRUE) %>% drop_na()
-   max.color = ceiling(quantile(table.current$enrichment, 0.90))
+   max.color = max(table.current$enrichment)
    lims = c(0, max.color)
    hm.df = dplyr::select(table.current, Biosample, GTExTissue, enrichment)
    colnames(hm.df) = c('name','variable','value')

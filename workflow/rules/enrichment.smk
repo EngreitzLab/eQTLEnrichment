@@ -23,7 +23,7 @@ rule compute_count_matrix_by_distance:
 		threshold = lambda wildcards: methods_config.loc[wildcards.method, "threshold"],
 		biosamples = lambda wildcards: methods_config.loc[wildcards.method, "biosamples"]
 	output:
-		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrices", "count_matrix.{distance_min}to{distance_max}Kb.tsv")
+		countMatrix = temp(os.path.join(config["outDir"], "{method}", "countMatrices", "count_matrix.{distance_min}to{distance_max}Kb.tsv"))
 	resources:
 		mem_mb = determine_mem_mb
 	conda:
@@ -41,7 +41,7 @@ rule compute_count_matrix_by_threshold:
 	params:
 		biosamples = lambda wildcards: methods_config.loc[wildcards.method, "biosamples"],
 	output:
-		countMatrix = os.path.join(config["outDir"], "{method}", "countMatrices", "count_matrix.acrossThresholds.tsv")
+		countMatrix = temp(os.path.join(config["outDir"], "{method}", "countMatrices", "count_matrix.acrossThresholds.tsv"))
 	resources:
 		mem_mb = determine_mem_mb
 	conda:
@@ -59,7 +59,8 @@ rule compute_enrichment_matrix_by_distance:
 	params:
 		biosamples = lambda wildcards: methods_config.loc[wildcards.method, "biosamples"],
 		threshold = lambda wildcards: methods_config.loc[wildcards.method, "threshold"],
-		distances_max = config["distances_max"]
+		distances_max = config["distances_max"],
+		thresholdPval = config["thresholdPval"]
 	output: 
 		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.{distance_min}to{distance_max}Kb.tsv")
 	resources:
@@ -79,7 +80,8 @@ rule compute_enrichment_matrix_by_threshold:
 		map = os.path.join(config["outDir"], "{method}", "intermediate", "GTExTissueBiosampleMap.tsv"),
 		commonVarInt = lambda wildcards: [os.path.join(config["outDir"], wildcards.method, "biosamples", biosample, "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz") for biosample in methods_config.loc[wildcards.method, "biosamples"]]
 	params:
-		biosamples = lambda wildcards: methods_config.loc[wildcards.method, "biosamples"]
+		biosamples = lambda wildcards: methods_config.loc[wildcards.method, "biosamples"],
+		thresholdPval = config["thresholdPval"]
 	output: 
 		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.acrossThresholds.tsv.gz")
 	resources:

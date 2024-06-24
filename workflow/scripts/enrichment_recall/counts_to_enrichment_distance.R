@@ -14,6 +14,7 @@ countFile = (snakemake@input$countMatrix)
 bgCommonVar_file = (snakemake@input$commonVarCount)
 commonVarInt_files = (snakemake@input$commonVarInt)
 biosamples = (snakemake@params$biosamples) %>% strsplit(" ") %>% unlist()
+sign_threshold = snakemake@params$thresholdPval %>% as.numeric()
 varPerGTExTissueFile = (snakemake@input$variantsPerGTExTissueByDist)
 outFile = (snakemake@output$enrichmentTable)
 
@@ -54,7 +55,7 @@ enrMatrix$enrichment = enrMatrix$nVariantsOverlappingEnhancers/enrMatrix$nVarian
 
 ## stats about risk ratio (RR) aka enrichment
 # calculate CI of RR and SE(log RR); see: https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_confidence_intervals/bs704_confidence_intervals8.html
-z = 1.96 # for 95% CI
+z = qnorm(sign_threshold/2, lower.tail=FALSE) # e.g. 1.96 for p=0.05
 calcs = enrMatrix
 calcs$n1 = calcs$nVariantsGTExTissue
 calcs$x1 = calcs$nVariantsOverlappingEnhancers

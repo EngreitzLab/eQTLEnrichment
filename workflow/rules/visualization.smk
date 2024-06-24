@@ -69,6 +69,8 @@ rule plot_enrichment_with_ci:
 	input:
 		colorPalette = os.path.join(config["outDir"], "plots", "colorPalette.tsv"),
 		enrichmentRecall_files = lambda wildcards: get_table_files(wildcards.GTExTissue)
+	params:
+		thresholdPval = config["thresholdPval"]
 	output:
 		enr_at_recall = os.path.join(config["outDir"],  "plots", "enrichmentAtRecall", "enrichments.Recall{recall}.GTExTissue{GTExTissue}.pdf"),
 		enr_at_recall_table = os.path.join(config["outDir"],  "plots", "enrichmentAtRecall", "enrichments.Recall{recall}.GTExTissue{GTExTissue}.tsv"),

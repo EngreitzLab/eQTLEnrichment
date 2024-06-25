@@ -133,7 +133,7 @@ pred.dist = dplyr::filter(pred.all, distance_max==30000)
 col_overlap = colnames(enr.dist)[colnames(enr.dist) %in% colnames(pred.dist)]
 df.dist = inner_join(enr.dist, pred.dist, by=col_overlap)
 
-x_label = paste0("Recall (fraction of variants overlapping variant linked to eGene)\n", df.dist$count[1])
+x_label = paste0("Recall (fraction of variants overlapping enhancer linked to eGene)\n", df.dist$count[1])
 g = ggplot(df.dist, aes(x=recall.linking, y=log10(enrichment), color=pred_name_long)) +
 	geom_point(alpha=0.75) +
 	xlab(x_label) + ylab("log10 enrichment (eQTLs vs. common variants)") +

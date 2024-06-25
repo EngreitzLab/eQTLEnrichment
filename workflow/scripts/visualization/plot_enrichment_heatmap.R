@@ -48,16 +48,16 @@ main <- function() {
     # heat map alone
 	just_enr = ggplot(enr, aes(x=GTExTissue, y=Biosample, fill=enrichment)) + 
 		geom_tile() +
-		geom_text(aes(label = label), size=6) +
-		scale_fill_gradientn(colors=colors, oob=scales::squish, na.value="#FFFFFF", limits=lims, name="Enrichment") +
+		#geom_text(aes(label = label), size=6) + # remove stars, too much significance
+		scale_fill_gradientn(colors=colors, oob=scales::squish, na.value=na_color, limits=lims, name="Enrichment") +
 		theme_minimal() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_text(angle=60, hjust=1),
 			legend.position='top',  legend.direction='horizontal', legend.text=element_text(size=7), legend.title=element_text(size=7))
 		
 	# plots for grid
 	enr_grid  = ggplot(enr, aes(x=GTExTissue, y=Biosample, fill=enrichment)) + 
 		geom_tile() +
-		geom_text(aes(label = label), size=6) +
-		scale_fill_gradientn(colors=colors, oob=scales::squish, na.value="#FFFFFF", limits=lims, name="Enrichment") +
+		#geom_text(aes(label = label), size=6) +
+		scale_fill_gradientn(colors=colors, oob=scales::squish, na.value=na_color, limits=lims, name="Enrichment") +
 		theme_minimal() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_blank(),
 			legend.position='top',  legend.direction='horizontal', legend.text=element_text(size=7), legend.title=element_text(size=7))
 

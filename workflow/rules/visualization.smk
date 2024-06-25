@@ -87,7 +87,7 @@ enrichmentTables_distance=  [os.path.join(config["outDir"], method, "enrichmentT
 predTables_distance = [os.path.join(config["outDir"], method, "recallTables", "recallTable.byDistance.tsv") for method in config['methods']]
 maps = [os.path.join(config["outDir"], method, "intermediate", "GTExTissueBiosampleMap.tsv") for method in config["methods"]]
 
-rule plot_thresholded_performance_comparison:
+rule plot_thresholded_matched_performance_comparison:
 	input:
 		enrichmentTable_files = enrichmentTables_distance,
 		predTable_files = predTables_distance,
@@ -175,7 +175,6 @@ rule plot_recall_heatmaps:
 	script:
 		os.path.join(config["codeDir"], "visualization", "plot_recall_heatmap.R")
 
-
 # html report
 rule generate_html_report:
 	input:
@@ -184,6 +183,7 @@ rule generate_html_report:
 		predictionMetrics = os.path.join(config["outDir"], "plots", "allMatchedPredictionMetrics.tsv"),
 		er_combined = expand(os.path.join(config["outDir"],  "plots", "enrichmentRecall", "enrichmentRecall.GTExTissue{GTExTissue}.tsv"), GTExTissue=GTExTissues_plus_all),
 		enrMatrices_CRISPRthresh = expand(os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.0to30000Kb.tsv"), method=config["methods"]),
+		recallTables_CRISPRthresh = expand(os.path.join(config["outDir"], "{method}", "recallTables", "recallTable.byDistance.tsv"), method=config["methods"]),
 		nVariants = os.path.join(config["outDir"], "plots", "avgVariantsPerTissue.tsv")
 	params:
 		methods = config["methods"],

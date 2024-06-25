@@ -58,8 +58,8 @@ The pipeline requires two config files. The required inputs are outlined below.
    - **boolean:** `TRUE` if this is a binary 0 or 1 predictor, otherwise `FALSE`
 
 ## Works-in-progress
-- Edit terminology in configuration, code, file names to not be specific to GTEx tissues (replace with "eQTL biosample")
+- Edit terminology in configuration, code, file names to not be specific to GTEx (replace "GTEx tissue" with "eQTL biosample")
 - Implement benchmarking of groups of prediction biosamples against a single eQTL biosamples to better map to hetergenous tissues
-- Integrate computations fro enrichment and recall into a single function
+- Integrate computations from enrichment and recall into a single function
 - Implement baseline predictors computed internally (e.g. distance to TSS, random expressed gene with 500kb)
 - Review/improve the "enrichment at recall" analysis

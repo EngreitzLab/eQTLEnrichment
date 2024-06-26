@@ -59,12 +59,15 @@ df$tissue = factor(df$tissue, levels=to_order$tissue, ordered=TRUE)
 df$distance_label = factor(df$distance_label, levels=dist$distance_label, ordered=TRUE)
 
 g=ggplot(data=df, aes(x=tissue, y=var_count, fill=distance_label)) +
+	geom_hline(yintercept=50, linetype="dashed", color="#96a0b3") +
 	geom_bar(position="stack", stat="identity") +
 	labs(x="", y="Number of eQTLs above PIP threshold", fill="eVariant-eGene distance") +
 	scale_fill_manual(values=cp) +
 	theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8)) +
 	coord_flip() 
 
-ggsave(out_plot, g, width=6, height=4)
+n_tissues = length(unique(df$tissue))
+ht = max(4, n_tissues/12)
+ggsave(out_plot, g, width=6, height=ht)
 write.table(df, out_table, quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
 

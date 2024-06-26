@@ -15,8 +15,7 @@ out_sign = snakemake@output$sign_table
 cpFilePlotting = snakemake@input$colorPalette
 cp = fread(cpFilePlotting, sep="\t") # method, pred_name_long, hex
 recall.this = snakemake@wildcards$recall %>% as.numeric()
-
-sign_threshold = 0.05
+sign_threshold = snakemake@params$thresholdPval %>% as.numeric()
 
 # gather tables
 for (i in 1:length(files)){
@@ -77,7 +76,6 @@ if (nrow(df)>1) {
   df_p_val = data.frame(t(combn(df$key, 2)))
   colnames(df_p_val) = c("group1", "group2")
   df_p_val$p = 0
-  df_p_val$y.position = 0
 
   # iterate through rows
   for (i in 1:nrow(df_p_val)) {
@@ -90,6 +88,8 @@ if (nrow(df)>1) {
     p = pnorm(-(abs(z))) * 2 # two-sided p-value
     df_p_val$p[i] = p
   }
+  df_p_val$p_adjust = p.adjust(df_p_val$p, method="bonferroni")
+  df_p_val$significant = df_p_val$p_adjust < sign_threshold
   print(df_p_val)
 
   ## plotting

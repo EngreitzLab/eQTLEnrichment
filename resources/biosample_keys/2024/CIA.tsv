@@ -1,3 +1,0 @@
-biosample	predictionFile	GTExTissue
-K562	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/CIA/processed/K562_EnhancerPredictionsAllPutative_CTCF_HiC_CIA.predictions.txt.gz	Whole_Blood,Spleen
-GM12878	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/CIA/processed/GM12878_EnhancerPredictionsAllPutative_CTCF_HiC_CIA.predictions.txt.gz	Cells_EBV-transformed_lymphocytes

@@ -11,15 +11,15 @@ main <- function() {
 	# input data
 	enrTableFile = snakemake@input$enrichmentTable # 0-30000kb table
 	enhSizeFile = snakemake@input$enhancerSizes # per method; biosample / base pairs
-	mapFile= snakemake@input$map
+	p_threshold = snakemake@params$p_threshold %>% as.numeric()
 	outFile_combined = snakemake@output$outFile_combined
 	outFile_solo = snakemake@output$outFile_alone
 
-	enr = fread(enrTableFile, sep="\t", header=TRUE) %>% drop_na()
+	enr = fread(enrTableFile, sep="\t", header=TRUE)
+	enr = dplyr::filter(enr, nVariantsGTExTissue>20, is.finite(enrichment))
 	enr$Biosample[enr$Biosample=="Cells_EBV-transformed_lymphocytes"] = "Cells_EBV_transformed_lymphocytes"
 	enhSizes = fread(enhSizeFile, sep="\t", header=TRUE) 
 	colnames(enhSizes) = c("Biosample", "enhBp") 
-	map = fread(mapFile, sep="\t", header=TRUE)
 
     # add base pairs per biosample
 	enr = left_join(enr, enhSizes, by="Biosample")
@@ -28,8 +28,8 @@ main <- function() {
     # cluster to get orders
     M = dplyr::select(enr, Biosample, GTExTissue, enrichment) %>% distinct() %>%
 		pivot_wider(names_from=GTExTissue, values_from = enrichment) %>% column_to_rownames("Biosample") %>% drop_na()
-	order_tissues =  hclust(dist(1-cor(M)), method = "ward.D")$order
-	order_biosamples = hclust(dist(1-cor(t(M))), method = "ward.D")$order
+	order_tissues =  hclust(dist(1-cor(M)), method = "ward.D2")$order
+	order_biosamples = hclust(dist(1-cor(t(M))), method = "ward.D2")$order
 	enr$Biosample = factor(enr$Biosample, levels=rownames(M)[order_biosamples], ordered=TRUE)
 	enr$GTExTissue = factor(enr$GTExTissue, levels=colnames(M)[order_tissues], ordered=TRUE)
 
@@ -37,28 +37,27 @@ main <- function() {
     #colors = c("#c5373d", "#f7f7f7", "#006eae") # red-white-blue
 	colors = c("#f6eff7","#bdc9e1", "#67a9cf","#1c9099", "#016c59")
 	na_color = "#ffffff"
-	max_value = round(quantile(enr$enrichment, 0.9), 1) # 90th percentile enrichment
+	#max_value = round(quantile(enr$enrichment, 0.9), 1) # 90th percentile enrichment
+	max_value = max(enr$enrichment)
 	lims = c(0, max_value) # or 0,1? also try not log?
 	ht = ifelse(length(rownames(M))>50, 16, 8)
 
-	# mark intersections labeled as "matches"
-	enr$key = paste0(enr$GTExTissue, ".", enr$Biosample)
-	map$key = paste0(map$tissue, ".", map$biosample)
-	enr = mutate(enr, label = ifelse(key %in% map$key, "*", ""))
+	# mark intersections with significant enrichments
+	enr = mutate(enr, label = ifelse(p_adjust_enr<p_threshold, "*", ""))
 
     # heat map alone
 	just_enr = ggplot(enr, aes(x=GTExTissue, y=Biosample, fill=enrichment)) + 
 		geom_tile() +
-		geom_text(aes(label = label), size=6) +
-		scale_fill_gradientn(colors=colors, oob=scales::squish, na.value="#FFFFFF", limits=lims, name="Enrichment") +
+		#geom_text(aes(label = label), size=6) + # remove stars, too much significance
+		scale_fill_gradientn(colors=colors, oob=scales::squish, na.value=na_color, limits=lims, name="Enrichment") +
 		theme_minimal() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_text(angle=60, hjust=1),
 			legend.position='top',  legend.direction='horizontal', legend.text=element_text(size=7), legend.title=element_text(size=7))
 		
 	# plots for grid
 	enr_grid  = ggplot(enr, aes(x=GTExTissue, y=Biosample, fill=enrichment)) + 
 		geom_tile() +
-		geom_text(aes(label = label), size=6) +
-		scale_fill_gradientn(colors=colors, oob=scales::squish, na.value="#FFFFFF", limits=lims, name="Enrichment") +
+		#geom_text(aes(label = label), size=6) +
+		scale_fill_gradientn(colors=colors, oob=scales::squish, na.value=na_color, limits=lims, name="Enrichment") +
 		theme_minimal() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_blank(),
 			legend.position='top',  legend.direction='horizontal', legend.text=element_text(size=7), legend.title=element_text(size=7))
 

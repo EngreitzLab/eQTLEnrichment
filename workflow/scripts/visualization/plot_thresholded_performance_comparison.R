@@ -19,6 +19,7 @@ cp = fread(snakemake@input$colorPalette, sep="\t") # method, pred_name_long, hex
 distances_min = snakemake@params$distances_min %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
 distances_max = snakemake@params$distances_max %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
 out_plot = snakemake@output$outFile
+out_scatter = snakemake@output$outScatter
 out_enrTable= snakemake@output$enrAllTable
 out_predMetrics = snakemake@output$predictionMetrics
 
@@ -47,19 +48,25 @@ for (i in 1:length(enrTable_files)){
 
 # get stats, edit names, define labels 
 enr.all = enr.all[order(enr.all$enrichment), ]
-max.enr = max(enr.all$enrichment[is.finite(enr.all$enrichment)])
+enr.filt = dplyr::filter(enr.all, nVariantsGTExTissue>20, is.finite(enrichment))
+max.enr = max(enr.filt$enrichment)
 enrLabel = 'Enrichment\n(GTEx variants/all common variants)'
 enr.all = left_join(enr.all, cp, by="method")
 enr.all$pred_name_long = factor(enr.all$pred_name_long, levels=cp$pred_name_long, ordered=TRUE)
 
 ## aggregate and process prediction metrics
 for (i in 1:length(predTable_files)){
+	map.this = fread(map_files[i])
+	map.this$key = paste0(map.this$tissue, ".", map.this$biosample)
 	temp = fread(file = predTable_files[i], header = TRUE, sep="\t")  
+	temp$tissue.biosample =  paste0(temp$GTExTissue, ".", temp$Biosample)
+	temp = dplyr::filter(temp, tissue.biosample %in% map.this$key)
+
 	if(i==1){pred.all = temp} else {
 		pred.all = rbind(pred.all, temp)
 	}
 }
-pred.all = left_join(pred.all, cp, by="method")
+pred.all = left_join(pred.all, cp, by="method") %>% dplyr::filter(total.variants>20)
 pred.all$pred_name_long = factor(pred.all$pred_name_long, levels=cp$pred_name_long, ordered=TRUE)
 
 ## make y-axis labels (distance range, min-max variants)
@@ -90,11 +97,12 @@ names(pred_colors) = cp$pred_name_long
 # pred.all$pred_name_long = factor(pred.all$pred_name_long, levels=ordered.methods)
 
 ### GENERATE PLOTS
+
 ## enrichment
 enr.boxplot = ggplot(enr.all, aes(x = distance.label, y = enrichment, fill = pred_name_long)) +
   geom_boxplot(linewidth = 0.5, outlier.size=0.75) +
   coord_flip() +
-  theme_minimal() + ylab("Enrichment\n(GTEx variants/all common variants)") + xlab('') +
+  theme_minimal() + ylab("Enrichment\n (eQTLs vs. common variants)") + xlab('') +
   scale_fill_manual(values=pred_colors) +
   theme(legend.position = 'none') +
   ggtitle("Enrichment of variants\nin predicted enhancers")
@@ -104,21 +112,34 @@ sr.overlaps = ggplot(pred.all, aes(x = distance.label, y = recall.total, fill=pr
   geom_boxplot(linewidth = 0.5, outlier.size=0.75) +
   scale_fill_manual(values=pred_colors) +
   theme_minimal() + ggtitle('Variants overlapping\npredicted enhancers') + 
-  ylab('Fraction of GTEx variants') + xlab('') +
+  ylab('Fraction of variants') + xlab('') +
   theme(axis.text.y = element_blank(), legend.position='none') + coord_flip()
 
 ## linked to correct eGene
 sr.predicted = ggplot(pred.all, aes(x = distance.label, y = correctGene.ifOverlap, fill=pred_name_long)) +
   geom_boxplot(linewidth = 0.5, outlier.size=0.75) +
-  scale_fill_manual(values=pred_colors, name="Predictor") +
+  scale_fill_manual(values=pred_colors, name="Predictor", guide = guide_legend(reverse = TRUE)) +
   theme_minimal() + ggtitle('Variants linked to correct gene,\ngiven overlapping predicted enhancer') + xlab('') +
-  ylab('Fraction of GTEx variants\noverlapping predicted enhancers') +
+  ylab('Fraction of variants\noverlapping predicted enhancers') +
   theme(axis.text.y = element_blank()) + coord_flip()
 
 ## save final plots
 pdf(file=out_plot, width=12, height=5)
 	all.tissues =  ggarrange(enr.boxplot, sr.overlaps, sr.predicted, nrow=1, ncol=3)
 dev.off()
+
+enr.dist = dplyr::filter(enr.all, distance_max==30000)
+pred.dist = dplyr::filter(pred.all, distance_max==30000)
+col_overlap = colnames(enr.dist)[colnames(enr.dist) %in% colnames(pred.dist)]
+df.dist = inner_join(enr.dist, pred.dist, by=col_overlap)
+
+x_label = paste0("Recall (fraction of variants overlapping enhancer linked to eGene)\n", df.dist$count[1])
+g = ggplot(df.dist, aes(x=recall.linking, y=log10(enrichment), color=pred_name_long)) +
+	geom_point(alpha=0.75) +
+	xlab(x_label) + ylab("log10 enrichment (eQTLs vs. common variants)") +
+	scale_color_manual(values=pred_colors, name="Predictor") +
+	theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), legend.position='right')
+ggsave(out_scatter, g, height=4, width=6)
 
 pred.all = dplyr::select(pred.all, -distance.label)
 enr.all = dplyr::select(enr.all, -distance.label)

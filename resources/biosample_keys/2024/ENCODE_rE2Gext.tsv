@@ -1,3 +1,0 @@
-biosample	predictionFile	GTExTissue
-K562	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/ENCODE-rE2G/additional_models/Extended/K562/encode_e2g_predictions.tsv.gz	Whole_Blood,Spleen
-GM12878	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/ENCODE-rE2G/additional_models/Extended/GM12878/encode_e2g_predictions.tsv.gz	Cells_EBV-transformed_lymphocytes

@@ -4,7 +4,7 @@ rule make_gene_universes:
  		methodGeneUniverse = lambda wildcards: methods_config.loc[wildcards.method, "geneUniverse"],
 		GTExGeneUniverse = config["GTExGeneUniverse"]
 	output:
-		geneUniverse = os.path.join(config["outDir"], "{method}", "intermediate", "geneUniverse.bed.gz")
+		geneUniverse = temp(os.path.join(config["outDir"], "{method}", "intermediate", "geneUniverse.bed.gz"))
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	resources:
@@ -31,7 +31,7 @@ rule process_predictions:
 		scoreCol = lambda wildcards: methods_config.loc[wildcards.method, "score_col"],
 		inversePred = lambda wildcards: methods_config.loc[wildcards.method, "inverse_predictor"]
 	output:
-		predictionsSorted = os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
+		predictionsSorted = temp(os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz"))
 	resources:
 		mem_mb = determine_mem_mb
 	conda: 
@@ -65,9 +65,9 @@ rule filter_all_variants:
 		chrSizes = config["chrSizes"],
 		thresholdPIP = config["thresholdPIP"]
 	output: 
-		filteredGTExVar = os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.tsv.gz"),
-		partitionDistalNoncoding = os.path.join(config["outDir"], "variants", "Partition.distalNoncoding.bed"),
-		commonVarDistalNoncoding = os.path.join(config["outDir"], "variants", "distalNoncodingBackgroundSNPs.bed.gz"),
+		filteredGTExVar = temp(os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.tsv.gz")),
+		partitionDistalNoncoding = temp(os.path.join(config["outDir"], "variants", "Partition.distalNoncoding.bed")),
+		commonVarDistalNoncoding = temp(os.path.join(config["outDir"], "variants", "distalNoncodingBackgroundSNPs.bed.gz"))
 	resources:
 		mem_mb = determine_mem_mb
 	conda: 
@@ -108,7 +108,7 @@ rule add_distance_to_variants:
 		TSS = config['TSS'],
 		distances = config["distances"]
 	output:
-		GTExVariantsDistance = os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.withDistance.tsv.gz")
+		GTExVariantsDistance = temp(os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.withDistance.tsv.gz"))
 	resources:
 		mem_mb = determine_mem_mb
 	conda:
@@ -124,7 +124,7 @@ rule filter_variants_to_gene_universe:
 		GTExVariantsDistance = os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.withDistance.tsv.gz"),
 		geneUniverse = os.path.join(config["outDir"], "{method}", "intermediate", "geneUniverse.bed.gz")
 	output:
-		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "intermediate", "GTExVariants.filteredForMethod.tsv.gz")
+		filteredGTExVariantsFinal = temp(os.path.join(config["outDir"], "{method}", "intermediate", "GTExVariants.filteredForMethod.tsv.gz"))
 	resources:
 		mem_mb = determine_mem_mb
 	shell:
@@ -146,7 +146,7 @@ rule intersect_variants_predictions:
 	params: 
 		chrSizes = config["chrSizes"]
 	output:
-		variantsPredictionsInt = os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz")
+		variantsPredictionsInt = temp(os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "GTExVariants-enhancerPredictionsInt.tsv.gz"))
 	resources:
 		mem_mb = determine_mem_mb
 	conda: 
@@ -167,7 +167,7 @@ rule intersect_bg_variants_predictions:
 	params:
 		chrSizes = config["chrSizes"]
 	output:
-		commonVarPredictionsInt = os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz")
+		commonVarPredictionsInt = temp(os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz")),
 	resources:
 		mem_mb = determine_mem_mb
 	conda: 
@@ -203,7 +203,7 @@ rule generate_quantile_threshold_span:
 		biosamples = lambda wildcards: methods_config.loc[wildcards.method, "biosamples"],
 		binary = lambda wildcards: methods_config.loc[wildcards.method, "boolean"]
 	output:
-		outFile = os.path.join(config["outDir"], "{method}", "intermediate", "thresholdSpan.tsv")
+		outFile = temp(os.path.join(config["outDir"], "{method}", "intermediate", "thresholdSpan.tsv"))
 	resources:
 		mem_mb = determine_mem_mb
 	conda:

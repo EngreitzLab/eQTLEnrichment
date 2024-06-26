@@ -49,12 +49,13 @@ if (length(methods) < length(unique(cp$key))) {
 }
 
 df = dplyr::select(df, -hex) %>% left_join(cp, by=c("key", "method")) # for saving later!
+
 # data for binary predictors to be plotted as points
 df$key = factor(df$key)
 df_plot = dplyr::filter(df, recall.linking>0) # remove (0,0) points
 
-df_binary = dplyr::filter(df_plot, nPoints==1)
-df_plot = dplyr::filter(df_plot, nPoints>1)
+df_binary = dplyr::filter(df_plot, nPoints==2) %>% dplyr::filter(threshold==1)
+df_plot = dplyr::filter(df_plot, nPoints>2)
 
 # plotting params
 ylim = 50

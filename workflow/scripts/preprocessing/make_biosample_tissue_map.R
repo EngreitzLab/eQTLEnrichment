@@ -1,9 +1,7 @@
 suppressPackageStartupMessages({
   library(dplyr)
-  library(tidyr)
   library(stringr)
   library(data.table)})
-
 
 main <- function() {
   biosamples = (snakemake@params$biosamples) %>% as.character() %>% strsplit(" ") %>% unlist() 

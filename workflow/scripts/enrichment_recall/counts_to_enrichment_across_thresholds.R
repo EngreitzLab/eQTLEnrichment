@@ -10,6 +10,7 @@ method = (snakemake@wildcards$method)
 thresholdSpan = (read.table(snakemake@input$thresholdSpan, sep='\t', header=FALSE)) %>% setNames("threshold")
 countFile = (snakemake@input$countMatrix)
 biosamples = (snakemake@params$biosamples) %>% strsplit(" ") %>% unlist()
+sign_threshold = snakemake@params$thresholdPval %>% as.numeric()
 map = (snakemake@input$map)
 varPerGTExTissueFile = (snakemake@input$variantsPerGTExTissue)
 commonVarInt_files = (snakemake@input$commonVarInt)
@@ -88,7 +89,7 @@ enrMatrix_all = rbind(enrMatrix_all, summ)
 
 ## stats about risk ratio (RR) aka enrichment
 # calculate CI of RR and SE(log RR); see: https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_confidence_intervals/bs704_confidence_intervals8.html
-z = 1.96 # for 95% CI
+z = qnorm(sign_threshold/2, lower.tail=FALSE) # e.g. 1.96 for p=0.05
 calcs = enrMatrix_all
 calcs$n1 = calcs$nVariantsGTExTissue
 calcs$x1 = calcs$nVariantsOverlappingEnhancers
@@ -102,9 +103,14 @@ calcs$log_CI_enr_high = with(calcs, log_enr + z*SE_log_enr)
 calcs$CI_enr_low = exp(calcs$log_CI_enr_low)
 calcs$CI_enr_high = exp(calcs$log_CI_enr_high)
 
+# significance (from Jesse's CredibleSetTools.R)
+calcs$p = with(calcs, mapply(FUN=phyper, x1, n1, n2, x1+x2, log.p=FALSE, lower.tail=FALSE))
+calcs$p.adjust = p.adjust(calcs$p, method="bonferroni")
+
 enrMatrix_all$CI_enr_low = calcs$CI_enr_low
 enrMatrix_all$CI_enr_high = calcs$CI_enr_high
 enrMatrix_all$SE_log_enr = calcs$SE_log_enr
+enrMatrix_all$p_adjust_enr = calcs$p.adjust
   
 ## write output
 fwrite(enrMatrix_all, file=outFile, sep="\t", quote=F, row.names=F, col.names=T)

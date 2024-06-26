@@ -10,7 +10,7 @@ out.file.all = (snakemake@output$variantsPerTissue)
 variants = read.table(file=var.file, header=FALSE, sep='\t') %>%
   setNames(c("chr", "start", "end", "variant_id", "gene", "tissue", "PIP", "distance_bin")) 
 
-# calculate n variants in diff categories
+# calculate n variants in diff categories - NOTE, this is the number of variant "locations", not eVariant-eGene pairs
 all_tissues = unique(variants$tissue)
 df = data.frame(tissue=all_tissues)
 

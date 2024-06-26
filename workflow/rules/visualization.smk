@@ -14,7 +14,7 @@ rule generate_color_palette:
 # gather data for enrichment recall curve per GTEx tissue/biosample match per method
 rule gather_enrichment_recall:
 	input: 
-		predTable = os.path.join(config["outDir"], "{method}", "predictionTables", "GTExTissue{GTExTissue}.Biosample{biosample}.byThreshold.tsv"),
+		predTable = os.path.join(config["outDir"], "{method}", "recallTables", "recallTable.acrossThresholds.tsv.gz"),
 		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.acrossThresholds.tsv.gz"),
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
@@ -26,10 +26,10 @@ rule gather_enrichment_recall:
 		os.path.join(config["codeDir"], "enrichment_recall", "gather_enrichment_recall.R")
 
 
-# make table for "aggregeate" enrichment/recall for all tissue/biosample matches per method
+# make table for "aggregate" enrichment/recall for all tissue/biosample matches per method
 rule gather_enrichment_recall_aggregate:
 	input: 
-		predTables = lambda wildcards:  [os.path.join(config["outDir"], wildcards.method, "predictionTables", f"GTExTissue{tissue}.Biosample{biosample}.byThreshold.tsv") for tissue, biosample in zip(methods_config.loc[wildcards.method, "GTExTissue_map"], methods_config.loc[wildcards.method, "biosample_map"])],
+		predTable = os.path.join(config["outDir"], "{method}", "recallTables", "recallTable.acrossThresholds.tsv.gz"),
 		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.acrossThresholds.tsv.gz"),
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
@@ -39,7 +39,6 @@ rule gather_enrichment_recall_aggregate:
 		mem_mb = determine_mem_mb
 	script:
 		os.path.join(config["codeDir"], "enrichment_recall", "gather_aggregate_enrichment_recall.R")	
-
 
 # combined enrichment recall curves-- one per GTEx tissue-- across methods
 def get_table_files(GTExTissue):
@@ -70,6 +69,8 @@ rule plot_enrichment_with_ci:
 	input:
 		colorPalette = os.path.join(config["outDir"], "plots", "colorPalette.tsv"),
 		enrichmentRecall_files = lambda wildcards: get_table_files(wildcards.GTExTissue)
+	params:
+		thresholdPval = config["thresholdPval"]
 	output:
 		enr_at_recall = os.path.join(config["outDir"],  "plots", "enrichmentAtRecall", "enrichments.Recall{recall}.GTExTissue{GTExTissue}.pdf"),
 		enr_at_recall_table = os.path.join(config["outDir"],  "plots", "enrichmentAtRecall", "enrichments.Recall{recall}.GTExTissue{GTExTissue}.tsv"),
@@ -83,10 +84,10 @@ rule plot_enrichment_with_ci:
 
 # generate final comparison plot (triple boxplot)
 enrichmentTables_distance=  [os.path.join(config["outDir"], method, "enrichmentTables", f"enrichmentTable.{distance_min}to{distance_max}Kb.tsv") for distance_min, distance_max in zip(config["distances_min"], config["distances_max"]) for method in config['methods']]
-predTables_distance = flatten([[os.path.join(config["outDir"], method, "predictionTables", f"GTExTissue{tissue}.Biosample{biosample}.byDistance.tsv") for tissue, biosample in zip(methods_config.loc[method, "GTExTissue_map"], methods_config.loc[method, "biosample_map"])] for method in config['methods']])
-
+predTables_distance = [os.path.join(config["outDir"], method, "recallTables", "recallTable.byDistance.tsv") for method in config['methods']]
 maps = [os.path.join(config["outDir"], method, "intermediate", "GTExTissueBiosampleMap.tsv") for method in config["methods"]]
-rule plot_thresholded_performance_comparison:
+
+rule plot_thresholded_matched_performance_comparison:
 	input:
 		enrichmentTable_files = enrichmentTables_distance,
 		predTable_files = predTables_distance,
@@ -98,7 +99,8 @@ rule plot_thresholded_performance_comparison:
 	output:
 		outFile = os.path.join(config["outDir"], "plots", "thresholdedPerformanceComparison.pdf"),
 		enrAllTable = os.path.join(config["outDir"], "plots", "allMatchedEnrichments.tsv"),
-		predictionMetrics = os.path.join(config["outDir"], "plots", "allMatchedPredictionMetrics.tsv")
+		predictionMetrics = os.path.join(config["outDir"], "plots", "allMatchedPredictionMetrics.tsv"),
+		outScatter = os.path.join(config["outDir"], "plots", "allMatchedThresholdedPerformance.scatter.pdf")
 	resources:
 		mem_mb = determine_mem_mb
 	conda:
@@ -106,22 +108,23 @@ rule plot_thresholded_performance_comparison:
 	script:
 		os.path.join(config["codeDir"], "visualization", "plot_thresholded_performance_comparison.R")
 
-# plot all enrichments
-rule plot_all_thresholded_enrichments:
+# plot all thresholded enrichments + recalls
+rule plot_all_thresholded_metrics:
 	input:
 		enrichmentTable_files = enrichmentTables_distance,
+		predTable_files = predTables_distance,
 		colorPalette = os.path.join(config["outDir"], "plots", "colorPalette.tsv"),
 	params:
 		distances_min = config["distances_min"],
 		distances_max = config["distances_max"]
 	output:
-		outFile = os.path.join(config["outDir"], "plots", "allThresholdedEnrichments.pdf"),
+		outFile = os.path.join(config["outDir"], "plots", "allThresholdedEnrichmentRecall.byDistance.pdf"),
 	resources:
 		mem_mb = determine_mem_mb
 	conda:
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script:
-		os.path.join(config["codeDir"], "visualization", "plot_all_thresholded_enrichments.R")
+		os.path.join(config["codeDir"], "visualization", "plot_all_thresholded_enrichment_recall.R")
 
 # plot n variants per tissue
 rule plot_variants_per_tissue:
@@ -142,11 +145,12 @@ rule plot_variants_per_tissue:
 		os.path.join(config["codeDir"], "visualization", "plot_number_variants.R")
 
 # heatmaps
-rule plot_heatmaps:
+rule plot_enrichment_heatmaps:
 	input:
 		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.0to30000Kb.tsv"),
-		enhancerSizes =  os.path.join(config["outDir"], "{method}", "intermediate", "basesPerEnhancerSet.tsv"),
-		map = os.path.join(config["outDir"], "{method}", "intermediate", "GTExTissueBiosampleMap.tsv"),
+		enhancerSizes =  os.path.join(config["outDir"], "{method}", "intermediate", "basesPerEnhancerSet.tsv")
+	params:
+		p_threshold = config["thresholdPval"]
 	output:
 		outFile_combined =  os.path.join(config["outDir"], "plots", "enrichmentHeatmaps", "{method}.enrichmentHeatmap.withMetrics.pdf"),
 		outFile_alone = os.path.join(config["outDir"], "plots", "enrichmentHeatmaps", "{method}.enrichmentHeatmap.pdf")
@@ -157,6 +161,20 @@ rule plot_heatmaps:
 	script:
 		os.path.join(config["codeDir"], "visualization", "plot_enrichment_heatmap.R")
 
+rule plot_recall_heatmaps:
+	input:
+		recallTable = os.path.join(config["outDir"], "{method}", "recallTables", "recallTable.byDistance.tsv"),
+		enhancerSizes =  os.path.join(config["outDir"], "{method}", "intermediate", "basesPerEnhancerSet.tsv")
+	output:
+		outFile_combined =  os.path.join(config["outDir"], "plots", "recallHeatmaps", "{method}.recallHeatmap.withMetrics.pdf"),
+		outFile_alone = os.path.join(config["outDir"], "plots", "recallHeatmaps", "{method}.recallHeatmap.pdf")
+	resources:
+		mem_mb = determine_mem_mb
+	conda:
+		os.path.join(config["envDir"], "eQTLEnv.yml")
+	script:
+		os.path.join(config["codeDir"], "visualization", "plot_recall_heatmap.R")
+
 # html report
 rule generate_html_report:
 	input:
@@ -165,6 +183,7 @@ rule generate_html_report:
 		predictionMetrics = os.path.join(config["outDir"], "plots", "allMatchedPredictionMetrics.tsv"),
 		er_combined = expand(os.path.join(config["outDir"],  "plots", "enrichmentRecall", "enrichmentRecall.GTExTissue{GTExTissue}.tsv"), GTExTissue=GTExTissues_plus_all),
 		enrMatrices_CRISPRthresh = expand(os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.0to30000Kb.tsv"), method=config["methods"]),
+		recallTables_CRISPRthresh = expand(os.path.join(config["outDir"], "{method}", "recallTables", "recallTable.byDistance.tsv"), method=config["methods"]),
 		nVariants = os.path.join(config["outDir"], "plots", "avgVariantsPerTissue.tsv")
 	params:
 		methods = config["methods"],

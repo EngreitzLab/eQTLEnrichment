@@ -41,10 +41,13 @@ enr.all = fread(snakemake@input$enrAllTable, sep="\t")
 pred.all = fread(snakemake@input$predictionMetrics, sep="\t")
 ER.files = snakemake@input$er_combined %>% strsplit(" ") %>% unlist() # once per matched GTEx tissue
 enrMatrices.CRISPR.files = snakemake@input$enrMatrices_CRISPRthresh  %>% strsplit(" ") %>% unlist() # one per method
+recallTables.CRISPR.files = snakemake@input$recallTables_CRISPRthresh  %>% strsplit(" ") %>% unlist() # one per method, includes all distances
+
 nVariants = fread(snakemake@input$nVariants, sep="\t")
 
 # params
 cp = fread(snakemake@input$colorPalette, sep="\t") # method, pred_name_long, hex
+thresholdPIP = snakemake@params$thresholdPIP %>% as.numeric()
 distances_min = snakemake@params$distances_min %>% as.character %>% strsplit(" ") %>% unlist() %>% as.numeric()
 distances_max = snakemake@params$distances_max %>% as.character %>% strsplit(" ") %>% unlist() %>% as.numeric()
 methods = (snakemake@params$methods) %>% strsplit(" ") %>% unlist
@@ -86,7 +89,7 @@ names(cp_triple) = cp$pred_name_long
 enr.by.distance = ggplot(enr.all, aes(x = distance.label, y = enrichment, fill = pred_name_long)) +
   geom_boxplot() +
   coord_flip() +
-  theme_minimal() + ylab("Enrichment\n(GTEx variants/all common variants)") + xlab('') +
+  theme_minimal() + ylab("Enrichment\n(eQTL variants/all common variants)") + xlab('') +
   scale_fill_manual(values=cp_triple) +
   theme(legend.position = 'none') +
   ggtitle("Enrichment of variants\nin predicted enhancers")
@@ -96,7 +99,7 @@ recall.by.distance = ggplot(pred.all, aes(x = distance.label, y = recall.total, 
   geom_boxplot() +
   scale_fill_manual(values=cp_triple) +
   theme_minimal() + ggtitle('Variants overlapping\npredicted enhancers') + 
-  ylab('Fraction of GTEx variants') + xlab('') +
+  ylab('Fraction of eQTL variants') + xlab('') +
   theme(axis.text.y = element_blank(), legend.position='none') + coord_flip()
 
 ## GENE LINKING BY METHOD, STRATIFIED BY DISTANCE
@@ -104,15 +107,28 @@ linking.by.distance = ggplot(pred.all, aes(x = distance.label, y = correctGene.i
   geom_boxplot() +
   scale_fill_manual(values=cp_triple) +
   theme_minimal() + ggtitle('Variants linked to correct gene,\ngiven overlapping predicted enhancer') + xlab('') +
-  ylab('Fraction of GTEx variants\noverlapping predicted enhancers') +
+  ylab('Fraction of eQTL variants\noverlapping predicted enhancers') +
   theme(axis.text.y = element_blank()) + coord_flip()
+
+## ENR RECALL THRESH SCATTER
+enr.dist = dplyr::filter(enr.all, distance_max==30000)
+pred.dist = dplyr::filter(pred.all, distance_max==30000)
+col_overlap = colnames(enr.dist)[colnames(enr.dist) %in% colnames(pred.dist)]
+df.dist = inner_join(enr.dist, pred.dist, by=col_overlap)
+
+scatter_x = paste0("Recall (fraction of variants overlapping enhancer linked to eGene)\n", df.dist$count[1])
+scatter = ggplot(df.dist, aes(x=recall.linking, y=log10(enrichment), color=pred_name_long)) +
+	geom_point(alpha=0.75) +
+	xlab(scatter_x) + ylab("log10 enrichment (eQTLs vs. common variants)") +
+	scale_color_manual(values=cp_triple, name="Predictor") +
+	theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), legend.position='right')
 
 # VARIABLES FOR TEXT
 pred_name_longs = cp$pred_name_long
 ```
 
 - This report presents benchmarking results for the following E-G linking methods: `r pred_name_longs`
-- For distance stratified plots, eVariant-eGene distances were stratified at the following Kb values: `r distances`
+- For distance stratified plots, eVariant-eGene distances were stratified at the following kb values: `r distances`
 
 ```{r summary, echo=FALSE, fig.width=14, fig.cap=cap}
 
@@ -122,44 +138,50 @@ cap = "Boxplots showing enrichment (fraction of variants overlapping any enhance
 ```
 
 ---
-# GTEx fine-mapped eQTL variants
-The following analyses use the [version 8 GTEx Consortium data](https://science.sciencemag.org/content/369/6509/1318) to benchmark enhancer-gene prediction methods. This dataset was generated from 15,201 RNA-seq samples from 49 tissues of 838 postmortem donors, which were used to discover cis-eQTLs for 18,262 protein-coding and 5006 lincRNA genes. The eQTLs were fine-mapped by SuSiE to identify likely causal variants (Jacob Ulirsch and Hilary Finucane). The diversity of tissues represented offer a uniquely valuable resource to evaluate the cell-type specificity of enhancer-gene prediction methods. In the following analyses, we considered fine-mapped eQTL variants that met the following criteria:  
+# Fine-mapped eQTL variants
+This pipeline was initially developed to use the [version 8 GTEx Consortium data](https://science.sciencemag.org/content/369/6509/1318) to benchmark enhancer-gene prediction methods. This dataset was generated from 15,201 RNA-seq samples from 49 tissues of 838 postmortem donors, which were used to discover cis-eQTLs for 18,262 protein-coding and 5006 lincRNA genes. The eQTLs were fine-mapped by SuSiE to identify likely causal variants (Jacob Ulirsch and Hilary Finucane).
+We have also applied the pipeline with eQTL datasets curated from the [eQTL Catalogue release 7](https://www.ebi.ac.uk/eqtl/Data_access/), which encompasses the variants from GTEx and dozens of other bulk and single-cell studies. These variants are uniformly processed and finemapped with SuSiE.
 
+The diversity of cell-types and tissues represented by both resources offer a valuable opportunity to evaluate the cell-type specificity of enhancer-gene prediction methods. 
+
+In the following analyses, we considered fine-mapped eQTL variants from the provided dataset that met the following criteria:  
 - located in distal, noncoding regions of the genome  
-- in a credible set  
-- posterior threshold > 0.5  
+- posterior threshold > `r thresholdPIP`  
 - linked to a gene considered by a given prediction method 
-- linked to a highly-expressed gene for that tissue (median TPM > 1)  
+
+Other filters on variants we recommend applying when curating an input eQTL dataset are:
+- linked to a highly-expressed gene for that tissue (median TPM > 1)
+- in a credible set
 
 
 ```{r varPerTissue, echo=FALSE, fig.width=10, fig.cap=cap}
 
 ggplotly(varPerGTExTissue)
 
-cap = "Number of fine-mapped GTEx variants after filtering in each GTEx tissue."
+cap = "Number of fine-mapped eQTL variants in each biosample, stratified by eGene-eVariant distance."
 
 
 ```
 
 
-# Enrichment of eQTL variants in enhancers from different prediction methods
-First, we consider how the distribution of eQTLs overlaps with predicted enhancer regions from each prediction method. To answer the question, "How much more likely is a causal variant to be located in an enhancer than any common variant?", we consider the overall enrichment of eQTL variants in each set of enhancers. The enrichment E of variants from each GTEx tissue, T, in enhancers for each biosample, B, included in the prediction dataset was computed as:
-E(T,B) = [(# variants in T overlapping enhancers in B)/(# variants in T)]/[(# common variants overlapping enhancers in B)/(total common variants)]. 
+# Enrichment of eQTL variants in predicted enhancers
+First, we consider how the distribution of eQTLs overlaps with predicted enhancer regions from each prediction method. To answer the question, "How much more likely is a causal variant to be located in an enhancer than any common variant?", we consider the  enrichment of eQTL variants from each biosample in each set of enhancers. The enrichment E of variants from each eQTL biosample Q in enhancers for each biosample B is computed as:
+E(Q,B) = [(# variants in Q overlapping enhancers in B)/(# variants in Q)]/[(# 1000G overlapping enhancers in B)/(# 1000G variants)]. 
 
-## Enrichment heat maps {.tabset}
-Heat maps displaying enrichment values at each GTEx tissue/biosample intersection. As the order on each axis was determined by clustering, we expect similar biosamples and tissues to be located near each other. Areas of the heat map with darker blue indicate stronger enrichment. Predicted enhancers were considered to be those with scores above the value yielding 70% recall for benchmarking K562 predictions on the CRISPR data.
-```{r heatMaps, echo=FALSE, results='asis', fig.height=12, fig.cap=cap}
+## Enrichment heatmaps {.tabset}
+Heatmaps displaying enrichment values at each biosample intersection. As the order on each axis was determined by clustering, we expect similar biosamples and tissues to be located near each other. Areas of the heat map with darker blue indicate stronger enrichment. Enhancer predicitons were binarized based on the provided value for each predictor, often the threshold yielding 70% recall for benchmarking K562 predictions for the predictor on CRISPR data.
+```{r enrHM, echo=FALSE, results='asis', fig.height=12, fig.cap=cap}
 colors = c("#f6eff7","#bdc9e1", "#67a9cf","#1c9099", "#016c59")
 
 for (i in 1:length(methods)) {
    cat("  \n###",  methods[i], "  \n")
-   table.current = read.table(enrMatrices.CRISPR.files[i], header=TRUE, fill=TRUE) %>% drop_na()
-   max.color = ceiling(quantile(table.current$enrichment, 0.90))
+   table.current = read.table(enrMatrices.CRISPR.files[i], header=TRUE, fill=TRUE) %>%  dplyr::filter(nVariantsGTExTissue>20, is.finite(enrichment)) %>% drop_na()
+   max.color = max(table.current$enrichment)
    lims = c(0, max.color)
    hm.df = dplyr::select(table.current, Biosample, GTExTissue, enrichment)
    colnames(hm.df) = c('name','variable','value')
    cat(knitr::knit_print(heatmaply(long_data=hm.df, show_dendrogram = c(FALSE,FALSE),
-             label_names=c('Biosample','GTExTissue','Enrichment'),
+             label_names=c('Prediction biosample','eQTL biosample','Enrichment'),
              dynamicTicks=FALSE, fontsize_row = 8, fontsize_col = 8,
              margins=c(-50,0,0,0),mplot_method='ggplot',
              heatmap_layers = (list(theme(legend.key.height=unit(10,'pt')))),
@@ -167,36 +189,120 @@ for (i in 1:length(methods)) {
    cat("  \n")
    cat("  \n")
 
-  cap = "Heat map displaying enrichment at every GTEx tissue/biosample intersection for each prediction method. Both the x- and y- axes were clustered using the Euclidean distance measure and the average linkage function."
+  cap = "Heatmap displaying enrichment at every biosample intersection for each prediction method. Both the x- and y- axes were clustered using the Euclidean distance measure and the average linkage function."
 }
 
 ```
 
 ## Enrichment tables {.tabset}
-Table with values used to derive enrichment values for matching tissues and biosamples for the above heatmaps (searchable and sortable by any metric). Note that predicted enhancers were considered those with scores greater than the threshold yielding 70% recall for K562 predictions on the CRISPR data. 
-```{r doSomething, include=FALSE}
+Table (searchable and sortable) with values used to derive enrichment values for the above heatmaps. 
+```{r random1, include=FALSE}
 htmltools::tagList(reactable(matrix()))
 ```
 
-```{r dataTables, echo=FALSE, results='asis'}
+```{r enrTables, echo=FALSE, results='asis'}
 
 for (i in 1:length(methods)) {
    cat("  \n###",  methods[i], "  \n")
-   table.current = read.table(enrMatrices.CRISPR.files[i], header=TRUE, fill=TRUE) %>% drop_na()
+   table.current = read.table(enrMatrices.CRISPR.files[i], header=TRUE, fill=TRUE) %>% drop_na() %>% dplyr::select(-method)
    cat("  \n")
   
    cat(knitr::knit_print(reactable(table.current, striped=TRUE, searchable=TRUE, filterable=TRUE,
                                    defaultPageSize=5, resizable=TRUE,
-                                   columns = list(GTExTissue = colDef(name = "GTEx tissue"),
+                                   columns = list(GTExTissue = colDef(name = "eQTL biosample"),
+								                             Biosample = colDef(name = "prediction biosample"),
                           nVariantsOverlappingEnhancers = colDef(name = "# variants overlapping enhancers"),
-                          nVariantsGTExTissue = colDef(name = "# variants in GTEx tissue"),
-                          nCommonVariantsOverlappingEnhancers = colDef(name = "# common variants overlapping enhancers"),
+                          nVariantsGTExTissue = colDef(name = "# variants in eQTL biosample"),
+                          nCommonVariantsOverlappingEnhancers = colDef(name = "# 1000G variants overlapping enhancers"),
                           enrichment = colDef(name="Enrichment", format=colFormat(digits=2))))))
  
    cat("  \n")
    cat("  \n")
 }
 ```
+
+# Recall of eQTL variants in predicted enhancers
+Next, we consider what fraction of eQTLs overlap enhancer regions for each biosample pair. Calculating the recall of eQTLs from each biosample in each prediction biosample can help us evalute false negative predictions.
+However, it is important to note the lack of "true negatives" in this benchmark, given the dependence of eQTL discovery on sample size and other variables. 
+We compute recall R of variants from eQTL biosample Q in enhancers for biosample B as: R(Q,B) =  (# eVariants in Q overlapping an enhancer linked to the correct eGene in B)/(# eVariant-eGene pairs in Q). Note that this is similar but not identical to the numerator of enrichment!
+
+## Recall heatmaps {.tabset}
+Heatmaps displaying recall values at each biosample intersection. As above, we expect similar biosamples and tissues to cluster, and enhancer predictions were binarized based on the provided threshold.
+```{r recallHM, echo=FALSE, results='asis', fig.height=12, fig.cap=cap}
+colors = c("#edf8fb","#b3cde3", "#8c96c6", "#8856a7", "#810f7c")
+lims = c(0, 0.25)
+
+for (i in 1:length(methods)) {
+	cat("  \n###",  methods[i], "  \n")
+	table.current = read.table(recallTables.CRISPR.files[i], header=TRUE, fill=TRUE)
+	table.current = dplyr::filter(table.current, distance_max==30000, is.finite(recall.linking), !is.na(recall.linking), total.variants>20)
+	# remove tissues where sd recall = 0
+	recall_sum = group_by(table.current, GTExTissue) %>%
+		summarize(sd_recall = sd(recall.linking)) %>%
+		dplyr::filter(sd_recall>0)
+	table.current = dplyr::filter(table.current, GTExTissue %in% recall_sum$GTExTissue)
+
+   hm.df = dplyr::select(table.current, Biosample, GTExTissue, recall.linking)
+   colnames(hm.df) = c('name','variable','value')
+   cat(knitr::knit_print(heatmaply(long_data=hm.df, show_dendrogram = c(FALSE,FALSE),
+             label_names=c('Prediction biosample','eQTL biosample','Recall (variant linked to correct eGene)'),
+             dynamicTicks=FALSE, fontsize_row = 8, fontsize_col = 8,
+             margins=c(-50,0,0,0),mplot_method='ggplot',
+             heatmap_layers = (list(theme(legend.key.height=unit(10,'pt')))),
+             scale_fill_gradient_fun = scale_fill_gradientn(colors=colors, oob=scales::squish, na.value="#FFFFFF", limits=lims, name="Recall (linking)"))))
+   cat("  \n")
+   cat("  \n")
+
+  cap = "Heatmap displaying recall (linking) at every biosample intersection for each prediction method. Both the x- and y- axes were clustered using the Euclidean distance measure and the average linkage function."
+}
+
+```
+
+## Recall tables {.tabset}
+Table (searchable and sortable) with values used to derive recall values for the above heatmaps, as well as the recall for variants stratified by eGene-eVariant distance.
+```{r random2, include=FALSE}
+htmltools::tagList(reactable(matrix()))
+```
+
+```{r recallTables, echo=FALSE, results='asis'}
+
+for (i in 1:length(methods)) {
+   cat("  \n###",  methods[i], "  \n")
+   table.current = read.table(recallTables.CRISPR.files[i], header=TRUE, fill=TRUE) %>% drop_na() %>% dplyr::select(-method)
+   cat("  \n")
+  
+   cat(knitr::knit_print(reactable(table.current, striped=TRUE, searchable=TRUE, filterable=TRUE,
+                                   defaultPageSize=5, resizable=TRUE,
+                                   columns = list(GTExTissue = colDef(name = "eQTL biosample"),
+                          nVariantGenePairsOverlappingEnhancers = colDef(name = "# eVariants overlapping enhancers"),
+						  nVariantsOverlappingEnhancersCorrectGene = colDef(name = "# eVariants overlapping enhancers linked to eGene"),
+                          Biosample = colDef(name = "Prediction biosample"),
+                          distance_min = colDef(name = "Minimum eGene-eVariant distance (kb)"), distance_max = colDef(name = "Maximum eGene-eVariant distance (kb)"),
+						  total.variants =  colDef(name = "# eVariant-eGene pairs in eQTL biosample"),
+						  recall.total =  colDef(name = "Fraction of eVariants overlapping enhancers", format=colFormat(digits=2)),
+						  recall.linking =  colDef(name = "Fraction of eVariants overlapping an enhancer linked to correct eGene", format=colFormat(digits=2)),
+						  correctGene.ifOverlap =  colDef(name = "Fraction of eVariants overlapping enhancers also linked to correct eGene", format=colFormat(digits=2))))))
+ 
+   cat("  \n")
+   cat("  \n")
+}
+```
+
+
+## Enrichment and recall for matching biosamples 
+Each datapoint represents one eQTL biosample, prediction biosample pair. Enrichment and recall were computed as above using enhancers defined by the provided threshold.
+```{r scatter, echo=FALSE, fig.width=10, fig.cap=cap}
+
+ggplotly(scatter)
+
+cap = "Scatterplot of enrichment and recall (linking) of eQTLs for corresponding eQTL biosample, prediction biosample pairs."
+
+```
+
+
+# Evaluating enrichment and recall across thresholds
+The above enrichment and recall comparisons are dependent on a single chosen threshold to define enhancers. However, we expect using a more stringent threshold will maximize enrichment while decreasing recall.
+It is therefore useful to compare enrichment and recall, as defined above, across the entire range of prediction scores. 
 
 ## Enrichment-recall curves {.tabset}
 Enrichment-recall curves for each GTEx tissue with a matching biosample. Enrichment was calculated at threshold values across the range of scores as defined above. Recall was calculated as the fraction of variants overlapping an enhancer that is linked to at least one corresponding eGene. 
@@ -211,8 +317,8 @@ for (i in 1:length(GTExTissues_matched)) {
   df[is.na(df)] = 0
   df = df[order(df$threshold),]
 
-  df_binary = dplyr::filter(df, nPoints==1)
-  df_line = dplyr::filter(df, nPoints>1)
+	df_binary = dplyr::filter(df, nPoints==2) %>% dplyr::filter(threshold==1)
+	df_line = dplyr::filter(df, nPoints>2)
 
   # colors
   colors = dplyr::select(df, key, hex) %>% distinct()
@@ -228,7 +334,8 @@ for (i in 1:length(GTExTissues_matched)) {
     ylim(c(0, 50)) +
     theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8),
 	legend.position="right", legend.direction="vertical", legend.text = element_text(size=7), legend.title=element_text(size=8))
-  plot(g)
+plot(g)
+
 
   cat("  \n")
   cat("  \n")

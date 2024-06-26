@@ -120,7 +120,7 @@ scatter_x = paste0("Recall (fraction of variants overlapping enhancer linked to 
 scatter = ggplot(df.dist, aes(x=recall.linking, y=log10(enrichment), color=pred_name_long)) +
 	geom_point(alpha=0.75) +
 	xlab(scatter_x) + ylab("log10 enrichment (eQTLs vs. common variants)") +
-	scale_color_manual(values=co_triple, name="Predictor") +
+	scale_color_manual(values=cp_triple, name="Predictor") +
 	theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), legend.position='right')
 
 # VARIABLES FOR TEXT
@@ -128,7 +128,7 @@ pred_name_longs = cp$pred_name_long
 ```
 
 - This report presents benchmarking results for the following E-G linking methods: `r pred_name_longs`
-- For distance stratified plots, eVariant-eGene distances were stratified at the following Kb values: `r distances`
+- For distance stratified plots, eVariant-eGene distances were stratified at the following kb values: `r distances`
 
 ```{r summary, echo=FALSE, fig.width=14, fig.cap=cap}
 
@@ -164,12 +164,12 @@ cap = "Number of fine-mapped eQTL variants in each biosample, stratified by eGen
 ```
 
 
-# Enrichment of eQTL variants in predictd enhancers
-First, we consider how the distribution of eQTLs overlaps with predicted enhancer regions from each prediction method. To answer the question, "How much more likely is a causal variant to be located in an enhancer than any common variant?", we consider the  enrichment of eQTL variants from each biosample in each set of enhancers. The enrichment, E, of variants from each eQTL biosample, Q, in enhancers for each biosample, B is computed as:
+# Enrichment of eQTL variants in predicted enhancers
+First, we consider how the distribution of eQTLs overlaps with predicted enhancer regions from each prediction method. To answer the question, "How much more likely is a causal variant to be located in an enhancer than any common variant?", we consider the  enrichment of eQTL variants from each biosample in each set of enhancers. The enrichment E of variants from each eQTL biosample Q in enhancers for each biosample B is computed as:
 E(Q,B) = [(# variants in Q overlapping enhancers in B)/(# variants in Q)]/[(# 1000G overlapping enhancers in B)/(# 1000G variants)]. 
 
 ## Enrichment heatmaps {.tabset}
-Heat maps displaying enrichment values at each biosample intersection. As the order on each axis was determined by clustering, we expect similar biosamples and tissues to be located near each other. Areas of the heat map with darker blue indicate stronger enrichment. Enhancer predicitons were binarized based on the provided value for each predictor, often the threshold yielding 70% recall for benchmarking K562 predictions for the predictor on CRISPR data.
+Heatmaps displaying enrichment values at each biosample intersection. As the order on each axis was determined by clustering, we expect similar biosamples and tissues to be located near each other. Areas of the heat map with darker blue indicate stronger enrichment. Enhancer predicitons were binarized based on the provided value for each predictor, often the threshold yielding 70% recall for benchmarking K562 predictions for the predictor on CRISPR data.
 ```{r enrHM, echo=FALSE, results='asis', fig.height=12, fig.cap=cap}
 colors = c("#f6eff7","#bdc9e1", "#67a9cf","#1c9099", "#016c59")
 
@@ -189,7 +189,7 @@ for (i in 1:length(methods)) {
    cat("  \n")
    cat("  \n")
 
-  cap = "Heat map displaying enrichment at every biosample intersection for each prediction method. Both the x- and y- axes were clustered using the Euclidean distance measure and the average linkage function."
+  cap = "Heatmap displaying enrichment at every biosample intersection for each prediction method. Both the x- and y- axes were clustered using the Euclidean distance measure and the average linkage function."
 }
 
 ```
@@ -224,10 +224,10 @@ for (i in 1:length(methods)) {
 # Recall of eQTL variants in predicted enhancers
 Next, we consider what fraction of eQTLs overlap enhancer regions for each biosample pair. Calculating the recall of eQTLs from each biosample in each prediction biosample can help us evalute false negative predictions.
 However, it is important to note the lack of "true negatives" in this benchmark, given the dependence of eQTL discovery on sample size and other variables. 
-We compute recall, R, of variants from eQTL biosample Q in enhancers for biosample B as: R(Q,B) =  (# eVariants in Q overlapping an enhancer linked to the correct eGene in B)/(# eVariant-eGene pairs in Q). Note that this is similar but not identical to the numerator of enrichment!
+We compute recall R of variants from eQTL biosample Q in enhancers for biosample B as: R(Q,B) =  (# eVariants in Q overlapping an enhancer linked to the correct eGene in B)/(# eVariant-eGene pairs in Q). Note that this is similar but not identical to the numerator of enrichment!
 
 ## Recall heatmaps {.tabset}
-Heat maps displaying recall values at each biosample intersection. As above, we expect similar biosamples and tissues to cluster, and enhancer predictions were binarized based on the provided threshold.
+Heatmaps displaying recall values at each biosample intersection. As above, we expect similar biosamples and tissues to cluster, and enhancer predictions were binarized based on the provided threshold.
 ```{r recallHM, echo=FALSE, results='asis', fig.height=12, fig.cap=cap}
 colors = c("#edf8fb","#b3cde3", "#8c96c6", "#8856a7", "#810f7c")
 lims = c(0, 0.25)
@@ -253,7 +253,7 @@ for (i in 1:length(methods)) {
    cat("  \n")
    cat("  \n")
 
-  cap = "Heat map displaying recall (linking) at every biosample intersection for each prediction method. Both the x- and y- axes were clustered using the Euclidean distance measure and the average linkage function."
+  cap = "Heatmap displaying recall (linking) at every biosample intersection for each prediction method. Both the x- and y- axes were clustered using the Euclidean distance measure and the average linkage function."
 }
 
 ```
@@ -297,7 +297,8 @@ ggplotly(scatter)
 
 cap = "Scatterplot of enrichment and recall (linking) of eQTLs for corresponding eQTL biosample, prediction biosample pairs."
 
-```q
+```
+
 
 # Evaluating enrichment and recall across thresholds
 The above enrichment and recall comparisons are dependent on a single chosen threshold to define enhancers. However, we expect using a more stringent threshold will maximize enrichment while decreasing recall.
@@ -316,8 +317,8 @@ for (i in 1:length(GTExTissues_matched)) {
   df[is.na(df)] = 0
   df = df[order(df$threshold),]
 
-	df_binary = dplyr::filter(df_plot, nPoints==2) %>% dplyr::filter(threshold==1)
-	df_plot = dplyr::filter(df_plot, nPoints>2)
+	df_binary = dplyr::filter(df, nPoints==2) %>% dplyr::filter(threshold==1)
+	df_line = dplyr::filter(df, nPoints>2)
 
   # colors
   colors = dplyr::select(df, key, hex) %>% distinct()
@@ -333,7 +334,8 @@ for (i in 1:length(GTExTissues_matched)) {
     ylim(c(0, 50)) +
     theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8),
 	legend.position="right", legend.direction="vertical", legend.text = element_text(size=7), legend.title=element_text(size=8))
-  plot(g)
+plot(g)
+
 
   cat("  \n")
   cat("  \n")

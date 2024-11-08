@@ -17,13 +17,13 @@ methods_config['threshold'] = [-thresh if inverse else thresh for thresh,inverse
 
 # import workflows
 include: "./rules/utils.smk"
-add_biosamples_and_files_to_config()
-process_biosample_tissue_maps()
+methods_config = add_biosamples_and_files_to_config(methods_config, config)
+methods_config = process_biosample_tissue_maps(methods_config, config)
 
 # define some variables needed in rules
 GTExTissues_all = [] # find set of all GTEx tissues with biosample matches across methods 
 for x in config["methods"]:
-	GTExTissues_all.extend(methods_config.loc[x, "GTExTissue_map"])
+    GTExTissues_all.extend(methods_config.loc[x, "GTExTissue_map"])
 GTExTissues_matched = [*set(GTExTissues_all)]
 GTExTissues_plus_all = GTExTissues_matched + ["AllMatches"]
 # distance bins: for example, min = 0, 10, 100, 0 and max = 10, 100, 250, 30000 kb (30 Mb)
@@ -37,16 +37,17 @@ include: "./rules/visualization.smk"
 
 
 rule all:
-	input:
-		nVar = os.path.join(config["outDir"], "plots", "variantsPerTissue.pdf"),
-		distance_comparison = os.path.join(config["outDir"], "plots", "thresholdedPerformanceComparison.pdf"),
-		scatter = os.path.join(config["outDir"], "plots", "allMatchedThresholdedPerformance.scatter.pdf"),
-		allMetrics = os.path.join(config["outDir"], "plots", "allThresholdedEnrichmentRecall.byDistance.pdf"),
-		enrichmentRecallCurves = [os.path.join(config["outDir"],  "plots", "enrichmentRecall",  f"enrichmentRecall.GTExTissue{tissue}.pdf") for tissue in GTExTissues_plus_all],
-		enrichmentAtRecall = [os.path.join(config["outDir"],  "plots", "enrichmentAtRecall",  f"enrichments.Recall{recall}.GTExTissue{tissue}.pdf") for tissue in GTExTissues_plus_all for recall in config["recalls"]],
-		enrHeatmaps = [os.path.join(config["outDir"], "plots", "enrichmentHeatmaps", f"{method}.enrichmentHeatmap.pdf") for method in config["methods"]],
-		recallHeatmaps = [os.path.join(config["outDir"], "plots", "recallHeatmaps", f"{method}.recallHeatmap.pdf") for method in config["methods"]],
-		benchmarkingReport = os.path.join(config["outDir"], "benchmarkingReport.html")
+    input:
+        nVar = os.path.join(config["outDir"], "plots", "variantsPerTissue.pdf"),
+        distance_comparison = os.path.join(config["outDir"], "plots", "thresholdedPerformanceComparison.pdf"),
+        scatter = os.path.join(config["outDir"], "plots", "allMatchedThresholdedPerformance.scatter.pdf"),
+        allMetrics = os.path.join(config["outDir"], "plots", "allThresholdedEnrichmentRecall.byDistance.pdf"),
+        enrichmentRecallCurves = [os.path.join(config["outDir"],  "plots", "enrichmentRecall",  f"enrichmentRecall.GTExTissue{tissue}.pdf") for tissue in GTExTissues_plus_all],
+        enrichmentAtRecall = [os.path.join(config["outDir"],  "plots", "enrichmentAtRecall",  f"enrichments.Recall{recall}.GTExTissue{tissue}.pdf") for tissue in GTExTissues_plus_all for recall in config["recalls"]],
+        enrHeatmaps = [os.path.join(config["outDir"], "plots", "enrichmentHeatmaps", f"{method}.enrichmentHeatmap.pdf") for method in config["methods"]],
+        recallHeatmaps = [os.path.join(config["outDir"], "plots", "recallHeatmaps", f"{method}.recallHeatmap.pdf") for method in config["methods"]],
+        benchmarkingReport = os.path.join(config["outDir"], "benchmarkingReport.html"),
+        variantCounts = [os.path.join(config["outDir"], method, "intermediate", "uniqueVariantCount.matchedTissues.txt") for method in config["methods"]]
 
 
 #######################

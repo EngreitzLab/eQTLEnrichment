@@ -6,6 +6,25 @@ suppressPackageStartupMessages({library(ggplot2)
         library(egg)
 		library(data.table)})
     
+cluster_tissues_biosamples <- function(res){
+	M = dplyr::select(res, Biosample, GTExTissue, recall.linking) %>%
+	pivot_wider(names_from=GTExTissue, values_from=recall.linking) %>% column_to_rownames("Biosample")
+	M[is.na(M)] = 0
+	
+	tissue_dist = dist(1-cor(M))
+	tissue_dist[is.na(tissue_dist)] = 0
+	order_tissues = hclust(tissue_dist, method = "ward.D2")$order
+	tissues_ordered = colnames(M)[order_tissues]
+
+	biosample_dist = dist(1-cor(t(M)))
+	biosample_dist[is.na(biosample_dist)] = 0
+	order_biosamples = hclust(biosample_dist, method="ward.D2")$order
+	biosamples_ordered = rownames(M)[order_biosamples]
+
+	res$GTExTissue = factor(res$GTExTissue, levels=tissues_ordered, ordered=TRUE)
+	res$Biosample = factor(res$Biosample, levels=biosamples_ordered, ordered=TRUE)
+	return(res)
+}
 
 main <- function() {
 	# input data
@@ -32,20 +51,14 @@ main <- function() {
 	recall$enhMb = recall$enhBp/1e6
 	
     # cluster to get orders
-    M = dplyr::select(recall, Biosample, GTExTissue, recall.linking) %>% distinct() %>%
-		pivot_wider(names_from=GTExTissue, values_from = recall.linking) %>% column_to_rownames("Biosample") %>% drop_na()
-	print(M)
-	print(cor(M))
-	order_tissues =  hclust(dist(1-cor(M)), method = "ward.D2")$order
-	order_biosamples = hclust(dist(1-cor(t(M))), method = "ward.D2")$order
-	recall$Biosample = factor(recall$Biosample, levels=rownames(M)[order_biosamples], ordered=TRUE)
-	recall$GTExTissue = factor(recall$GTExTissue, levels=colnames(M)[order_tissues], ordered=TRUE)
+   recall = cluster_tissues_biosamples(recall)
 
 	# set plotting params
 	colors = c("#edf8fb","#b3cde3", "#8c96c6", "#8856a7", "#810f7c")
 	na_color = "#ffffff"
 	lims = c(0, 0.25) 
-	ht = ifelse(length(rownames(M))>50, 16, 8)
+	n_biosamples = recall$Biosample %>% unique() %>% length()
+	ht = ifelse(n_biosamples>50, 16, 8)
 
     # heat map alone
 	just_recall = ggplot(recall, aes(x=GTExTissue, y=Biosample, fill=recall.linking)) + 

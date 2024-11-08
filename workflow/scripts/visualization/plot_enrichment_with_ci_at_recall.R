@@ -16,35 +16,37 @@ cpFilePlotting = snakemake@input$colorPalette
 cp = fread(cpFilePlotting, sep="\t") # method, pred_name_long, hex
 recall.this = snakemake@wildcards$recall %>% as.numeric()
 sign_threshold = snakemake@params$thresholdPval %>% as.numeric()
+this_tissue = snakemake@wildcards$GTExTissue
 
 # gather tables
+df_list <- vector("list", length(files))
 for (i in 1:length(files)){
 	temp = fread(files[i], sep="\t")
 	temp = drop_na(temp)
 	temp = dplyr::filter(temp,is.finite(recall.linking))
 
-	if (i==1){
-		df = data.frame(matrix(nrow = 0, ncol = length(colnames(temp)))) 
-		colnames(df) = colnames(temp)
-	}
+	# if (i==1){
+	# 	df = data.frame(matrix(nrow = 0, ncol = length(colnames(temp)))) 
+	# 	colnames(df) = colnames(temp)
+	# }
 	
-	# is closest recal within 0.02 of input?
+	# is closest recal within 10% of input?
 	n_thresholds = nrow(temp)
   	recall_low = min(temp$recall.linking)
   	recall_high = max(temp$recall.linking)
 	closest = min(abs(recall.this-temp$recall.linking))
- 	 if (closest<0.02){
+	diff_lim <- recall.this * 0.1
+ 	 if (closest<=diff_lim){
     	# identify + filter to row with a recall closest to recall.this
 		idx = which.min(abs(recall.this-temp$recall.linking))
     	temp = temp[idx,]
-		# concatenate
-		if (nrow(df)==0){
-			df = temp
-		} else {
-			df = rbind(df, temp)
-		}
+		print(nrow(temp))
+		df_list[[i]] <- temp
 	 }
 }
+
+df <- rbindlist(df_list) %>% as_tibble()# %>% dplyr::filter(GTExTissue == this_tissue)
+message("Printing df"); print(df)
 
 # organize for plotting
 if (nrow(df)>1) {
@@ -90,18 +92,20 @@ if (nrow(df)>1) {
   }
   df_p_val$p_adjust = p.adjust(df_p_val$p, method="bonferroni")
   df_p_val$significant = df_p_val$p_adjust < sign_threshold
-  print(df_p_val)
+  #print(df_p_val)
 
   ## plotting
   # format things a little
   df$recall.linking.rounded = round(df$recall.linking, digits=3)
   df$plotting_label = paste0(df$key, " (", df$recall.linking.rounded, ")")
   df = df[order(df$enrichment, decreasing=TRUE),]
-  df$plotting_label = factor(df$plotting_label, levels=df$plotting_label, ordered=TRUE)
-  df$key = factor(df$key, levels=df$key, ordered=TRUE)
+  df$plotting_label = factor(df$plotting_label, levels=unique(df$plotting_label), ordered=TRUE)
+  df$key = factor(df$key, levels=unique(df$key), ordered=TRUE)
 
 pred_colors = cp$hex
 names(pred_colors) = cp$key
+n_keys = cp$key %>% unique() %>% length(); print(n_keys)
+n_legend_cols = ceiling(n_keys / 12); print(n_legend_cols)
 
   # actually plot
   g = ggplot(data=df, aes(x=key, y=enrichment)) +
@@ -110,18 +114,20 @@ names(pred_colors) = cp$key
     scale_fill_manual(values=pred_colors, labels=df$plotting_label) +
     labs(fill="Predictor (exact recall)") + ylab(paste0("Enrichment (eQTLs vs. common variants) at recall ", recall.this)) +
     theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), legend.text=element_text(size=7), legend.title=element_text(size=8)) + 
-    theme(axis.text.x=element_blank(), axis.title.x=element_blank()) # remove x-axis labels
-  
+    theme(axis.text.x=element_blank(), axis.title.x=element_blank()) + # remove x-axis labels
+	guides(col = guide_legend(nrow = 12))
 
+	width = 3 + 3 * n_legend_cols  
 
 } else {
   df = "Fewer than two predictors achieve this recall."
   df_p_val = "Fewer than two predictors achieve this recall."
   g = ggplot() + theme_void()
+  width = 6
 }
 
 # save outputs
 write.table(df_p_val, out_sign, quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
 write.table(df, out_table, quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
-ggsave(out_plot, g, width=6, height=4)
+ggsave(out_plot, g, width=width, height=4)
 

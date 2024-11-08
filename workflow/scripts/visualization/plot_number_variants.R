@@ -9,7 +9,9 @@ library(tidyr)
 ## INPUTS
 files = snakemake@input$variantsPerTissue %>% strsplit(" ") %>% unlist()
 methods = snakemake@params$methods %>% strsplit(" ") %>% unlist()
+tissues_matched = snakemake@params$tissues_matched %>% strsplit(" ") %>% unlist()
 out_plot = snakemake@output$out_plot
+out_plot_matched = snakemake@output$out_plot_matched
 out_table = snakemake@output$out_table
 distances_min = snakemake@params$distances_min %>%  as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
 distances_max = snakemake@params$distances_max %>%  as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
@@ -70,4 +72,18 @@ n_tissues = length(unique(df$tissue))
 ht = max(4, n_tissues/12)
 ggsave(out_plot, g, width=6, height=ht)
 write.table(df, out_table, quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
+
+# plot just matched tissues
+df_filt = dplyr::filter(df, tissue %in% tissues_matched)
+g=ggplot(data=df_filt, aes(x=tissue, y=var_count, fill=distance_label)) +
+	#geom_hline(yintercept=50, linetype="dashed", color="#96a0b3") +
+	geom_bar(position="stack", stat="identity") +
+	labs(x="", y="Number of eQTLs above PIP threshold", fill="eVariant-eGene distance") +
+	scale_fill_manual(values=cp) +
+	theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8)) +
+	coord_flip() 
+
+n_tissues = length(unique(df_filt$tissue))
+ht = max(4, n_tissues/12)
+ggsave(out_plot_matched, g, width=6, height=ht)
 

@@ -47,9 +47,9 @@ for (i in 1:length(enrTable_files)){
 }
 
 # get stats, edit names, define labels 
-enr.all = enr.all[order(enr.all$enrichment), ]
-enr.filt = dplyr::filter(enr.all, nVariantsGTExTissue>20, is.finite(enrichment))
-max.enr = max(enr.filt$enrichment)
+enr.all = enr.all[order(enr.all$enrichment), ] %>%
+	dplyr::filter(nVariantsGTExTissue>20, is.finite(enrichment))
+max.enr = max(enr.all$enrichment)
 enrLabel = 'Enrichment\n(GTEx variants/all common variants)'
 enr.all = left_join(enr.all, cp, by="method")
 enr.all$pred_name_long = factor(enr.all$pred_name_long, levels=cp$pred_name_long, ordered=TRUE)
@@ -69,14 +69,17 @@ for (i in 1:length(predTable_files)){
 pred.all = left_join(pred.all, cp, by="method") %>% dplyr::filter(total.variants>20)
 pred.all$pred_name_long = factor(pred.all$pred_name_long, levels=cp$pred_name_long, ordered=TRUE)
 
-## make y-axis labels (distance range, min-max variants)
+## make y-axis labels (distance range, min-max variants, number of comparisons)
 dist_labels = data.frame(distance_min=distances_min, distance_max=distances_max)
 dist_labels$distance.label = " "
 for (i in 1:nrow(dist_labels)){
 	pred.this = dplyr::filter(pred.all, distance_max==dist_labels$distance_max[i])
 	n_min = min(pred.this$total.variants)
 	n_max = max(pred.this$total.variants)
-	count = paste0("N = ", n_min, "-", n_max, " variants")
+	n_pairs = dplyr::select(pred.this, pred_name_long, tissue.biosample) %>% distinct() %>%
+		group_by(pred_name_long) %>% summarize(n_matches = n()) %>% pull(n_matches)
+	count = paste0(n_min, "-", n_max, " variants")
+	pairs = paste0(min(n_pairs), "-", max(n_pairs), " biosample pairs")
 	if (dist_labels$distance_max[i]==30000) {
 		cat = "All variants"
 	} else {
@@ -84,7 +87,8 @@ for (i in 1:nrow(dist_labels)){
 	}
 	dist_labels$count[i]  = count
 	dist_labels$cat[i] = cat
-	dist_labels$distance.label[i] = paste0(cat, "\n", count)
+	dist_labels$pairs[i] = pairs
+	dist_labels$distance.label[i] = paste0(cat, "\n", count, "\n", pairs)
 }
 pred.all = left_join(pred.all, dist_labels, by=c("distance_min", "distance_max"))
 enr.all = left_join(enr.all, dist_labels, by=c("distance_min", "distance_max"))
@@ -99,8 +103,9 @@ names(pred_colors) = cp$pred_name_long
 ### GENERATE PLOTS
 
 ## enrichment
-enr.boxplot = ggplot(enr.all, aes(x = distance.label, y = enrichment, fill = pred_name_long)) +
-  geom_boxplot(linewidth = 0.5, outlier.size=0.75) +
+enr.plot <- dplyr::filter(enr.all, nVariantsOverlappingEnhancers >= 5)
+enr.boxplot = ggplot(enr.plot, aes(x = distance.label, y = enrichment, fill = pred_name_long)) +
+  geom_boxplot(linewidth = 0.5, outlier.size=0.5) +
   coord_flip() +
   theme_minimal() + ylab("Enrichment\n (eQTLs vs. common variants)") + xlab('') +
   scale_fill_manual(values=pred_colors) +
@@ -124,18 +129,19 @@ sr.predicted = ggplot(pred.all, aes(x = distance.label, y = correctGene.ifOverla
   theme(axis.text.y = element_blank()) + coord_flip()
 
 ## save final plots
-pdf(file=out_plot, width=12, height=5)
+pdf(file=out_plot, width=12, height=7)
 	all.tissues =  ggarrange(enr.boxplot, sr.overlaps, sr.predicted, nrow=1, ncol=3)
 dev.off()
 
-enr.dist = dplyr::filter(enr.all, distance_max==30000)
+enr.dist = dplyr::filter(enr.all, distance_max==30000, nVariantsOverlappingEnhancers >= 5)
 pred.dist = dplyr::filter(pred.all, distance_max==30000)
 col_overlap = colnames(enr.dist)[colnames(enr.dist) %in% colnames(pred.dist)]
-df.dist = inner_join(enr.dist, pred.dist, by=col_overlap)
+df.dist = inner_join(enr.dist, pred.dist, by=col_overlap) %>%
+	dplyr::slice_sample(prop = 1, replace = FALSE) # randomize row order for plotting
 
 x_label = paste0("Recall (fraction of variants overlapping enhancer linked to eGene)\n", df.dist$count[1])
 g = ggplot(df.dist, aes(x=recall.linking, y=log10(enrichment), color=pred_name_long)) +
-	geom_point(alpha=0.75) +
+	geom_point(alpha=0.75, shape = 16, size = 3) +
 	xlab(x_label) + ylab("log10 enrichment (eQTLs vs. common variants)") +
 	scale_color_manual(values=pred_colors, name="Predictor") +
 	theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), legend.position='right')

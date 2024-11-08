@@ -70,7 +70,7 @@ enr_max = max(df$log10_enrichment)
 
 ## small multiples
 g = ggplot(df, aes(x=recall.linking, y=log10_enrichment, color=pred_name_long)) +
-	geom_point(alpha=0.5) +
+	geom_point(alpha=0.5, shape = 16, size = 1) +
 	xlab("Recall (fraction of variants overlapping variant linked to eGene)") + ylab("log10 enrichment (eQTLs vs. common variants)") +
 	scale_color_manual(values=pred_colors) +
 	facet_grid(rows=vars(distance.label), cols=vars(pred_name_long)) +

@@ -45,7 +45,7 @@ def get_table_files(GTExTissue):
 	if (GTExTissue=="AllMatches"):
 		tissue_files  = [os.path.join(config["outDir"], method, "enrichmentRecallTables", "AllMatches.tsv") for method in config["methods"]]
 	else:
-		substr = "GTExTissue" + GTExTissue
+		substr = "GTExTissue" + GTExTissue + ".Biosample"
 		all_files = flatten([[os.path.join(config["outDir"], method, "enrichmentRecallTables", f"GTExTissue{tissue}.Biosample{biosample}.tsv") for tissue, biosample in zip(methods_config.loc[method, "GTExTissue_map"], methods_config.loc[method, "biosample_map"])] for method in config['methods']])
 		tissue_files =  [x for x in all_files if substr in x]
 	return tissue_files
@@ -54,6 +54,9 @@ rule plot_enrichment_recall_curve:
 	input:
 		colorPalette = os.path.join(config["outDir"], "plots", "colorPalette.tsv"),
 		enrichmentRecall_files = lambda wildcards: get_table_files(wildcards.GTExTissue)
+	params:
+		score_thresholds = [methods_config.loc[method_name, "threshold"] for method_name in config["methods"]],
+		methods = config["methods"]
 	output:
 		er_combined = os.path.join(config["outDir"],  "plots", "enrichmentRecall", "enrichmentRecall.GTExTissue{GTExTissue}.pdf"),
 		er_combined_table = os.path.join(config["outDir"],  "plots", "enrichmentRecall", "enrichmentRecall.GTExTissue{GTExTissue}.tsv")
@@ -133,9 +136,11 @@ rule plot_variants_per_tissue:
 	params:
 		distances_min = config["distances_min"],
 		distances_max = config["distances_max"],
+		tissues_matched = GTExTissues_matched,
 		methods = config["methods"]
 	output:
 		out_plot = os.path.join(config["outDir"], "plots", "variantsPerTissue.pdf"),
+		out_plot_matched = os.path.join(config["outDir"], "plots", "variantsPerTissue_matched.pdf"),
 		out_table = os.path.join(config["outDir"], "plots", "avgVariantsPerTissue.tsv")
 	resources:
 		mem_mb = determine_mem_mb

@@ -103,7 +103,8 @@ rule plot_thresholded_matched_performance_comparison:
 		outFile = os.path.join(config["outDir"], "plots", "thresholdedPerformanceComparison.pdf"),
 		enrAllTable = os.path.join(config["outDir"], "plots", "allMatchedEnrichments.tsv"),
 		predictionMetrics = os.path.join(config["outDir"], "plots", "allMatchedPredictionMetrics.tsv"),
-		outScatter = os.path.join(config["outDir"], "plots", "allMatchedThresholdedPerformance.scatter.pdf")
+		outScatter = os.path.join(config["outDir"], "plots", "allMatchedThresholdedPerformance.scatter.pdf"),
+		outViolins = os.path.join(config["outDir"], "plots", "allMatchedThresholdedPerformance.violins.pdf")
 	resources:
 		mem_mb = determine_mem_mb
 	conda:

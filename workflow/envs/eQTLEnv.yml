@@ -29,5 +29,7 @@ dependencies:
  - r-heatmaply
  - r-ggpubr
  - r-dichromat
+ - r-ggdist
+ - r-cowplot
  - cairo
  - pandoc

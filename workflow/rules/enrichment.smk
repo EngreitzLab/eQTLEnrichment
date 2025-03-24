@@ -2,11 +2,11 @@
 # variant list columns: 1-3 (loc), 4 (variantID), 5 (gene), 6 (tissue), 7 (PIP),  8 (distance group)
 rule get_variants_per_GTEx_tissue:
 	input:
-		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "intermediate", "GTExVariants.filteredForMethod.tsv.gz")
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "variants", "GTExVariants.filteredForUniverse.tsv.gz")
 	params:
 		distances_max= config["distances_max"]
 	output: 
-		variantsPerTissue =  os.path.join(config["outDir"], "{method}", "intermediate", "nVariantsPerGTExTissue.tsv"),
+		variantsPerTissue = os.path.join(config["outDir"], "{method}", "intermediate", "nVariantsPerGTExTissue.tsv"),
 	resources:
 		mem_mb = determine_mem_mb
 	conda: 
@@ -64,7 +64,7 @@ rule compute_enrichment_matrix_by_distance:
 	output: 
 		enrichmentTable = os.path.join(config["outDir"], "{method}", "enrichmentTables", "enrichmentTable.{distance_min}to{distance_max}Kb.tsv")
 	resources:
-		mem_mb = determine_mem_mb
+		mem_mb = 64*1000
 	conda: 
 		os.path.join(config["envDir"], "eQTLEnv.yml")
 	script: 
@@ -98,7 +98,8 @@ rule compute_enhancer_set_size:
 		predictionsSorted = lambda wildcards: [os.path.join(config["outDir"], wildcards.method, "biosamples",  biosample, "enhancerPredictions.sorted.bed.gz") for biosample in methods_config.loc[wildcards.method, "biosamples"]],
 	params:
 		biosamples = lambda wildcards: methods_config.loc[wildcards.method, "biosamples"],
-		threshold = lambda wildcards: methods_config.loc[wildcards.method, "threshold"]
+		threshold = lambda wildcards: methods_config.loc[wildcards.method, "threshold"],
+		TSS = config["TSS_reference"]
 	output:
 		basesPerEnhancerSet = os.path.join(config["outDir"], "{method}", "intermediate", "basesPerEnhancerSet.tsv")
 	resources:
@@ -123,7 +124,11 @@ rule compute_enhancer_set_size:
 			pred=${{predFileArray[$i]}}
 
 			# Calculate the metric for the current prediction file
-			metric=$(zcat $pred | awk -v threshold={params.threshold} '$6 >= threshold' | cut -f 1-3 | bedtools merge -i stdin | awk 'BEGIN {{FS=OFS="\t"}} {{print $3-$2}}' | awk '{{s+=$1}} END {{print s}}')
+			metric=$(zcat $pred | awk -v threshold={params.threshold} '$6 >= threshold' | cut -f 1-3 | \
+				sort -k 1,1 -k2,2n | uniq | \
+				bedtools intersect -a stdin -b {params.TSS} -v | \
+				bedtools merge -i stdin | awk 'BEGIN {{FS=OFS="\t"}} {{print $3-$2}}' | \
+				awk '{{s+=$1}} END {{print s}}')
 
 			# Append the biosample and metric to the output file
 			echo -e "${{biosample}}\t${{metric}}" >> {output.basesPerEnhancerSet}

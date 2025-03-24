@@ -8,7 +8,7 @@ suppressPackageStartupMessages({library(ggplot2)
     
 cluster_tissues_biosamples <- function(res){
 	M = dplyr::select(res, Biosample, GTExTissue, recall.linking) %>%
-	pivot_wider(names_from=GTExTissue, values_from=recall.linking) %>% column_to_rownames("Biosample")
+		pivot_wider(names_from=GTExTissue, values_from=recall.linking) %>% column_to_rownames("Biosample")
 	M[is.na(M)] = 0
 	
 	tissue_dist = dist(1-cor(M))
@@ -35,7 +35,8 @@ main <- function() {
 	outFile_solo = snakemake@output$outFile_alone
 
 	recall = fread(recallTableFile, sep="\t", header=TRUE)
-	recall = dplyr::filter(recall, distance_max==30000, is.finite(recall.linking), !is.na(recall.linking), total.variants>20)
+	recall = dplyr::filter(recall, distance_min == 0, distance_max==30000,
+		is.finite(recall.linking), !is.na(recall.linking), total.variants>20)
 	# remove tissues where sd recall = 0
 	recall_sum = group_by(recall, GTExTissue) %>%
 		summarize(sd_recall = sd(recall.linking)) %>%
@@ -43,7 +44,7 @@ main <- function() {
 	recall = dplyr::filter(recall, GTExTissue %in% recall_sum$GTExTissue)
 
 	recall$Biosample[recall$Biosample=="Cells_EBV-transformed_lymphocytes"] = "Cells_EBV_transformed_lymphocytes"
-	enhSizes = fread(enhSizeFile, sep="\t", header=TRUE) 
+	enhSizes = fread(enhSizeFile, sep="\t", header=TRUE) %>% distinct()
 	colnames(enhSizes) = c("Biosample", "enhBp") 
 
     # add base pairs per biosample

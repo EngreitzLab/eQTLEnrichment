@@ -47,7 +47,7 @@ rule all:
         enrHeatmaps = [os.path.join(config["outDir"], "plots", "enrichmentHeatmaps", f"{method}.enrichmentHeatmap.pdf") for method in config["methods"]],
         recallHeatmaps = [os.path.join(config["outDir"], "plots", "recallHeatmaps", f"{method}.recallHeatmap.pdf") for method in config["methods"]],
         benchmarkingReport = os.path.join(config["outDir"], "benchmarkingReport.html"),
-        variantCounts = [os.path.join(config["outDir"], method, "intermediate", "uniqueVariantCount.matchedTissues.txt") for method in config["methods"]]
+        variantCounts = os.path.join(config["outDir"], "variants", "uniqueVariantCount.matchedTissues.txt")
 
 
 #######################

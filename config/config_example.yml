@@ -3,7 +3,7 @@ outDir: "results/2025_0322_scE2G_fine_grained"
 methodsTable: "config/mine/config_methods_example.tsv"
 predictionsTable: "config/mine/config_predictions_example.tsv"
 methods: [scE2G_multiome, scE2G_ATAC, Kendall, scABC, ABC_distanceToTSS, SnapATAC, Cicero, FigR, ScenicPlus, DIRECTNET, ArchR]
-eQTLVariants: "/oak/stanford/groups/engreitz/Users/sheth/Data/eQTL_Catalogue_v7/results/2024_1003_fine_tissues/eQTL_catalogue_v7.processed.PIP0.5.tsv.gz" # columns: chr,start,end,variant_id,gene_hgnc,tissue,pip
+eQTLVariants: "/oak/stanford/groups/engreitz/Users/sheth/Data/eQTL_Catalogue_v7/results/2024_0623_coarse_tissues/eQTL_catalogue_v7.processed.PIP0.5.tsv.gz" # columns: chr,start,end,variant_id,gene_hgnc,tissue,pip
 
 ## RESOURCE / REFERENCE FILES
 baseDir: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/"

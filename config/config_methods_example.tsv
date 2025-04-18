@@ -1,11 +1,19 @@
-method	sampleKey	geneUniverse	boolean	inverse_predictor	pred_name_long	threshold	score_col	color
-ENCODE_rE2Gext	resources/biosample_keys/2024/ENCODE_rE2Gext.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ENCODE-rE2G_Extended	0.336	ENCODE-rE2G.Score	#9B241C
-ENCODE_rE2G	resources/biosample_keys/2024/ENCODE_rE2G_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ENCODE-rE2G	0.201	Score	#DC6464
-ABC_DNase	resources/biosample_keys/2024/ABC_DNase_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ABC_A=DNase, C=megamap Hi-C	0.201	ABC.Score	#5496CE
-ABC_full	resources/biosample_keys/2024/ABC_full.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ABC_A=DNase x H3K27ac, C=ENCODE Hi-C	0.027	ABC.Score	#00488D
-DHS_distToTSS	resources/biosample_keys/2024/DHS_distToTSS_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	TRUE	In element (DHS) & distance to TSS	53976	Score	#C5CAD7
-DHS_nearestExprGene	resources/biosample_keys/2024/DHS_nearestExprGene_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	TRUE	FALSE	In element (DHS) & closest expr. gene	1	Score	#888364
-EpiMap	resources/biosample_keys/2024/EpiMap_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	EpiMap	0.004521914	Score	#E0DCCA
-GraphReg	resources/biosample_keys/2024/GraphReg.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	GraphReg	0.001368199	GraphReg_L_8_dnase_h3k27ac.Score	#C5C1A5
-CIA	resources/biosample_keys/2024/CIA.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	CIA	0.01008	CIA_norm.Score	#888364
-EPIraction	resources/biosample_keys/2024/EPIraction_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	EPIraction	0.0311255	Score	#5E5948
+method	boolean	inverse_predictor	pred_name_long	threshold	score_col	color	geneUniverse
+scE2G_multiome	FALSE	FALSE	scE2G (Multiome)	0.177	E2G.Score.qnorm	#792374	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+scE2G_ATAC	FALSE	FALSE	scE2G (scATAC)	0.174	E2G.Score.qnorm	#006479	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+scABC	FALSE	FALSE	ABC (A=scATAC, C=power law)	0.015	ABC.Score	#0096a0	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+Kendall	FALSE	FALSE	Kendall correlation (access. at E x expr. at G)	0.013	Kendall	#d3a9ce	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+ABC_distanceToTSS	FALSE	TRUE	In element (ABC (A=scATAC)) & distance to TSS	54190	distance	#96a0b3	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+STARE	FALSE	FALSE	STARE (gABC, power law)	0.004	ABC.Score	#96ced3	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+SnapATAC	FALSE	TRUE	SnapATAC (p-value)	0.00000005	p	#5e5948	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+Signac	FALSE	TRUE	Signac (p-value)	0.05	pvalue	#916953	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+Cicero	FALSE	FALSE	Cicero (co-accessibility)	0.25	coaccess	#888364	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+FigR	FALSE	TRUE	FigR (p-value)	0.05	pvalZ	#bc9678	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+SCENT	FALSE	TRUE	SCENT (FDR)	0.1	FDR	#a5a083	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+ScenicPlus	FALSE	FALSE	SCENIC+ (importance)	0.003	importance	#c5c1a5	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+DIRECTNET	TRUE	FALSE	DIRECTNET (high-confidence)	1	HC_binary	#e0dcca	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+ArchR	TRUE	FALSE	ArchR (high-confidence)	1	threshold_binary	#dcbca1	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+DNase_ENCODE_rE2G	FALSE	FALSE	ENCODE-rE2G (A=DNase, C=average Hi-C)	0.201	Score	#DC6464	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+ENCODE_rE2G_extended	FALSE	FALSE	ENCODE-rE2G_Extended	0.336	ENCODE-rE2G.Score	#9B241C	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+DNase_ABC	FALSE	FALSE	ABC (A=DNase,C=avg. Hi-C)	0.016	ABC.Score.Feature	#5496CE	resources/genome_annotation/CollapsedGeneBounds.hg38.bed
+DNase_ABC_distanceToTSS	FALSE	TRUE	In element (ABC (A=DNase)) & distance to TSS	54128	distanceToTSS.Feature	#435369	resources/genome_annotation/CollapsedGeneBounds.hg38.bed

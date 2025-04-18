@@ -18,7 +18,7 @@ main <- function() {
   TSS$center = with(TSS, (start + end)/2)
 
   # variant file:chr,start,end,variant_id,gene_hgnc,tissue,pip
-  variants = read.table(file=var.file, header=FALSE, sep='\t') %>%
+  variants = fread(file=var.file, header=FALSE, sep='\t') %>%
     setNames(c("chr", "start", "end", "variant_id", "gene", "tissue", "pip"))
 
   # add "center" TSS column and merge to average TSS per gene
@@ -27,7 +27,7 @@ main <- function() {
     summarise(center = mean(center))
 
   var.merged = inner_join(variants, TSS.col, by="gene")
-print(head(var.merged))
+
   ## compute TSS-gene distance
   # subtract and absolute value from variant start loc
   var.merged$distance = with(var.merged, abs(center-start))
@@ -45,7 +45,6 @@ print(head(var.merged))
 
   var.merged = dplyr::select(var.merged, -center, -distance)
   fwrite(var.merged, file=out.file, quote=FALSE, sep='\t', col.names=FALSE, row.names=FALSE)
-
   
 }
 

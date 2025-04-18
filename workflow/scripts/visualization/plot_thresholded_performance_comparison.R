@@ -8,8 +8,9 @@ suppressPackageStartupMessages({
   library(forcats)
   library(data.table)
   library(stringr)
+  library(ggdist)
+  library(cowplot)
 })
-
 
 ### INPUTS
 enrTable_files = snakemake@input$enrichmentTable_files  %>% strsplit(" ") %>% unlist()
@@ -20,6 +21,7 @@ distances_min = snakemake@params$distances_min %>% as.character() %>% strsplit("
 distances_max = snakemake@params$distances_max %>% as.character() %>% strsplit(" ") %>% unlist() %>% as.numeric()
 out_plot = snakemake@output$outFile
 out_scatter = snakemake@output$outScatter
+out_violins = snakemake@output$outViolins
 out_enrTable= snakemake@output$enrAllTable
 out_predMetrics = snakemake@output$predictionMetrics
 
@@ -139,13 +141,40 @@ col_overlap = colnames(enr.dist)[colnames(enr.dist) %in% colnames(pred.dist)]
 df.dist = inner_join(enr.dist, pred.dist, by=col_overlap) %>%
 	dplyr::slice_sample(prop = 1, replace = FALSE) # randomize row order for plotting
 
+# scatter
 x_label = paste0("Recall (fraction of variants overlapping enhancer linked to eGene)\n", df.dist$count[1])
 g = ggplot(df.dist, aes(x=recall.linking, y=log10(enrichment), color=pred_name_long)) +
 	geom_point(alpha=0.75, shape = 16, size = 3) +
 	xlab(x_label) + ylab("log10 enrichment (eQTLs vs. common variants)") +
 	scale_color_manual(values=pred_colors, name="Predictor") +
-	theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), legend.position='right')
+	theme_classic() + theme(axis.text = element_text(size = 7), axis.ticks = element_line(color = "#000000"), axis.title = element_text(size = 8), legend.position='right')
 ggsave(out_scatter, g, height=4, width=6)
+
+# violins for enrichment and recall per method
+df.n <- df.dist %>% group_by(pred_name_long) %>%
+	summarize(n_pairs = n(), max_enr = max(enrichment), max_recall = max(recall.linking)) %>% 
+	mutate(n_pairs = paste0("N = ", n_pairs))
+enr_lim <- max(df.n$max_enr) + 1
+recall_lim <- max(df.n$max_recall)
+
+ve <- ggplot(df.dist, aes(x = enrichment, y = pred_name_long)) +
+	stat_eye(aes(fill = pred_name_long), side = "both", shape = 16, point_size = 2, slab_linewidth = 0, normalize = "xy") +
+	geom_text(data = df.n, aes(x = enr_lim - 0.5, y = pred_name_long, label = n_pairs), size = 2, color = "#000000") +
+	scale_fill_manual(values = pred_colors, name = "Predictor") +
+	labs(x = "Enrichment for matching biosamples\n(eQTLs versus common variants)", y = "") +
+	theme_classic() + theme(axis.text = element_text(size = 7, color = "#000000"),
+		axis.title = element_text(size = 8), axis.ticks = element_line(color = "#000000"), legend.position='none')
+
+vr <- ggplot(df.dist, aes(x = recall.linking, y = pred_name_long)) +
+	stat_eye(aes(fill = pred_name_long), side = "both", shape = 16, point_size = 2, slab_linewidth = 0, normalize = "xy") +
+	geom_text(data = df.n, aes(x = recall_lim + 0.1, y = pred_name_long, label = n_pairs), size = 2, color = "#000000") +
+	scale_fill_manual(values = pred_colors, name = "Predictor") +
+	labs(x = "Recall for matching biosamples\n(Fraction of variants overlapping enhancer lined to eGene)", y = "") +
+	theme_classic() + theme(axis.text = element_text(size = 7, color = "#000000"), axis.text.y = element_blank(),
+		axis.title = element_text(size = 8), axis.ticks = element_line(color = "#000000"), legend.position='none')
+
+grid <- cowplot::plot_grid(ve, vr, nrow = 1, ncol = 2, align = "hv", axis = "tb")
+ggsave2(out_violins, grid, height = 5, width = 11)
 
 pred.all = dplyr::select(pred.all, -distance.label)
 enr.all = dplyr::select(enr.all, -distance.label)

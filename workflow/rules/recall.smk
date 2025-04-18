@@ -2,7 +2,7 @@
 rule compute_prediction_table_by_distance:
 	input:
 		varPredInt = lambda wildcards: [os.path.join(config["outDir"], wildcards.method, "biosamples", biosample, "GTExVariants-enhancerPredictionsInt.tsv.gz") for biosample in methods_config.loc[wildcards.method, "biosamples"]],
-		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "intermediate", "GTExVariants.filteredForMethod.tsv.gz")
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "variants", "GTExVariants.filteredForUniverse.tsv.gz")
 	params:
 		distances_max = config["distances_max"],
 		distances_min = config["distances_min"],
@@ -21,7 +21,7 @@ rule compute_prediction_table_by_distance:
 rule compute_prediction_table_by_threshold:
 	input:
 		varPredInt = lambda wildcards: [os.path.join(config["outDir"], wildcards.method, "biosamples", biosample, "GTExVariants-enhancerPredictionsInt.tsv.gz") for biosample in methods_config.loc[wildcards.method, "biosamples"]],
-		filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "intermediate", "GTExVariants.filteredForMethod.tsv.gz"),
+		filteredGTExVariantsFinal = os.path.join(config["outDir"], "variants", "GTExVariants.filteredForUniverse.tsv.gz"),
 		thresholdSpan = os.path.join(config["outDir"], "{method}", "intermediate", "thresholdSpan.tsv"),
 		map = os.path.join(config["outDir"], "{method}", "intermediate", "GTExTissueBiosampleMap.tsv")
 	params:

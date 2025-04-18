@@ -112,8 +112,9 @@ n_legend_cols = ceiling(n_keys / 12); print(n_legend_cols)
     geom_col(aes(fill=key)) +
     geom_errorbar(aes(ymin=CI_enr_low, ymax=CI_enr_high), width=0.2) +
     scale_fill_manual(values=pred_colors, labels=df$plotting_label) +
-    labs(fill="Predictor (exact recall)") + ylab(paste0("Enrichment (eQTLs vs. common variants) at recall ", recall.this)) +
-    theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), legend.text=element_text(size=7), legend.title=element_text(size=8)) + 
+    labs(fill="Predictor (exact recall)") + ylab(paste0("Enrichment (eQTLs versus common variants) at recall ", recall.this)) +
+    theme_classic() + theme(axis.text = element_text(size = 7, color = "#000000"), axis.title = element_text(size = 8), axis.ticks = element_line(color = "#000000"),
+		legend.text=element_text(size=7), legend.title=element_text(size=8)) + 
     theme(axis.text.x=element_blank(), axis.title.x=element_blank()) + # remove x-axis labels
 	guides(col = guide_legend(nrow = 12))
 

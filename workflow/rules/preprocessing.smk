@@ -1,37 +1,17 @@
-# intersect genes considered by variants and prediction method
-rule make_gene_universes:
-    input: 
-        methodGeneUniverse = lambda wildcards: methods_config.loc[wildcards.method, "geneUniverse"],
-        GTExGeneUniverse = config["GTExGeneUniverse"]
-    output:
-        geneUniverse = temp(os.path.join(config["outDir"], "{method}", "intermediate", "geneUniverse.bed.gz"))
-    conda: 
-        os.path.join(config["envDir"], "eQTLEnv.yml")
-    resources:
-        mem_mb = determine_mem_mb
-    shell:
-            """
-            set +o pipefail;
-            
-            # return variant universe genes that are also in method gene universe
-            awk 'NR==FNR{{names[$4]; next}} $4 in names' {input.GTExGeneUniverse} {input.methodGeneUniverse} | gzip > {output.geneUniverse}
-
-            """
-
 # sort enhancer predictions by chromosome & start location & filter to gene universe, invert scores if necessary
 # return file with (1-3) loc, (4) biosample, (5) TargetGene, (6) score (no header)
 rule process_predictions:
     input:
         predFile = lambda wildcards: methods_config.loc[wildcards.method, "predFiles"][wildcards.biosample],
-        geneUniverse = os.path.join(config["outDir"], "{method}", "intermediate", "geneUniverse.bed.gz")
+        geneUniverse = config["TSS_reference"]
     params:
         codeDir = config["codeDir"],
-        outDir = config["outDir"],
         chrSizes = config["chrSizes"],
         scoreCol = lambda wildcards: methods_config.loc[wildcards.method, "score_col"],
         inversePred = lambda wildcards: methods_config.loc[wildcards.method, "inverse_predictor"]
     output:
-        predictionsSorted = temp(os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz"))
+        predictionsSorted_temp = temp(os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.tsv")),
+        predictionsSorted = (os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz"))
     resources:
         mem_mb = determine_mem_mb
     conda: 
@@ -43,15 +23,13 @@ rule process_predictions:
         # sort predictions file: remove # from header,select columns,remove header, remove rows with blanks
         if [[ {input.predFile} == *.gz ]]
         then
-            zcat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | awk 'NF==5{{print}}{{}}' | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv
+            zcat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | awk 'NF==5{{print}}{{}}' | bedtools sort -i stdin -faidx {params.chrSizes} > {output.predictionsSorted_temp}
         else
-            cat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | awk 'NF==5{{print}}{{}}' | bedtools sort -i stdin -faidx {params.chrSizes} > {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv
+            cat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | awk 'NF==5{{print}}{{}}' | bedtools sort -i stdin -faidx {params.chrSizes} > {output.predictionsSorted_temp}
         fi
 
         # invert score if inverted predictor and filter to gene universe and set biosample column
-        Rscript {params.codeDir}/preprocessing/process_predictions.R --input {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv  --genes {input.geneUniverse} --biosample {wildcards.biosample} --invert {params.inversePred}  | gzip > {output.predictionsSorted}
-
-        rm {params.outDir}/{wildcards.method}/biosamples/{wildcards.biosample}/temp.sortedPred.tsv
+        Rscript {params.codeDir}/preprocessing/process_predictions.R --input {output.predictionsSorted_temp}  --genes {input.geneUniverse} --biosample {wildcards.biosample} --invert {params.inversePred}  | gzip > {output.predictionsSorted}
             
         """
 
@@ -105,10 +83,10 @@ rule add_distance_to_variants:
     input:
         filteredGTExVariants = os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.tsv.gz"),
     params:
-        TSS = config['TSS'],
+        TSS = config['TSS_reference'],
         distances = config["distances"]
     output:
-        GTExVariantsDistance = temp(os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.withDistance.tsv.gz"))
+        GTExVariantsDistance = temp(os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.withDistance.tsv"))
     resources:
         mem_mb = determine_mem_mb
     conda:
@@ -121,10 +99,10 @@ rule add_distance_to_variants:
 # columns: 1-3 (loc), 4 (variantID), 5 (gene), 6 (tissue), 7 (PIP),  8 (distance group)
 rule filter_variants_to_gene_universe:
     input:
-        GTExVariantsDistance = os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.withDistance.tsv.gz"),
-        geneUniverse = os.path.join(config["outDir"], "{method}", "intermediate", "geneUniverse.bed.gz")
+        GTExVariantsDistance = os.path.join(config["outDir"], "variants", "GTExVariants.PIPfilt.distalNoncoding.withDistance.tsv"),
+        geneUniverse = config["TSS_reference"]
     output:
-        filteredGTExVariantsFinal = temp(os.path.join(config["outDir"], "{method}", "intermediate", "GTExVariants.filteredForMethod.tsv.gz"))
+        filteredGTExVariantsFinal = (os.path.join(config["outDir"], "variants", "GTExVariants.filteredForUniverse.tsv.gz"))
     resources:
         mem_mb = determine_mem_mb
     shell:
@@ -132,7 +110,7 @@ rule filter_variants_to_gene_universe:
         set +o pipefail;
 
         # filter variants based on gene universe
-        awk 'NR==FNR{{names[$4]; next}} $5 in names' <(zcat {input.geneUniverse}) <(zcat {input.GTExVariantsDistance}) | gzip > {output.filteredGTExVariantsFinal}
+        awk 'NR==FNR{{names[$4]; next}} {{if ($5 in names) print $0}}' {input.geneUniverse} {input.GTExVariantsDistance} | gzip > {output.filteredGTExVariantsFinal}
             
         """
 
@@ -142,7 +120,7 @@ rule filter_variants_to_gene_universe:
 rule intersect_variants_predictions:
     input:
         predictionsSorted = os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
-        filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "intermediate", "GTExVariants.filteredForMethod.tsv.gz")
+        filteredGTExVariantsFinal = os.path.join(config["outDir"], "variants", "GTExVariants.filteredForUniverse.tsv.gz")
     params: 
         chrSizes = config["chrSizes"]
     output:
@@ -170,6 +148,7 @@ rule intersect_bg_variants_predictions:
         commonVarPredictionsInt = temp(os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "distalNoncodingBackgroundSNPs-enhancerPredictionsInt.tsv.gz")),
     resources:
         mem_mb = determine_mem_mb
+    group: "process_predictions"
     conda: 
         os.path.join(config["envDir"], "eQTLEnv.yml")
     shell:
@@ -204,7 +183,7 @@ rule generate_quantile_threshold_span:
         binary = lambda wildcards: methods_config.loc[wildcards.method, "boolean"],
         threshold = lambda wildcards: methods_config.loc[wildcards.method, "threshold"],
     output:
-        outFile = temp(os.path.join(config["outDir"], "{method}", "intermediate", "thresholdSpan.tsv"))
+        outFile = (os.path.join(config["outDir"], "{method}", "intermediate", "thresholdSpan.tsv"))
     resources:
         mem_mb = determine_mem_mb
     conda:
@@ -214,11 +193,11 @@ rule generate_quantile_threshold_span:
 
 rule get_unique_variants_mapped_tissues:
     input: 
-        filteredGTExVariantsFinal = os.path.join(config["outDir"], "{method}", "intermediate", "GTExVariants.filteredForMethod.tsv.gz")
+        filteredGTExVariantsFinal = os.path.join(config["outDir"], "variants", "GTExVariants.filteredForUniverse.tsv.gz")
     params:
         tissues = GTExTissues_matched
     output:
-        outFile = os.path.join(config["outDir"], "{method}", "intermediate", "uniqueVariantCount.matchedTissues.txt")
+        outFile = os.path.join(config["outDir"], "variants", "uniqueVariantCount.matchedTissues.txt")
     resources:
         mem_mb = determine_mem_mb
     run:

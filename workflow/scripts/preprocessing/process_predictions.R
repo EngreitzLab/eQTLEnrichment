@@ -24,13 +24,13 @@ main <- function() {
   # read ABC data
   genes = read.table(gene.file, sep="\t", header=FALSE, fill=TRUE)
   if (ncol(genes)>1){
-	colnames(genes) = c("chr", "start", "end", "hgnc.ID", "score", "strand")
+	colnames(genes) = c("chr", "start", "end", "gene_name", "score", "strand")
   } else {
-    colnames(genes)[1] = 'hgnc.ID'
+    colnames(genes)[1] = 'gene_name'
   }
 
   # filter input file to given gene universe
-  df = dplyr::filter(df, TargetGene %in% genes$hgnc.ID)
+  df = dplyr::filter(df, TargetGene %in% genes$gene_name)
   
   # invert score if necessary
   if (invert %in% c("True", "TRUE")){

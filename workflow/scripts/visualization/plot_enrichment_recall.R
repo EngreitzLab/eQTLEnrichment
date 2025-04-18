@@ -84,15 +84,16 @@ x_label = paste0("Recall (variants overlapping prediction linked to eGene)\n", n
 g=ggplot(data=df_plot, aes(x=recall.linking, y=enrichment, color=key)) +
   geom_line(linewidth=0.75) +
   geom_point(data=df_binary, aes(x=recall.linking, y=enrichment, color=key), size=3, shape = 16) +
-  geom_linerange(data=df_thresh, aes(ymin=CI_enr_low, ymax=CI_enr_high)) +
+  geom_linerange(data=df_thresh, aes(ymin=CI_enr_low, ymax=CI_enr_high), linewidth = 0.75) +
   geom_point(data=df_thresh, aes(x=recall.linking, y=enrichment, color=key), size=3, shape = 16) +
   scale_color_manual(values=pred_colors) +
-  ylab("Enrichment (eQTLs vs. common variants)") + xlab(x_label) +
+  ylab("Enrichment (eQTLs versus common variants)") + xlab(x_label) +
   labs(col="Predictor") + 
   coord_cartesian(ylim=c(0,ylim)) +
-  theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8),
-  legend.text = element_text(size=7), legend.title=element_text(size=8), legend.position="right", legend.direction="vertical",
-  aspect.ratio = 1) + 
+  theme_classic() + theme(axis.text = element_text(size = 7, color = "#000000"),
+  	axis.title = element_text(size = 8), axis.ticks = element_line(color = "#000000"),
+	legend.text = element_text(size= 7), legend.title=element_text(size=8), legend.position="right", legend.direction="vertical",
+	aspect.ratio = 1) + 
   guides(col = guide_legend(nrow = 12))
 
 width = 3 + 3 * n_legend_cols

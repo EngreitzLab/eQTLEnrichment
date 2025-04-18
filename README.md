@@ -48,8 +48,6 @@ The pipeline requires two config files. The required inputs are outlined below.
   
 2. **Methods config table** - an example file is included at: `config/methods_config_example.tsv`. The following columns (with a header) are required, where each row represents one predictive method:
    - **method:** predictive method name, to match listed methods in the main config file outlined above
-   - **sampleKey:** path to .tsv file with columns and header `biosample`, `predictionFile`, and `GTExTissue`. The `GTExTissue` column should be left EMPTY for biosamples without a match. Multiple GTEx tissues can be matched with a single biosample in a comma-separated list. The prediction files must be separated by biosample and must have a header with minimally the columns `chr`, `start`, `end`, `TargetGene`, and a numeric score column (see below)
-   - **geneUniverse:** path to .bed6 file specifying which genes are considered by this method. Variants will be filtered to this set of genes for the analysis.
    - **pred_name_long:** a string with the full method name to be used in plots
    - **threshold:** score threshold value to be used to generate boxplots stratified by distance and enrichment heat maps (outputs (1) and (4)). We used the threshold values corresponding to 70% recall from our CRISPR benchmarking pipeline for each model.
    - **score_col:** name of the column in prediction files with the prediction score
@@ -58,6 +56,7 @@ The pipeline requires two config files. The required inputs are outlined below.
    - **boolean:** `TRUE` if this is a binary 0 or 1 predictor, otherwise `FALSE`
 
 ## Works-in-progress
+- Add description of prediction config file
 - Edit terminology in configuration, code, file names to not be specific to GTEx (replace "GTEx tissue" with "eQTL biosample")
 - Implement benchmarking of groups of prediction biosamples against a single eQTL biosamples to better map to hetergenous tissues
 - Integrate computations from enrichment and recall into a single function

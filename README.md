@@ -29,7 +29,7 @@ snakemake -j1 --configfile config/config_example.yml --use-conda
 ```
 
 ## Config files
-The pipeline requires two config files. The required inputs are outlined below.
+The pipeline requires three config files. The required inputs are outlined below.
 1. **Main config file** - an example file is included at: `config/config_example.yml`. The following fields are required:
 	- **outDir:** output directory name
 	- **methodsTable:** configuration file with information about predictors (see below for specifications)
@@ -55,8 +55,12 @@ The pipeline requires two config files. The required inputs are outlined below.
    - **inverse_predictor:** `TRUE` if high scores correspond to lower prediction confidence (eg. distance to TSS), otherwise `FALSE`
    - **boolean:** `TRUE` if this is a binary 0 or 1 predictor, otherwise `FALSE`
 
+3. **Predictions config table** - an example file is included at: `config/predicitons_config_example.tsv`. The table contains the following columns (with a header), where each row represents one prediction biosample:
+   - **biosample:** name of prediction biosample
+   - **GTExTissue:** comma-separated list eQTL biosamples matching this prediciton biosample, where the eQTL biosample name corresponds to the `tissue` column in the eQTL variant input file
+   - columns with names corresponding to each predictive method, with names matching the methods listed in the main config. These columns contain file paths to the enhancer-gene predictions for the corresponding method. The prediction files should be unthresholded and may be gzipped or uncompressed. They must contain the following columns at minimum: `chr`, `start`, `end` (corresponding to the enhancer elements), `TargetGene` (gene symbol), and a score column corresponding to the `score_col` indicated in the methods configuration table.
+
 ## Works-in-progress
-- Add description of prediction config file
 - Edit terminology in configuration, code, file names to not be specific to GTEx (replace "GTEx tissue" with "eQTL biosample")
 - Implement benchmarking of groups of prediction biosamples against a single eQTL biosamples to better map to hetergenous tissues
 - Integrate computations from enrichment and recall into a single function

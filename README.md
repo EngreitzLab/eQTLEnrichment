@@ -3,6 +3,8 @@ We developed this "eQTL benchmarking pipeline” to assess whether predictive mo
 
 For this analysis, we focus on distal noncoding eQTLs by by filtering out (i) coding sequences, 5′ and 3′ untranslated regions of protein-coding genes, and splice sites (within 10 bp of a intron–exon junction of a protein-coding gene) of protein-coding genes, and (ii) promoters (±250 bp from the gene TSS) of protein-coding genes. We define **enrichment** as (fraction of eQTL variants with PIP >= 50% that overlap predicted enhancers) / (fraction of all 1000G SNPs that overlap predicted enhancers). We define **recall (linking)** as as the fraction of eVariant-eGene pairs overlapping a predicted enhancer linked to the correct eGenes, and **recall (total)** as the fraction of eVariant-eGene pairs with the eVariant overlapping predicted a enhancer.
 
+<hr>
+
 ## Outputs
 Running this pipeline will produce the following plots and corresponding tables, many of which are also included in a summary HTML report (`results/benchmarkingReport.html`). 
 1. To compare comprehensively compare performance across predictors, we plot the enrichment and recall for user-specified eQTL biosample, prediction biosample matches, where predicted enhancers are defined as enhancer-gene links with a score greater than the provided threshold value.
@@ -16,6 +18,23 @@ Running this pipeline will produce the following plots and corresponding tables,
 	- `results/plots.enrichmentRecall/enrichmentRecall.GTExTissueAllMatches.pdf`: Enrichment-recall curve as above where values are aggregated across all specified biosample matches for each predictor. Enrichment and recall are both aggregated by summing variant overlap counts across each biosample match before computing the metric.
 	- `results/plots/enrichmentAtRecall/enrichmentAtRecall{recall}.GTExTissue{tissue}.pdf`: For user-specified recall (linking) values, a plot is generated for each eQTL biosample with at least one predictor biosample designated match. Each predictor biosample match is only included in the plot if they acheive a recall (linking) within 0.02 of the desired value; the exact recall corresponding to the threshold at which enrichment is plotted is shown in the legend. We calculate Bonferroni-adjusted p-values between all pairwise comparisons of included predictors using the approach of [comparing relative risks](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1125071/). Pairs with significant differences are not indicated on the plot because algorithimically calculating the y-position of the required bars is confusing. If fewer than two predictor biosample matches meet the designated recall, empty placeholder files are created. 
 
+<hr>
+
+## System requirements
+
+### Hardware requirements
+
+For optimal performance, we suggest using a computer equipped with 32+ GB RAM to run this pipeline.
+
+### Software requirements
+
+This pipeline has been successfully tested with Linux systems.
+
+The software dependencies and versions to run the pipeline are: `python<=3.11`, `mamba=1.5.11`, `snakemake=7`
+All software dependencies and versions used within the pipeline are listed in `workflow/envs/eQTLEnv.yml`. 
+
+<hr>
+
 ## Running the pipeline
 1. Clone this repository
 ```
@@ -27,6 +46,8 @@ git@github.com:EngreitzLab/eQTLEnrichment.git
 ```
 snakemake -j1 --configfile config/config_example.yml --use-conda
 ```
+
+<hr>
 
 ## Config files
 The pipeline requires three config files. The required inputs are outlined below.
@@ -59,6 +80,8 @@ The pipeline requires three config files. The required inputs are outlined below
    - **biosample:** name of prediction biosample
    - **GTExTissue:** comma-separated list eQTL biosamples matching this prediciton biosample, where the eQTL biosample name corresponds to the `tissue` column in the eQTL variant input file
    - columns with names corresponding to each predictive method, with names matching the methods listed in the main config. These columns contain file paths to the enhancer-gene predictions for the corresponding method. The prediction files should be unthresholded and may be gzipped or uncompressed. They must contain the following columns at minimum: `chr`, `start`, `end` (corresponding to the enhancer elements), `TargetGene` (gene symbol), and a score column corresponding to the `score_col` indicated in the methods configuration table.
+
+<hr>
 
 ## Works-in-progress
 - Edit terminology in configuration, code, file names to not be specific to GTEx (replace "GTEx tissue" with "eQTL biosample")

@@ -90,3 +90,17 @@ The pipeline requires three config files. The required inputs are outlined below
 - Integrate computations from enrichment and recall into a single function
 - Implement baseline predictors computed internally (e.g. distance to TSS, random expressed gene with 500kb)
 - Review/improve the "enrichment at recall" analysis
+
+<hr>
+
+### License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Citation
+
+If you use this pipeline in your research, please cite the preprints in which it was developed: [ENCODE-rE2G preprint](https://www.biorxiv.org/content/10.1101/2023.11.09.563812v1), [scE2G preprint](https://www.biorxiv.org/content/10.1101/2024.11.23.624931v1)
+
+### Support
+
+For questions and issues, please use the [GitHub Issues](https://github.com/EngreitzLab/eQTLEnrichment/issues) page.

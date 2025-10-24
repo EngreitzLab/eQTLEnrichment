@@ -31,6 +31,7 @@ For optimal performance, we suggest using a computer equipped with 32+ GB RAM to
 This pipeline has been successfully tested with Linux systems.
 
 The software dependencies and versions to run the pipeline are: `python<=3.11`, `mamba=1.5.11`, `snakemake=7`
+
 All software dependencies and versions used within the pipeline are listed in `workflow/envs/eQTLEnv.yml`. 
 
 <hr>

@@ -43,7 +43,7 @@ git@github.com:EngreitzLab/eQTLEnrichment.git
 ```
 2. Edit configuration files (see below)
 3. Activate a conda environment with [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) and [snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html) installed.
-4. Run pipeline
+4. Run the pipeline as follows. Depending on the number of predictors and cell types being benchmarked, the workflow should complete in 2–6 hours.
 ```
 snakemake -j1 --configfile config/config_example.yml --use-conda
 ```
